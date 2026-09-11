@@ -14,7 +14,6 @@ class EmbeddingService:
             genai.configure(api_key=settings.GEMINI_API_KEY)
 
     def create_embedding(self, text: str) -> list:
-        # استخدام نموذج Gemini الخاص بالمتجهات، ممتاز للغة العربية وسريع جداً
         result = genai.embed_content(
             model="models/gemini-embedding-2",
             content=text

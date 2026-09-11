@@ -8,7 +8,7 @@ class EmotionAnalyzer:
         if settings.GEMINI_API_KEY:
             genai.configure(api_key=settings.GEMINI_API_KEY)
             
-        self.model = genai.GenerativeModel('gemini-3.5-flash')
+        self.model = genai.GenerativeModel('gemini-3.6-flash')
         
         # هندسة الأوامر (Prompt Engineering) لضمان تحليل المشاعر فقط دون تأليف نصوص
         self.system_prompt = """
@@ -30,5 +30,6 @@ class EmotionAnalyzer:
             
             return json.loads(raw_text)
         except Exception as e:
+            print(f"EmotionAnalyzer Error: {e}")
             # استجابة احتياطية في حال فشل الـ API لتجنب توقف النظام
             return {"emotion": "طبيعي", "confidence": 0.0}

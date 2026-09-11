@@ -18,7 +18,9 @@ app.add_middleware(
 )
 
 # ربط واجهة التوصية (API Endpoint)
-app.include_router(recommend.router, prefix="/api/v1", tags=["recommendations"])
+from app.api.v1.endpoints import recommend, history
+app.include_router(recommend.router, prefix="/api/v1/analyze", tags=["recommendations"])
+app.include_router(history.router, prefix="/api/v1/history", tags=["history"])
 
 @app.get("/")
 def read_root():
