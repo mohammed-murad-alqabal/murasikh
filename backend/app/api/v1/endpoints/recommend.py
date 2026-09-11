@@ -2,10 +2,12 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from app.services.ai.emotion_analyzer import EmotionAnalyzer
 from app.services.notification.tiered_response import TieredResponse
+from app.services.ai.embeddings import EmbeddingService
 
 router = APIRouter()
 analyzer = EmotionAnalyzer()
 tiered = TieredResponse()
+embedder = EmbeddingService()
 
 class UserInput(BaseModel):
     text: str
@@ -20,16 +22,32 @@ async def analyze_and_recommend(user_input: UserInput):
     # 2. تحديد مستوى التدخل (الاستجابة المدرجة)
     tier = tiered.determine_tier(emotion, confidence)
     
-    # 3. صياغة الرد المبدئي
+    # 3. صياغة الرد המبدئي
     if tier == 'minimal':
         response = tiered.get_minimal_response(emotion)
         response['confidence'] = confidence
         return response
         
-    # هنا سيتم لاحقاً حقن (RAG) لجلب الآية من قاعدة البيانات للـ (Moderate & Full)
+    # 4. البحث الدلالي (RAG) لجلب أفضل آية أو حديث يطابق الموقف
+    results = embedder.search_similar(query=user_input.text, n_results=1)
+    
+    if results and results['documents'] and len(results['documents'][0]) > 0:
+        best_match_text = results['documents'][0][0]
+        metadata = results['metadatas'][0][0]
+        
+        return {
+            "emotion": emotion,
+            "confidence": confidence,
+            "tier": tier,
+            "content_type": metadata.get("type"),
+            "text": best_match_text,
+            "source": metadata.get("source"),
+            "tafsir": metadata.get("tafsir", "") if tier == 'full' else "التفسير متاح عند الطلب"
+        }
+        
     return {
         "emotion": emotion,
         "confidence": confidence,
         "tier": tier,
-        "message": "سيقوم محرك البحث الدلالي بجلب الآية أو الحديث المناسب هنا."
+        "message": "لم يتم العثور على نص مناسب في الوقت الحالي."
     }
