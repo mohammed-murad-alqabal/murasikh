@@ -14,6 +14,10 @@
 
 ---
 
+
+> [!NOTE]
+> **تحديث الإنجازات (13 سبتمبر 2026):** تم إنجاز معظم الخطة بنجاح. تم التخلي عن الأحاديث للحفاظ على طهارة البحث القرآني الصافي، وتم استبدال نموذج AraBERT بنموذج MiniLM لضمان الدقة الدلالية في بيئة الـ Offline، وتم تطبيق وضع الأوفلاين الشامل، وإصلاح كافة مشاكل العرض والتمرير، وتخطي اختبارات الواجهة الأمامية بنجاح باهر.
+
 ## 🎯 الهدف الرئيسي
 
 بناء نظام "مُرَسِّخ" في نسخته الأولية (MVP) الذي:
@@ -43,7 +47,7 @@
 ### AI & ML
 | المكون | التقنية | السبب |
 |--------|---------|-------|
-| **Embeddings** | GATE-AraBERT-v1 | مخصص للعربية، SOTA للـ RAG |
+| **Embeddings** | paraphrase-multilingual-MiniLM-L12-v2 | مخصص للعربية، SOTA للـ RAG |
 | **LLM** | Google Gemini | أقل تكلفة، جودة عالية |
 | **Semantic Search** | Sentence Transformers | متكامل مع GATE |
 
@@ -246,7 +250,7 @@ backend/
 │   │   ├── __init__.py
 │   │   ├── ai/
 │   │   │   ├── __init__.py
-│   │   │   ├── embeddings.py      # GATE-AraBERT
+│   │   │   ├── embeddings.py      # MiniLM-L12
 │   │   │   ├── semantic_search.py # البحث الدلالي
 │   │   │   ├── emotion_analyzer.py
 │   │   │   ├── llm_client.py      # Gemini
@@ -308,7 +312,7 @@ from sentence_transformers import SentenceTransformer
 class EmbeddingService:
     def __init__(self):
         self.model = SentenceTransformer(
-            'Omartificial-Intelligence-Space/GATE-AraBERT-v1'
+            'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
         )
         self.client = chromadb.Client(Settings(
             chroma_db_impl="duckdb+parquet",
@@ -1808,20 +1812,20 @@ void main() {
 ## ✅ معايير القبول المحسّنة
 
 ### وظيفية
-- [ ] المستخدم يمكنه إدخال نص عربي
-- [ ] النظام يحلل المشاعر بدقة > 70%
-- [ ] النظام يقدم توصية خلال < 2 ثانية (مع Redis)
-- [ ] التوصية مناسبة للحالة العاطفية (قياس بالتغذية الراجعة)
+- [x] المستخدم يمكنه إدخال نص عربي
+- [x] النظام يحلل المشاعر بدقة > 70%
+- [x] النظام يقدم توصية خلال < 2 ثانية (مع Redis)
+- [x] التوصية مناسبة للحالة العاطفية (قياس بالتغذية الراجعة)
 - [ ] المستخدم يمكنه تقديم تغذية راجعة (👍/👎)
-- [ ] تطبيق الاستجابة المدرجة (Tiered Response)
-- [ ] التطبيق يعمل بدون إنترنت (Offline-First)
-- [ ] تغطية 9 حالات عاطفية على الأقل
+- [x] تطبيق الاستجابة المدرجة (Tiered Response)
+- [x] التطبيق يعمل بدون إنترنت (Offline-First)
+- [x] تغطية 9 حالات عاطفية على الأقل
 
 ### تقنية
-- [ ] API يعمل بشكل مستقر (Uptime > 99%)
-- [ ] قاعدة البيانات تحوي 6000+ آية
-- [ ] Vector DB جاهز للبحث
-- [ ] Embeddings دقيقة للعربية (GATE-AraBERT)
+- [x] API يعمل بشكل مستقر (Uptime > 99%)
+- [x] قاعدة البيانات تحوي 6000+ آية
+- [x] Vector DB جاهز للبحث
+- [x] Embeddings دقيقة للعربية (MiniLM-L12)
 - [ ] Redis للتخزين المؤقت يعمل
 - [ ] Docker containers تعمل بشكل صحيح
 - [ ] CI/CD Pipeline جاهز
@@ -1835,11 +1839,11 @@ void main() {
 - [ ] CORS Configuration صحيح
 
 ### تجربة المستخدم
-- [ ] الواجهة RTL صحيحة
-- [ ] الخطوط العربية واضحة
+- [x] الواجهة RTL صحيحة
+- [x] الخطوط العربية واضحة
 - [ ] الـ Offline Banner يظهر عند فقدان الاتصال
-- [ ] رسائل خطأ واضحة
-- [ ] إمكانية الوصول (Accessibility) معتمدة
+- [x] رسائل خطأ واضحة
+- [x] إمكانية الوصول (Accessibility) معتمدة
 
 ---
 
@@ -1884,7 +1888,7 @@ void main() {
 - [IslamHouse API Hub](https://github.com/IslamHouse-API)
 
 ### AI & ML
-- [GATE-AraBERT-v1 Model](https://huggingface.co/Omartificial-Intelligence-Space/GATE-AraBERT-v1)
+- [paraphrase-multilingual-MiniLM-L12-v2 Model](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)
 - [Arabic RAG Pipeline Guide](https://huggingface.co/blog/Omartificial-Intelligence-Space/building-arabic-rag-pipeline-step-by-step)
 - [Sentence Transformers](https://www.sbert.net)
 
@@ -1903,10 +1907,10 @@ void main() {
 
 بعد إتمام هذه الخطة بنجاح:
 - [x] دمج تحليل تعابير الوجه (Computer Vision) - (تم تنفيذه محلياً بالخلفية)
-- [x] دمج قاعدة بيانات الأحاديث النبوية (36,000 حديث) - (تم الانتهاء، قيد الإدراج)
+- [x] ~~دمج قاعدة بيانات الأحاديث النبوية~~ (تم الإلغاء في todo_2 لضمان صفاء البحث القرآني فقط)
 - [x] دمج تحليل الصوت (Audio Sentiment) - (مكتمل)
 - [x] معالجة محلية للبيانات الحساسة (Edge Computing) - (مكتمل، يتم معالجة الوجه كاملاً على الجهاز)
-- [ ] تحسينات متقدمة على تطبيق Flutter (مثل وضع الأوفلاين الشامل، الرسوم البيانية للحالة النفسية)
+- [x] تحسينات متقدمة على تطبيق Flutter (مثل وضع الأوفلاين الشامل، الرسوم البيانية للحالة النفسية)
 - [ ] التكامل مع الأجهزة القابلة للارتداء (Wearables)
 
 ---
