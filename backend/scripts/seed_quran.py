@@ -10,12 +10,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def seed_quran():
     print("تحميل نموذج AraBERT...")
-    model = SentenceTransformer('Omartificial-Intelligence-Space/GATE-AraBERT-v1')
+    model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
     
     client = chromadb.PersistentClient(path="./chroma_db")
     collection = client.get_or_create_collection(
-        name="islamic_content",
-        metadata={"description": "القرآن والأحاديث والتفاسير (Local Embeddings)"}
+        name="islamic_content_minilm",
+        metadata={"description": "القرآن", "hnsw:space": "cosine"}
     )
     
     print("قراءة ملف القرآن...")

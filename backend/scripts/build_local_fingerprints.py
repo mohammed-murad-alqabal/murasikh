@@ -29,7 +29,7 @@ def main():
 
     # 1. تحميل الموديل المحلي
     print("📥 تحميل نموذج GATE-AraBERT-v1 (محلي)...")
-    model = SentenceTransformer('Omartificial-Intelligence-Space/GATE-AraBERT-v1')
+    model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
 
     # 2. تحضير أبعاد التصنيف (Embeddings)
     print(f"📊 معالجة {len(EMOTION_TAXONOMY)} بُعد تصنيفي...")
