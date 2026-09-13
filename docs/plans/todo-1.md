@@ -16,14 +16,14 @@
 
 
 > [!NOTE]
-> **تحديث الإنجازات (13 سبتمبر 2026):** تم إنجاز معظم الخطة بنجاح. تم التخلي عن الأحاديث للحفاظ على طهارة البحث القرآني الصافي، وتم استبدال نموذج AraBERT بنموذج MiniLM لضمان الدقة الدلالية في بيئة الـ Offline، وتم تطبيق وضع الأوفلاين الشامل، وإصلاح كافة مشاكل العرض والتمرير، وتخطي اختبارات الواجهة الأمامية بنجاح باهر.
+> **تحديث الإنجازات (13 سبتمبر 2026):** تم إنجاز معظم الخطة بنجاح. تم التخلي عن الآيات للحفاظ على طهارة البحث القرآني الصافي، وتم استبدال نموذج AraBERT بنموذج MiniLM لضمان الدقة الدلالية في بيئة الـ Offline، وتم تطبيق وضع الأوفلاين الشامل، وإصلاح كافة مشاكل العرض والتمرير، وتخطي اختبارات الواجهة الأمامية بنجاح باهر.
 
 ## 🎯 الهدف الرئيسي
 
 بناء نظام "مُرَسِّخ" في نسخته الأولية (MVP) الذي:
 - يقبل إدخال نصي من المستخدم (وصف المشاعر أو الموقف)
 - يحلل الحالة العاطفية
-- يقدم توصية دينية مناسبة (آية أو حديث مع التفسير)
+- يقدم توصية دينية مناسبة (آية قرآنية مع التفسير)
 - يعتمد على تقنية RAG لضمان الدقة الشرعية
 - يعمل بدون إنترنت (Offline-First)
 - يطبق الاستجابة المدرجة (Tiered Response)
@@ -64,8 +64,8 @@
 ### مصادر البيانات الشرعية
 | المصدر | المحتوى | الرابط | ملاحظة |
 |--------|---------|--------|--------|
-| **UmmahAPI** | 6,236 آية + 36,000+ حديث + تفسير | https://ummahapi.com | مجاني، موثوق |
-| **House of Islam** | قرآن + حديث + تفسير + أدعية | https://developers.thehouseofislam.com | تحميل مباشر |
+| **UmmahAPI** | 6,236 آية + حصرياً + تفسير | https://ummahapi.com | مجاني، موثوق |
+| **House of Islam** | قرآن + تفسير + أدعية | https://developers.thehouseofislam.com | تحميل مباشر |
 | **IslamHouse API** | محتوى متعدد اللغات | https://github.com/IslamHouse-API | مصدر إضافي |
 
 ---
@@ -116,11 +116,11 @@ CREATE INDEX idx_verses_emotional_state ON verses(emotional_state);
 CREATE INDEX idx_verses_surah_ayah ON verses(surah_number, ayah_number);
 CREATE INDEX idx_verses_tags ON verses USING GIN(tags);
 
--- جدول الأحاديث
-CREATE TABLE hadiths (
+-- جدول الآيات
+CREATE TABLE verses (
     id SERIAL PRIMARY KEY,
     collection VARCHAR(100) NOT NULL,
-    hadith_number VARCHAR(50),
+    verse_number VARCHAR(50),
     text_arabic TEXT NOT NULL,
     translation TEXT,
     explanation TEXT,
@@ -135,9 +135,9 @@ CREATE TABLE hadiths (
     is_deleted BOOLEAN DEFAULT FALSE
 );
 
-CREATE INDEX idx_hadiths_emotional_state ON hadiths(emotional_state);
-CREATE INDEX idx_hadiths_collection ON hadiths(collection);
-CREATE INDEX idx_hadiths_tags ON hadiths USING GIN(tags);
+CREATE INDEX idx_verses_emotional_state ON verses(emotional_state);
+CREATE INDEX idx_verses_collection ON verses(collection);
+CREATE INDEX idx_verses_tags ON verses USING GIN(tags);
 
 -- جدول المستخدمين
 CREATE TABLE users (
@@ -195,7 +195,7 @@ CREATE TABLE emotion_mappings (
     emotion VARCHAR(50) NOT NULL,
     keywords TEXT[],
     example_verses INTEGER[],
-    example_hadiths INTEGER[],
+    example_verses INTEGER[],
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -242,7 +242,7 @@ backend/
 │   │       ├── __init__.py
 │   │       ├── base.py
 │   │       ├── verse.py
-│   │       ├── hadith.py
+│   │       ├── verse.py
 │   │       ├── user.py
 │   │       └── interaction.py
 │   │
@@ -258,7 +258,7 @@ backend/
 │   │   ├── knowledge_base/
 │   │   │   ├── __init__.py
 │   │   │   ├── quran_service.py
-│   │   │   └── hadith_service.py
+│   │   │   └── verse_service.py
 │   │   ├── cache/
 │   │   │   ├── __init__.py
 │   │   │   └── redis_cache.py
@@ -320,7 +320,7 @@ class EmbeddingService:
         ))
         self.collection = self.client.get_or_create_collection(
             name="islamic_content",
-            metadata={"description": "القرآن والأحاديث والتفاسير"}
+            metadata={"description": "القرآن الكريم والتفاسير"}
         )
     
     def create_embedding(self, text: str) -> list:
@@ -445,27 +445,27 @@ class QuranService:
         return ''
 ```
 
-**2. Hadith API**
+**2. Verse API**
 
 ```python
-# app/services/knowledge_base/hadith_service.py
-class HadithService:
+# app/services/knowledge_base/verse_service.py
+class VerseService:
     BASE_URL = "https://api.ummahapi.com"
     COLLECTIONS = ['bukhari', 'muslim', 'tirmidhi', 
                    'abudawud', 'nasai', 'ibnmajah']
     
-    async def fetch_all_hadiths(self) -> List[Dict]:
-        """جلب الأحاديث من المجموعات الصحيحة"""
-        all_hadiths = []
+    async def fetch_all_verses(self) -> List[Dict]:
+        """جلب الآيات من المجموعات الصحيحة"""
+        all_verses = []
         async with aiohttp.ClientSession() as session:
             for collection in self.COLLECTIONS:
-                hadiths = await self._fetch_collection(session, collection)
-                all_hadiths.extend(hadiths)
-        return all_hadiths
+                verses = await self._fetch_collection(session, collection)
+                all_verses.extend(verses)
+        return all_verses
     
     async def _fetch_collection(self, session, 
                                  collection: str) -> List[Dict]:
-        url = f"{self.BASE_URL}/hadith/{collection}"
+        url = f"{self.BASE_URL}/verse/{collection}"
         async with session.get(url) as response:
             if response.status == 200:
                 return await response.json()
@@ -474,7 +474,7 @@ class HadithService:
 
 #### تصنيف البيانات العاطفي المحسّن
 
-| الحالة العاطفية | الكلمات المفتاحية | الآيات المرتبطة | الأحاديث المرتبطة |
+| الحالة العاطفية | الكلمات المفتاحية | الآيات المرتبطة | الآيات المرتبطة |
 |-----------------|-------------------|-----------------|-------------------|
 | **غضب** | غضب، عصبية، انفعال، حنق | "وَالْكَاظِمِينَ الْغَيْظَ" | "ليس الشديد بالصُّرَعَة..." |
 | **حزن** | حزن، أسى، وجع، ألم | "وَبَشِّرِ الصَّابِرِينَ" | "ما أصاب من مصيبة..." |
@@ -492,18 +492,18 @@ class HadithService:
 import asyncio
 from app.services.ai.embeddings import EmbeddingService
 from app.services.knowledge_base.quran_service import QuranService
-from app.services.knowledge_base.hadith_service import HadithService
+from app.services.knowledge_base.verse_service import VerseService
 
 async def main():
     embedding_service = EmbeddingService()
     quran_service = QuranService()
-    hadith_service = HadithService()
+    verse_service = VerseService()
     
     print("جلب الآيات...")
     verses = await quran_service.fetch_all_verses()
     
-    print("جلب الأحاديث...")
-    hadiths = await hadith_service.fetch_all_hadiths()
+    print("جلب الآيات...")
+    verses = await verse_service.fetch_all_verses()
     
     print("إنشاء وتخزين Embeddings للآيات...")
     for i, verse in enumerate(verses):
@@ -523,23 +523,23 @@ async def main():
             if i % 100 == 0:
                 print(f"تمت معالجة {i} آية...")
     
-    print("إنشاء وتخزين Embeddings للأحاديث...")
-    for i, hadith in enumerate(hadiths):
-        if hadith:
+    print("إنشاء وتخزين Embeddings للآيات...")
+    for i, verse in enumerate(verses):
+        if verse:
             metadata = {
-                "type": "hadith",
-                "collection": hadith.get('collection'),
-                "hadith_number": hadith.get('hadith_number'),
-                "emotion": hadith.get('emotional_state'),
-                "grade": hadith.get('grade')
+                "type": "verse",
+                "collection": verse.get('collection'),
+                "verse_number": verse.get('verse_number'),
+                "emotion": verse.get('emotional_state'),
+                "grade": verse.get('grade')
             }
             embedding_service.store_embedding(
-                id=f"hadith_{i}",
-                text=hadith.get('text_arabic', ''),
+                id=f"verse_{i}",
+                text=verse.get('text_arabic', ''),
                 metadata=metadata
             )
             if i % 100 == 0:
-                print(f"تمت معالجة {i} حديث...")
+                print(f"تمت معالجة {i} آية...")
     
     print("تم إنشاء جميع الـ Embeddings بنجاح!")
 
@@ -575,7 +575,7 @@ class RecommendRequest(BaseModel):
 class RecommendResponse(BaseModel):
     emotion: str
     confidence: float
-    content_type: str  # 'verse' or 'hadith'
+    content_type: str  # 'verse' or 'verse'
     arabic_text: str
     translation: str
     tafsir: str
@@ -679,7 +679,7 @@ class TieredResponse:
     """
     نظام الاستجابة المدرجة:
     - Tier 1 (Minimal): تنبيه رمزي فقط
-    - Tier 2 (Moderate): آية مختصرة أو حديث قصير
+    - Tier 2 (Moderate): آية مختصرة 
     - Tier 3 (Full): الآية/الحديث كاملاً مع التفسير
     """
     
@@ -798,7 +798,7 @@ class SemanticSearch:
             if metadata.get('emotion') == emotion:
                 score *= 1.2
             
-            # تعزيز الآيات على الأحاديث في بعض الحالات
+            # تعزيز الآيات على الآيات في بعض الحالات
             if emotion in ['حزن', 'قلق'] and metadata.get('type') == 'verse':
                 score *= 1.1
             
@@ -1051,7 +1051,7 @@ frontend/
 │   │   │   │   └── recommendation_page.dart
 │   │   │   ├── widgets/
 │   │   │   │   ├── verse_card.dart
-│   │   │   │   ├── hadith_card.dart
+│   │   │   │   ├── verse_card.dart
 │   │   │   │   └── tiered_response_widget.dart
 │   │   │   └── bloc/
 │   │   │       ├── recommendation_bloc.dart
@@ -1221,8 +1221,8 @@ class OfflineService {
     await _pendingSyncBox.clear();
   }
   
-  // تخزين الآيات والأحاديث محلياً للعمل بدون إنترنت
-  Future<void> cacheContent(List<dynamic> verses, List<dynamic> hadiths) async {
+  // تخزين الآيات  محلياً للعمل بدون إنترنت
+  Future<void> cacheContent(List<dynamic> verses, List<dynamic> verses) async {
     final contentBox = await Hive.openBox('cached_content');
     
     // تخزين الآيات
@@ -1230,9 +1230,9 @@ class OfflineService {
       await contentBox.put('verse_${verse['id']}', verse);
     }
     
-    // تخزين الأحاديث
-    for (var hadith in hadiths) {
-      await contentBox.put('hadith_${hadith['id']}', hadith);
+    // تخزين الآيات
+    for (var verse in verses) {
+      await contentBox.put('verse_${verse['id']}', verse);
     }
   }
 }
@@ -1303,7 +1303,7 @@ class RecommendationRepository {
   
   Recommendation _getFromLocalContent(String? emotion) {
     // البحث في المحتوى المحلي
-    // هذا يتطلب تخزين الآيات والأحاديث محلياً مسبقاً
+    // هذا يتطلب تخزين الآيات  محلياً مسبقاً
     // ...
     
     // إرجاع توصية افتراضية
@@ -1868,7 +1868,7 @@ void main() {
 ## 📦 المخرجات النهائية المحسّنة
 
 1. **Backend API** قابل للتشغيل مع FastAPI
-2. **قاعدة بيانات** محتوى شرعي كامل (6000+ آية، 36000+ حديث)
+2. **قاعدة بيانات** محتوى شرعي كامل (6236 آية)
 3. **Vector DB** (Chroma للتطوير، Milvus للإنتاج)
 4. **تطبيق Flutter** (Android + iOS) مع Offline-First
 5. **Redis Cache** لتحسين الأداء
@@ -1907,7 +1907,7 @@ void main() {
 
 بعد إتمام هذه الخطة بنجاح:
 - [x] دمج تحليل تعابير الوجه (Computer Vision) - (تم تنفيذه محلياً بالخلفية)
-- [x] ~~دمج قاعدة بيانات الأحاديث النبوية~~ (تم الإلغاء في todo_2 لضمان صفاء البحث القرآني فقط)
+- [x] ~~دمج قاعدة بيانات الآيات القرآنية~~ (تم الإلغاء في todo_2 لضمان صفاء البحث القرآني فقط)
 - [x] دمج تحليل الصوت (Audio Sentiment) - (مكتمل)
 - [x] معالجة محلية للبيانات الحساسة (Edge Computing) - (مكتمل، يتم معالجة الوجه كاملاً على الجهاز)
 - [x] تحسينات متقدمة على تطبيق Flutter (مثل وضع الأوفلاين الشامل، الرسوم البيانية للحالة النفسية)

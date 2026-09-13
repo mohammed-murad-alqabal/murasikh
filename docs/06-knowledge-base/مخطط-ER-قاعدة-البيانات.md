@@ -47,11 +47,11 @@ Relationships:
                             │                        │
                             │                        │
                             │              ┌─────────▼─────────┐
-                    ┌───────┴──────┐      │    hadiths       │
+                    ┌───────┴──────┐      │    verses       │
                     │ interactions ├──────┤├──────────────┤   │
                     ├──────────────┤      │PK id         │   │
                     │PK id         │      │  collection  │   │
-                    │FK user_id    │      │  hadith_number│   │
+                    │FK user_id    │      │  verse_number│   │
                     │ query_text   │      │  text_arabic │   │
                     │ detected_    │      │  explanation │   │
                     │   emotion    │      │  grade       │   │
@@ -74,7 +74,7 @@ Relationships:
                     │ recommendation_│                │ example_verses│
                     │   type       │                │   []          │
                     │ recommendation_│                │ example_      │
-                    │   id         │                │   hadiths[]   │
+                    │   id         │                │   verses[]   │
                     │ reason       │                │ description   │
                     │ is_delivered │                │ created_at    │
                     │ scheduled_for│                └───────────────┘
@@ -131,7 +131,7 @@ CREATE TABLE interactions (
     query_text TEXT NOT NULL,
     detected_emotion VARCHAR(50),
     emotion_confidence FLOAT CHECK (emotion_confidence >= 0 AND emotion_confidence <= 1),
-    recommendation_type VARCHAR(20),  -- 'verse', 'hadith', 'symbol'
+    recommendation_type VARCHAR(20),  -- 'verse', 'verse', 'symbol'
     recommendation_id INTEGER,
     user_feedback BOOLEAN,
     response_tier VARCHAR(20) CHECK (response_tier IN ('minimal', 'moderate', 'full')),
@@ -225,17 +225,17 @@ CREATE INDEX idx_verses_tafsir_source ON verses(tafsir_source);
 - 3 مصادر تفسيرية (ابن كثير، السعدي، الميسر)
 - متوسط طول النص: 12 كلمة
 
-### 5. جدول الأحاديث (hadiths)
+### 5. جدول الآيات (verses)
 
 **الغرض:** تخزين النصوص الحديثية والشرح.
 
 ```sql
-CREATE TABLE hadiths (
+CREATE TABLE verses (
     id SERIAL PRIMARY KEY,
     collection VARCHAR(100) NOT NULL CHECK (
         collection IN ('bukhari', 'muslim', 'tirmidhi', 'abudawud', 'nasai', 'ibnmajah')
     ),
-    hadith_number VARCHAR(50),
+    verse_number VARCHAR(50),
     text_arabic TEXT NOT NULL,
     translation TEXT,
     explanation TEXT,
@@ -253,16 +253,16 @@ CREATE TABLE hadiths (
 
 **الفهارس:**
 ```sql
-CREATE INDEX idx_hadiths_collection ON hadiths(collection);
-CREATE INDEX idx_hadiths_emotional_state ON hadiths(emotional_state);
-CREATE INDEX idx_hadiths_tags ON hadiths USING GIN(tags);
-CREATE INDEX idx_hadiths_keywords ON hadiths USING GIN(keywords);
-CREATE INDEX idx_hadiths_grade ON hadiths(grade);
-CREATE INDEX idx_hadiths_is_authentic ON hadiths(is_authentic);
+CREATE INDEX idx_verses_collection ON verses(collection);
+CREATE INDEX idx_verses_emotional_state ON verses(emotional_state);
+CREATE INDEX idx_verses_tags ON verses USING GIN(tags);
+CREATE INDEX idx_verses_keywords ON verses USING GIN(keywords);
+CREATE INDEX idx_verses_grade ON verses(grade);
+CREATE INDEX idx_verses_is_authentic ON verses(is_authentic);
 ```
 
 **البيانات:**
-- إجمالي 36,000+ حديث
+- إجمالي حصرياً
 - 6 مجموعات حديثية رئيسية
 - تصنيف الصحة: صحيح، حسن، ضعيف
 - متوسط طول النص: 25 كلمة
@@ -279,7 +279,7 @@ CREATE TABLE emotion_mappings (
     ),
     keywords TEXT[] DEFAULT '{}',
     example_verses INTEGER[] DEFAULT '{}',
-    example_hadiths INTEGER[] DEFAULT '{}',
+    example_verses INTEGER[] DEFAULT '{}',
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -294,7 +294,7 @@ CREATE INDEX idx_emotion_mappings_keywords ON emotion_mappings USING GIN(keyword
 **البيانات:**
 ```
 ┌────────────┬──────────────────────────────┬─────────────┬─────────────┐
-│  Emotion   │          Keywords            │  Verses     │  Hadiths    │
+│  Emotion   │          Keywords            │  Verses     │  Verses    │
 ├────────────┼──────────────────────────────┼─────────────┼─────────────┤
 │ غضب        │ غضب، عصبية، انفعال، حنق     │ [134, 199]  │ [123, 456]  │
 │ حزن        │ حزن، أسى، وجع، ألم          │ [155, 156]  │ [789, 012]  │
@@ -343,17 +343,17 @@ verses (N) ─────── (M) emotion_mappings
 **Cardinality:** Many-to-Many  
 **شرح:** آية واحدة قد تكون مناسبة لحالات عاطفية متعددة، وحالة عاطفية واحدة قد ترتبط بالعديد من الآيات.
 
-### 4. علاقة الأحاديث ↔ التصنيف العاطفي
+### 4. علاقة الآيات ↔ التصنيف العاطفي
 
 ```
-hadiths (N) ─────── (M) emotion_mappings
+verses (N) ─────── (M) emotion_mappings
     │                     │
     │                     │
-    └─────────────────────┘ عبر example_hadiths array
+    └─────────────────────┘ عبر example_verses array
 ```
 
 **Cardinality:** Many-to-Many  
-**شرح:** نفس علاقة الآيات ولكن للأحاديث.
+**شرح:** نفس علاقة الآيات ولكن للآيات.
 
 ---
 
@@ -367,7 +367,7 @@ hadiths (N) ─────── (M) emotion_mappings
 | interactions | 1,000,000 | 2 GB | 100,000 |
 | delayed_responses | 100,000 | 100 MB | 10,000 |
 | verses | 6,236 | 50 MB | ثابت |
-| hadiths | 36,000 | 200 MB | ثابت |
+| verses | 36,000 | 200 MB | ثابت |
 | emotion_mappings | 9 | 100 KB | ثابت |
 | **المجموع** | **1,152,245** | **2.4 GB** | **110,500** |
 
@@ -377,7 +377,7 @@ hadiths (N) ─────── (M) emotion_mappings
 |-----------|--------|--------|-------------|
 | SELECT user interactions | interactions | idx_interactions_user_id | 5ms |
 | SELECT verse by surah/ayah | verses | idx_verses_surah_ayah | 2ms |
-| SELECT hadiths by emotion | hadiths | idx_hadiths_emotional_state | 3ms |
+| SELECT verses by emotion | verses | idx_verses_emotional_state | 3ms |
 | INSERT interaction | interactions | PK auto-increment | 10ms |
 | UPDATE delayed response | delayed_responses | idx_delayed_responses_scheduled_for | 8ms |
 | SELECT recent interactions | interactions | idx_interactions_created_at | 15ms |
@@ -393,7 +393,7 @@ hadiths (N) ─────── (M) emotion_mappings
 | interactions | 30 يوم | Archive to S3 |
 | delayed_responses | 7 أيام بعد التسليم | Soft Delete |
 | users | غير محدود | Soft Delete |
-| verses/hadiths | غير محدود | لا حذف |
+| verses/verses | غير محدود | لا حذف |
 
 ### Archiving Strategy:
 
@@ -445,7 +445,7 @@ CREATE ROLE murassikh_readonly;
 
 -- Grant permissions
 GRANT SELECT, INSERT, UPDATE ON interactions TO murassikh_app;
-GRANT SELECT ON verses, hadiths TO murassikh_app;
+GRANT SELECT ON verses, verses TO murassikh_app;
 GRANT SELECT ON ALL TABLES TO murassikh_readonly;
 
 -- Row Level Security (RLS)

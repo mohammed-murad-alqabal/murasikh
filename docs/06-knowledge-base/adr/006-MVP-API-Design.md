@@ -250,7 +250,7 @@ class EmotionResponse(BaseModel):
     intensity: str
 
 class RecommendationResponse(BaseModel):
-    type: str  # verse | hadith | symbol
+    type: str  # verse | verse | symbol
     arabic_text: str
     translation: str
     tafsir: str
