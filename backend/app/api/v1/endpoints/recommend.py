@@ -3,18 +3,23 @@ from pydantic import BaseModel
 from typing import Optional
 from app.services.ai.emotion_analyzer import EmotionAnalyzer
 from app.services.ai.embeddings import EmbeddingService
+from app.services.ai.rag_engine import RAGEngine
 from app.services.history_manager import HistoryManager
+from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
 import logging
 
 router = APIRouter()
 analyzer = EmotionAnalyzer()
 embedder = EmbeddingService()
+rag_engine = RAGEngine()
 history_manager = HistoryManager()
 logger = logging.getLogger(__name__)
 
+
 class RecommendationRequest(BaseModel):
     text: str
-    user_context: Optional[str] = None 
+    user_context: Optional[dict] = None  # {"age": 25, "gender": "male"}
+
 
 class RecommendationResponse(BaseModel):
     emotion: str
@@ -25,14 +30,15 @@ class RecommendationResponse(BaseModel):
     source: Optional[str] = None
     tafsir: Optional[str] = None
 
+
 @router.post("", response_model=RecommendationResponse)
 async def get_recommendation(request: RecommendationRequest):
     try:
-        # 1. Analyze emotion from text
-        analysis = await analyzer.analyze(request.text)
+        # 1. تحليل الحالة العاطفية/الإيمانية مع سياق المستخدم
+        analysis = await analyzer.analyze(request.text, user_context=request.user_context)
         emotion = analysis.get("emotion", "طبيعي")
         confidence = float(analysis.get("confidence", 0.0))
-        
+
         if emotion == "طبيعي":
             return RecommendationResponse(
                 emotion=emotion,
@@ -40,42 +46,66 @@ async def get_recommendation(request: RecommendationRequest):
                 tier="minimal",
                 message="يبدو أن الأمور هادئة بفضل الله. استمر في يومك بذكر الله."
             )
-            
-        # 2. Add backend context
+
+        # 2. بناء استعلام دلالي محسَّن للحالة
+        semantic_query = EMOTION_SEMANTIC_QUERIES.get(
+            emotion,
+            f"الصبر والطمأنينة والتوكل على الله {request.text}"
+        )
         backend_context = history_manager.get_user_context()
-        combined_text = request.text
         if backend_context:
-            combined_text = f"Context: {backend_context}. Query: {request.text}"
-            
-        results = embedder.search_similar(query=request.text, n_results=1)
-        
+            semantic_query = f"{semantic_query} {backend_context}"
+
+        # 3. البحث في القرآن الكريم حصراً (بدون أحاديث) مع استخدام البحث الهجين
+        verse_results = embedder.search_similar(
+            query=semantic_query,
+            n_results=3,        # نسترجع 3 لاختيار الأنسب
+            filters={"type": "verse"},
+            emotion=emotion
+        )
+
         source = None
         tafsir = None
         base_message = "اذكر الله يهدأ قلبك."
-        
-        if results and results['documents'] and len(results['documents'][0]) > 0:
-            base_message = results['documents'][0][0]
-            metadata = results['metadatas'][0][0]
+
+        if (verse_results and verse_results.get('documents')
+                and len(verse_results['documents'][0]) > 0):
+            # اختر أفضل آية (الأولى هي الأقرب دلالياً)
+            base_message = verse_results['documents'][0][0]
+            metadata = verse_results['metadatas'][0][0]
             source = metadata.get("source")
             tafsir = metadata.get("tafsir")
 
+        # 4. صياغة الرد الدافئ عبر Gemini
         tier = "moderate"
         delayed_message = None
-        
-        # FR-8: Delayed Responses for extreme emotions
-        if emotion in ["غضب", "حزن شديد", "إجهاد أو حزن", "يأس", "غضب شديد"]:
-            tier = "minimal" 
-            final_message = "تعوذ بالله من الشيطان الرجيم، وخذ نفساً عميقاً. (رسالة التهدئة الفورية)"
-            delayed_message = f"أهلاً بك مجدداً، أتمنى أن تكون الآن أكثر هدوءاً. تذكر قول الله تعالى: {base_message}"
-        else:
-            final_message = base_message
 
-        # Save to backend history automatically (so background Android Service records too)
+        if emotion in EXTREME_EMOTIONS:
+            # للحالات الشديدة: رد فوري مختصر + رسالة تفصيلية لاحقة
+            tier = "minimal"
+            final_message = "تعوذ بالله من الشيطان الرجيم، وخذ نفساً عميقاً."
+            delayed_message = await rag_engine.format_response(
+                user_text=request.text,
+                emotion=emotion,
+                retrieved_text=base_message,
+                source=source,
+                tafsir=tafsir
+            )
+        else:
+            final_message = await rag_engine.format_response(
+                user_text=request.text,
+                emotion=emotion,
+                retrieved_text=base_message,
+                source=source,
+                tafsir=tafsir
+            )
+
+        # 5. حفظ التفاعل
         history_manager.add_record(
-            input_text=request.text, 
-            emotion=emotion, 
-            message=final_message, 
-            source=source, 
+            input_text=request.text,
+            emotion=emotion,
+            message=final_message,
+            source=source,
             tafsir=tafsir
         )
 

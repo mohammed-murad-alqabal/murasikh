@@ -1,80 +1,123 @@
-import json
+import sqlite3
 import os
+import json
 from datetime import datetime
 from typing import List, Dict
 
 class HistoryManager:
-    def __init__(self, filepath="data/history.json"):
+    def __init__(self, filepath="data/history.db"):
         self.filepath = filepath
         os.makedirs(os.path.dirname(self.filepath), exist_ok=True)
-        if not os.path.exists(self.filepath):
-            with open(self.filepath, 'w', encoding='utf-8') as f:
-                json.dump([], f)
+        self._init_db()
+
+    def _init_db(self):
+        with sqlite3.connect(self.filepath) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS history (
+                    id TEXT PRIMARY KEY,
+                    timestamp TEXT,
+                    input_text TEXT,
+                    emotion TEXT,
+                    message TEXT,
+                    source TEXT,
+                    tafsir TEXT,
+                    confidence REAL,
+                    tier TEXT,
+                    feedback INTEGER
+                )
+            ''')
+            conn.commit()
 
     def add_record(self, input_text: str, emotion: str, message: str, source: str = None, tafsir: str = None):
-        if emotion == "طبيعي":
-            return
-            
-        try:
-            with open(self.filepath, 'r', encoding='utf-8') as f:
-                history = json.load(f)
-        except:
-            history = []
+        record_id = str(datetime.now().timestamp())
+        timestamp = datetime.now().isoformat()
+        confidence = 1.0
+        tier = "moderate"
+        feedback = 0
 
-        record = {
-            "id": str(datetime.now().timestamp()),
-            "timestamp": datetime.now().isoformat(),
-            "input_text": input_text,
-            "recommendation": {
-                "emotion": emotion,
-                "message": message,
-                "source": source,
-                "tafsir": tafsir,
-                "confidence": 1.0,
-                "tier": "moderate"
-            },
-            "feedback": 0
-        }
-        
-        history.insert(0, record) # Prepend
-        
-        with open(self.filepath, 'w', encoding='utf-8') as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
+        with sqlite3.connect(self.filepath) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO history (id, timestamp, input_text, emotion, message, source, tafsir, confidence, tier, feedback)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (record_id, timestamp, input_text, emotion, message, source, tafsir, confidence, tier, feedback))
+            conn.commit()
 
     def update_feedback(self, record_id: str, feedback: int):
         try:
-            with open(self.filepath, 'r', encoding='utf-8') as f:
-                history = json.load(f)
-                
-            for item in history:
-                if item["id"] == record_id:
-                    item["feedback"] = feedback
-                    break
-                    
-            with open(self.filepath, 'w', encoding='utf-8') as f:
-                json.dump(history, f, ensure_ascii=False, indent=2)
+            with sqlite3.connect(self.filepath) as conn:
+                cursor = conn.cursor()
+                cursor.execute('UPDATE history SET feedback = ? WHERE id = ?', (feedback, record_id))
+                conn.commit()
+                return cursor.rowcount > 0
+        except Exception:
+            return False
+
+    def clear_history(self) -> bool:
+        try:
+            with sqlite3.connect(self.filepath) as conn:
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM history')
+                conn.commit()
             return True
-        except:
+        except Exception:
             return False
 
     def get_history(self) -> List[Dict]:
         try:
-            with open(self.filepath, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
+            with sqlite3.connect(self.filepath) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM history ORDER BY timestamp DESC')
+                rows = cursor.fetchall()
+
+            history = []
+            for row in rows:
+                record = {
+                    "id": row["id"],
+                    "timestamp": row["timestamp"],
+                    "input_text": row["input_text"],
+                    "recommendation": {
+                        "emotion": row["emotion"],
+                        "message": row["message"],
+                        "source": row["source"],
+                        "tafsir": row["tafsir"],
+                        "confidence": row["confidence"],
+                        "tier": row["tier"]
+                    },
+                    "feedback": row["feedback"]
+                }
+                history.append(record)
+            return history
+        except Exception:
             return []
             
     def get_user_context(self) -> str:
-        history = self.get_history()
-        liked = set([item["recommendation"]["emotion"] for item in history if item.get("feedback") == 1][:3])
-        disliked = set([item["recommendation"]["emotion"] for item in history if item.get("feedback") == -1][:3])
-        
-        if not liked and not disliked:
+        try:
+            with sqlite3.connect(self.filepath) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('SELECT emotion, feedback FROM history WHERE feedback != 0 ORDER BY timestamp DESC')
+                rows = cursor.fetchall()
+                
+                liked = set()
+                disliked = set()
+                
+                for row in rows:
+                    if row["feedback"] == 1 and len(liked) < 3:
+                        liked.add(row["emotion"])
+                    elif row["feedback"] == -1 and len(disliked) < 3:
+                        disliked.add(row["emotion"])
+                
+                if not liked and not disliked:
+                    return ""
+                    
+                context = ""
+                if liked:
+                    context += f"User finds guidance helpful for: {', '.join(liked)}. "
+                if disliked:
+                    context += f"User disliked previous guidance for: {', '.join(disliked)}."
+                return context
+        except Exception:
             return ""
-            
-        context = ""
-        if liked:
-            context += f"User finds guidance helpful for: {', '.join(liked)}. "
-        if disliked:
-            context += f"User disliked previous guidance for: {', '.join(disliked)}."
-        return context

@@ -11,8 +11,16 @@ class FeedbackRequest(BaseModel):
     feedback: int
 
 @router.get("")
+@router.get("/")
+@router.get("/history")
 async def get_history():
     return history_manager.get_history()
+
+@router.delete("")
+@router.delete("/")
+async def clear_history():
+    success = history_manager.clear_history()
+    return {"status": "success" if success else "error"}
 
 @router.post("/feedback")
 async def update_feedback(request: FeedbackRequest):
