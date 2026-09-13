@@ -144,7 +144,13 @@ class RAGEngine:
         """
         صياغة دافئة محلية باستخدام قوالب مُعدّة مسبقاً
         """
-        templates = self.WARM_TEMPLATES.get(emotion, self.WARM_TEMPLATES["طبيعي"])
-        intro = random.choice(templates)
+        templates = self.WARM_TEMPLATES.get(emotion)
+        if not templates:
+            # قالب مرن للحالات الجديدة
+            intro = f"أسمعك، وأشعر بـ {emotion} الذي تمر به. وتذكر دائماً كلام الله في هذا الموقف:"
+        else:
+            intro = random.choice(templates)
+            
         source_line = f"\n\n📖 {source}" if source else ""
         return f"{intro}\n\n{retrieved_text}{source_line}"
+
