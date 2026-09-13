@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1.endpoints import recommend
+from app.api.v1.endpoints import recommend, history, audio
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -18,13 +18,13 @@ app.add_middleware(
 )
 
 # ربط واجهة التوصية (API Endpoint)
-from app.api.v1.endpoints import recommend, history
 app.include_router(recommend.router, prefix="/api/v1/analyze", tags=["recommendations"])
 app.include_router(history.router, prefix="/api/v1/history", tags=["history"])
+app.include_router(audio.router, prefix="/api/v1", tags=["audio"])
 
 @app.get("/")
 def read_root():
-    return {"message": "مرحباً بك في واجهة برمجة تطبيقات مُرَسِّخ (Murassikh API)"}
+    return {"message": "مرحباً بك في واجهة برمجة تطبيقات مُرَسِّخ (Murassikh API)"}
 
 @app.get("/health")
 def health_check():

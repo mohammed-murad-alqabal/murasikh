@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: murassikh_backend
+    ports:
+      - "8000:8000"
+    environment:
+      # المتغيرات البيئية الضرورية
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      # ربط مجلدات البيانات للحفاظ عليها عند إعادة تشغيل الحاوية
+      - ./backend/data:/app/data
+      - ./backend/chroma_db:/app/chroma_db
+    restart: unless-stopped
