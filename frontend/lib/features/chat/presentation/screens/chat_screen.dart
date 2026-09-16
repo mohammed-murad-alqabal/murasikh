@@ -193,6 +193,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
+    
+    HapticFeedback.lightImpact(); // تفاعل لمسي عند إرسال رسالة
+    
     final userMsg = ChatMessage(text: text.trim(), isUser: true);
     setState(() {
       _messages.add(userMsg);
@@ -291,6 +294,15 @@ class _ChatScreenState extends State<ChatScreen> {
     if (index < 0 || index >= _messages.length) return;
     final msg = _messages[index];
     final newRating = msg.feedback == rating ? null : rating;
+
+    // إضافة تفاعل لمسي (الوضع الصامت / الاهتزاز)
+    if (newRating == 1) {
+      HapticFeedback.lightImpact();
+    } else if (newRating == -1) {
+      HapticFeedback.mediumImpact();
+    } else {
+      HapticFeedback.selectionClick();
+    }
 
     setState(() {
       msg.feedback = newRating;

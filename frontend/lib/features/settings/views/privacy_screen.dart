@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../bloc/settings_bloc.dart';
 import '../models/user_settings.dart';
@@ -13,6 +17,33 @@ class PrivacyScreen extends StatefulWidget {
 }
 
 class _PrivacyScreenState extends State<PrivacyScreen> {
+  Future<void> _exportData() async {
+    try {
+      if (!Hive.isBoxOpen('murassikh_chat_box')) {
+        await Hive.openBox('murassikh_chat_box');
+      }
+      final box = Hive.box('murassikh_chat_box');
+      final data = box.values.toList();
+      final String jsonStr = jsonEncode(data);
+      
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/murassikh_export_${DateTime.now().millisecondsSinceEpoch}.json');
+      await file.writeAsString(jsonStr);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تم تصدير البيانات بنجاح إلى:\n${file.path}')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('حدث خطأ أثناء التصدير: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingsBloc = context.read<SettingsBloc>();
@@ -90,11 +121,17 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   ),
                 ),
               ]),
-              _buildSection(context, 'مسح البيانات', [
+              _buildSection(context, 'إدارة البيانات', [
+                ListTile(
+                  leading: const Icon(Icons.download_rounded, color: AppColors.primary, size: 22),
+                  title: const Text('تصدير بياناتي', style: TextStyle(fontWeight: FontWeight.w500)),
+                  subtitle: Text('حفظ نسخة من محادثاتك وسجلاتك بصيغة JSON', style: Theme.of(context).textTheme.bodySmall),
+                  onTap: _exportData,
+                ),
                 _buildWarningTile(
                   context: context,
                   title: 'مسح السجل',
-                  subtitle: 'حذف جميع سجلات التوجيه والتفاعلات',
+                  subtitle: 'حذف جميع سجلات التوجيه والتفاعلات (لا يمكن الاسترجاع)',
                   onPressed: () =>
                       _showClearHistoryDialog(context, settingsBloc),
                 ),
