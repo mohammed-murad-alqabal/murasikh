@@ -52,6 +52,7 @@ dependencies:
   flutter_background_service: ^5.1.0
   permission_handler: ^13.0.2
   shared_preferences: ^2.5.5
+  flutter_gemma: ^0.13.6
 
 dev_dependencies:
   flutter_test:

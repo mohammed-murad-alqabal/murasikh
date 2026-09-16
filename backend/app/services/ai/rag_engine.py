@@ -1,6 +1,16 @@
 import google.generativeai as genai
 from app.core.config import settings
 import random
+import logging
+import asyncio
+
+try:
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    LOCAL_LLM_AVAILABLE = True
+except ImportError:
+    LOCAL_LLM_AVAILABLE = False
+
 
 class RAGEngine:
     """
@@ -100,8 +110,12 @@ class RAGEngine:
 5. الرد يجب أن يكون باللغة العربية.
 """
 
+
     def __init__(self):
         self._gemini_available = False
+        self._local_llm_loaded = False
+        self._local_model = None
+        self._local_tokenizer = None
         if settings.GEMINI_API_KEY:
             try:
                 genai.configure(api_key=settings.GEMINI_API_KEY)
@@ -109,13 +123,33 @@ class RAGEngine:
                 self._gemini_available = True
             except Exception:
                 pass
+                
+    def _load_local_llm(self):
+        if not LOCAL_LLM_AVAILABLE or self._local_llm_loaded:
+            return
+        try:
+            logging.info("Loading local LLM (Qwen2.5-0.5B-Instruct)...")
+            model_name = "Qwen/Qwen2.5-0.5B-Instruct"
+            self._local_tokenizer = AutoTokenizer.from_pretrained(model_name)
+            self._local_model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                torch_dtype="auto",
+                device_map="auto"
+            )
+            self._local_llm_loaded = True
+            logging.info("Local LLM loaded successfully.")
+        except Exception as e:
+            logging.error(f"Failed to load local LLM: {e}")
+            self._local_llm_loaded = False
+
 
     async def format_response(self, user_text: str, emotion: str,
                                retrieved_text: str, source: str, tafsir: str) -> str:
         """
         صياغة الرد النهائي الدافئ:
         - يحاول Gemini أولاً
-        - عند نفاذ الحصة: يستخدم قوالب دافئة محلية
+        - عند نفاذ الحصة: يستخدم LLM محلي (Qwen)
+        - إذا فشل: يستخدم قوالب دافئة محلية
         """
         if self._gemini_available:
             try:
@@ -124,27 +158,50 @@ class RAGEngine:
                     return result
             except Exception as e:
                 error_str = str(e).lower()
-                if "quota" in error_str or "resource_exhausted" in error_str or "429" in error_str:
-                    # تجاوز الحصة — انتقل للقوالب المحلية
+                if "quota" in error_str or "resource_exhausted" in error_str or "429" in error_str or "no api_key" in error_str:
                     self._gemini_available = False
-                # أي خطأ آخر → استخدم القوالب المحلية
+        
+        # Local LLM Fallback
+        if LOCAL_LLM_AVAILABLE:
+            try:
+                if not self._local_llm_loaded:
+                    # Load asynchronously so it doesn't block entirely if possible, 
+                    # but here we just load synchronously for the first time.
+                    self._load_local_llm()
+                
+                if self._local_llm_loaded:
+                    result = await asyncio.to_thread(self._format_with_local_llm, user_text, emotion, retrieved_text, source)
+                    if result:
+                        return result
+            except Exception as e:
+                logging.error(f"Local LLM formatting failed: {e}")
 
         return self._format_with_template(emotion, retrieved_text, source)
 
-    async def _format_with_gemini(self, user_text, emotion, retrieved_text, source, tafsir) -> str:
-        prompt = self.FORMATTING_PROMPT.format(
-            user_text=user_text, emotion=emotion,
-            retrieved_text=retrieved_text,
-            source=source or "غير معروف",
-            tafsir=tafsir or "نص شرعي مبارك"
+    def _format_with_local_llm(self, user_text: str, emotion: str, retrieved_text: str, source: str) -> str:
+        messages = [
+            {"role": "system", "content": "أنت رفيق إسلامي دافئ وحنون تواسي المستخدم. اكتب رسالة مواساة وتعاطف قصيرة جداً (جملة واحدة فقط) للمستخدم، بدون كتابة آيات."},
+            {"role": "user", "content": f"أنا أشعر بـ {emotion}. وهذا ما قلته: {user_text}"}
+        ]
+        
+        text = self._local_tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
         )
-        response = await self.model.generate_content_async(prompt)
-        return response.text.strip()
-
-    def _format_with_template(self, emotion: str, retrieved_text: str, source: str) -> str:
-        """
-        صياغة دافئة محلية باستخدام قوالب مُعدّة مسبقاً
-        """
+        model_inputs = self._local_tokenizer([text], return_tensors="pt").to(self._local_model.device)
+        
+        generated_ids = self._local_model.generate(
+            **model_inputs,
+            max_new_tokens=40,
+            temperature=0.7
+        )
+        generated_ids = [
+            output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+        ]
+        
+        intro = self._local_tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
+        
         templates = self.WARM_TEMPLATES.get(emotion)
         if not templates:
             # قالب مرن للحالات الجديدة
@@ -155,3 +212,7 @@ class RAGEngine:
         source_line = f"\n\n📖 {source}" if source else ""
         return f"{intro}\n\n{retrieved_text}{source_line}"
 
+        # Clean up output
+        intro = intro.replace('"', '').replace('بصفتي ذكاء اصطناعي', '')
+        source_line = f"\n\n📖 {source}" if source else ""
+        return f"{intro}\n\n{retrieved_text}{source_line}"
