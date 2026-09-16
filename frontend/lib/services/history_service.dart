@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 
 import '../features/recommendation/models/recommendation_model.dart';
+import 'api_service.dart';
 
 class HistoryItem {
   final String id;
@@ -106,8 +107,9 @@ class HistoryService {
 
     // محاولة المزامنة مع الخادم
     try {
+      final headers = await ApiService.getHeaders();
       final response = await http
-          .get(Uri.parse(baseUrl))
+          .get(Uri.parse(baseUrl), headers: headers)
           .timeout(const Duration(seconds: 3));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -153,10 +155,11 @@ class HistoryService {
 
     // تحديث في الخادم
     try {
+      final headers = await ApiService.getHeaders();
       await http
           .post(
             Uri.parse('$baseUrl/feedback'),
-            headers: {'Content-Type': 'application/json'},
+            headers: headers,
             body: jsonEncode({'id': id, 'feedback': feedbackValue}),
           )
           .timeout(const Duration(seconds: 3));
@@ -170,7 +173,8 @@ class HistoryService {
     } catch (_) {}
 
     try {
-      await http.delete(Uri.parse(baseUrl)).timeout(const Duration(seconds: 3));
+      final headers = await ApiService.getHeaders();
+      await http.delete(Uri.parse(baseUrl), headers: headers).timeout(const Duration(seconds: 3));
     } catch (_) {}
   }
 }

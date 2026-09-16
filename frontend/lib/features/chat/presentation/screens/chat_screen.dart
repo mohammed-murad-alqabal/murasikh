@@ -193,7 +193,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  Map<String, dynamic> _buildImplicitContext() {
+  Future<Map<String, dynamic>> _buildImplicitContext() async {
     final Map<String, dynamic> ctx = {};
     
     // 1. الوجه (Facial Emotion)
@@ -203,15 +203,17 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     // 2. النبض (Heart Rate)
-    final hr = HealthService().currentHeartRate;
-    if (hr != null && hr > 90) {
-      ctx['biometric_stress'] = true;
-    }
+    try {
+      final hr = await HealthService().fetchAverageHeartRate();
+      if (hr != null && hr > 90) {
+        ctx['biometric_stress'] = true;
+      }
+    } catch (_) {}
 
     return ctx;
   }
 
-  void _sendMessage(String text) {
+  void _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
     HapticFeedback.lightImpact(); // تفاعل لمسي عند إرسال رسالة
@@ -226,10 +228,12 @@ class _ChatScreenState extends State<ChatScreen> {
     FocusScope.of(context).unfocus();
     _scrollToBottom();
     
-    final implicitCtx = _buildImplicitContext();
-    context.read<RecommendationBloc>().add(
-      GetRecommendationEvent(text.trim(), userContext: implicitCtx.isNotEmpty ? implicitCtx : null),
-    );
+    final implicitCtx = await _buildImplicitContext();
+    if (mounted) {
+      context.read<RecommendationBloc>().add(
+        GetRecommendationEvent(text.trim(), userContext: implicitCtx.isNotEmpty ? implicitCtx : null),
+      );
+    }
   }
 
   @override
@@ -614,7 +618,7 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Row(
           children: [
             MicButton(
-              onRecordComplete: (path) {
+              onRecordComplete: (path) async {
                 final userMsg = ChatMessage(
                   text: '[رسالة صوتية 🎤]',
                   isUser: true,
@@ -625,10 +629,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 });
                 _saveMessage(userMsg);
                 _scrollToBottom();
-                final implicitCtx = _buildImplicitContext();
-                context.read<RecommendationBloc>().add(
-                  AnalyzeAudioEvent(path, userContext: implicitCtx.isNotEmpty ? implicitCtx : null),
-                );
+                final implicitCtx = await _buildImplicitContext();
+                if (mounted) {
+                  context.read<RecommendationBloc>().add(
+                    AnalyzeAudioEvent(path, userContext: implicitCtx.isNotEmpty ? implicitCtx : null),
+                  );
+                }
               },
             ),
             const SizedBox(width: 8),
