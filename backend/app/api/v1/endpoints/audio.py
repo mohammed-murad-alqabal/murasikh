@@ -16,10 +16,24 @@ router = APIRouter()
 audio_analyzer = AudioAnalyzer()
 logger = logging.getLogger(__name__)
 
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+import json
+
 @router.post("/analyze-audio", response_model=RecommendationResponse)
 @limiter.limit("5/minute")
-async def analyze_audio(request: Request, file: UploadFile = File(...)):
+async def analyze_audio(
+    request: Request,
+    file: UploadFile = File(...),
+    user_context: str = Form(None)
+):
     try:
+        context_dict = None
+        if user_context:
+            try:
+                context_dict = json.loads(user_context)
+            except json.JSONDecodeError:
+                pass
+                
         audio_bytes = await file.read()
         analysis = await audio_analyzer.analyze_tone(audio_bytes)
         
@@ -41,6 +55,12 @@ async def analyze_audio(request: Request, file: UploadFile = File(...)):
         if backend_context:
             semantic_query = f"{semantic_query} {backend_context}"
             
+        if context_dict:
+            if context_dict.get('age'): semantic_query += f" العمر: {context_dict['age']}"
+            if context_dict.get('gender'): semantic_query += f" الجنس: {context_dict['gender']}"
+            if context_dict.get('biometric_stress'): semantic_query += f" يعاني من توتر جسدي أو نبض مرتفع"
+            if context_dict.get('facial_emotion'): semantic_query += f" وملامح وجهه تظهر {context_dict['facial_emotion']}"
+            
         # بحث في القرآن حصراً مع البحث الهجين
         verse_results = embedder.search_similar(
             query=semantic_query,
@@ -54,10 +74,23 @@ async def analyze_audio(request: Request, file: UploadFile = File(...)):
         base_message = "اذكر الله يهدأ قلبك."
         
         if verse_results and verse_results.get('documents') and len(verse_results['documents'][0]) > 0:
-            base_message = verse_results['documents'][0][0]
-            metadata = verse_results['metadatas'][0][0]
-            source = metadata.get("source")
-            tafsir = metadata.get("tafsir")
+            verses_list = []
+            for i in range(len(verse_results['documents'][0])):
+                verses_list.append({
+                    "text": verse_results['documents'][0][i],
+                    "source": verse_results['metadatas'][0][i].get("source", ""),
+                    "tafsir": verse_results['metadatas'][0][i].get("tafsir", "")
+                })
+                
+            best_verse = await rag_engine.select_best_verse(
+                user_text=f"أشعر بـ {emotion} استناداً لنبرة صوتي",
+                emotion=emotion,
+                verses=verses_list
+            )
+            
+            base_message = best_verse.get("text", "")
+            source = best_verse.get("source", "")
+            tafsir = best_verse.get("tafsir", "")
 
         tier = "moderate"
         delayed_message = None

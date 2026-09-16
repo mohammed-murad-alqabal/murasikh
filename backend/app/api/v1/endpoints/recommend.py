@@ -61,6 +61,13 @@ async def get_recommendation(request: Request, payload: RecommendationRequest):
         if backend_context:
             semantic_query = f"{semantic_query} {backend_context}"
 
+        if payload.user_context:
+            ctx = payload.user_context
+            if ctx.get('age'): semantic_query += f" العمر: {ctx['age']}"
+            if ctx.get('gender'): semantic_query += f" الجنس: {ctx['gender']}"
+            if ctx.get('biometric_stress'): semantic_query += f" يعاني من توتر جسدي أو نبض مرتفع"
+            if ctx.get('facial_emotion'): semantic_query += f" وملامح وجهه تظهر {ctx['facial_emotion']}"
+
         # 3. البحث في القرآن الكريم حصراً (بدون أحاديث) مع استخدام البحث الهجين
         verse_results = embedder.search_similar(
             query=semantic_query,

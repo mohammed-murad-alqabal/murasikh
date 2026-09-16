@@ -12,9 +12,10 @@ abstract class RecommendationEvent extends Equatable {
 
 class GetRecommendationEvent extends RecommendationEvent {
   final String text;
-  GetRecommendationEvent(this.text);
+  final Map<String, dynamic>? userContext;
+  GetRecommendationEvent(this.text, {this.userContext});
   @override
-  List<Object> get props => [text];
+  List<Object> get props => [text, if (userContext != null) userContext!];
 }
 
 // --- States ---
@@ -43,9 +44,10 @@ class RecommendationError extends RecommendationState {
 
 class AnalyzeAudioEvent extends RecommendationEvent {
   final String filePath;
-  AnalyzeAudioEvent(this.filePath);
+  final Map<String, dynamic>? userContext;
+  AnalyzeAudioEvent(this.filePath, {this.userContext});
   @override
-  List<Object> get props => [filePath];
+  List<Object> get props => [filePath, if (userContext != null) userContext!];
 }
 
 // --- Bloc ---
@@ -58,7 +60,7 @@ class RecommendationBloc
     on<GetRecommendationEvent>((event, emit) async {
       emit(RecommendationLoading());
       try {
-        final recommendation = await apiService.getRecommendation(event.text);
+        final recommendation = await apiService.getRecommendation(event.text, userContext: event.userContext);
         emit(RecommendationLoaded(recommendation));
       } catch (e) {
         emit(

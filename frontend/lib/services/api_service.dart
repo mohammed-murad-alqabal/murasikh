@@ -14,6 +14,7 @@ class ApiService {
   Future<RecommendationModel> getRecommendation(
     String text, {
     bool forceOffline = false,
+    Map<String, dynamic>? userContext,
   }) async {
     final offlineService = OfflineService();
     await offlineService.init();
@@ -24,7 +25,7 @@ class ApiService {
 
     if (isConnected) {
       try {
-        final rec = await _fetchFromServer(text);
+        final rec = await _fetchFromServer(text, userContext: userContext);
         // خزّن النتيجة محلياً لاستخدامها عند انقطاع الإنترنت
         await offlineService.cacheRecommendation(text, rec);
         await HistoryService().saveInteraction(text, rec);
@@ -68,24 +69,26 @@ class ApiService {
   //  الدوال الداخلية
   // ============================================================
 
-  Future<RecommendationModel> _fetchFromServer(String text) async {
+  Future<RecommendationModel> _fetchFromServer(String text, {Map<String, dynamic>? userContext}) async {
     final settingsService = SettingsService();
     await settingsService.init();
     final settings = settingsService.getSettings();
 
-    Map<String, dynamic>? userContext;
-    if (settings.age != null || settings.gender != null) {
-      userContext = {
-        if (settings.age != null) 'age': settings.age,
-        if (settings.gender != null) 'gender': settings.gender,
-      };
+    Map<String, dynamic> mergedContext = {};
+    if (settings.age != null) mergedContext['age'] = settings.age;
+    if (settings.gender != null) mergedContext['gender'] = settings.gender;
+    if (userContext != null) {
+      mergedContext.addAll(userContext);
     }
 
     final response = await http
         .post(
           Uri.parse('$baseUrl/analyze'),
           headers: {'Content-Type': 'application/json; charset=UTF-8'},
-          body: jsonEncode({'text': text, 'user_context': userContext}),
+          body: jsonEncode({
+            'text': text, 
+            'user_context': mergedContext.isEmpty ? null : mergedContext
+          }),
         )
         .timeout(const Duration(seconds: 15));
 
@@ -145,12 +148,26 @@ class ApiService {
   }
 
   /// إرسال مقطع صوتي لتحليله
-  Future<RecommendationModel> analyzeAudio(String filePath) async {
+  Future<RecommendationModel> analyzeAudio(String filePath, {Map<String, dynamic>? userContext}) async {
+    final settingsService = SettingsService();
+    await settingsService.init();
+    final settings = settingsService.getSettings();
+
+    Map<String, dynamic> mergedContext = {};
+    if (settings.age != null) mergedContext['age'] = settings.age;
+    if (settings.gender != null) mergedContext['gender'] = settings.gender;
+    if (userContext != null) {
+      mergedContext.addAll(userContext);
+    }
+
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('$baseUrl/analyze-audio'),
+      Uri.parse('$baseUrl/audio/analyze-audio'),
     );
     request.files.add(await http.MultipartFile.fromPath('file', filePath));
+    if (mergedContext.isNotEmpty) {
+      request.fields['user_context'] = jsonEncode(mergedContext);
+    }
 
     final streamedResponse = await request.send().timeout(
       const Duration(seconds: 15),

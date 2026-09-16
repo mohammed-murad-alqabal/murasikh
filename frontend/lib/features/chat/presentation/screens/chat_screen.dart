@@ -8,6 +8,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../services/history_service.dart';
 import '../../../../services/offline_service.dart';
+import '../../../../services/face_emotion_service.dart';
+import '../../../../services/health_service.dart';
 import '../../../recommendation/bloc/recommendation_bloc.dart';
 import '../../../recommendation/models/recommendation_model.dart';
 import '../../../recommendation/views/mic_button.dart';
@@ -191,6 +193,24 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  Map<String, dynamic> _buildImplicitContext() {
+    final Map<String, dynamic> ctx = {};
+    
+    // 1. الوجه (Facial Emotion)
+    final faceEmotion = FaceEmotionService().detectedEmotion;
+    if (faceEmotion != 'طبيعي' && faceEmotion != 'لم يتم اكتشاف وجه') {
+      ctx['facial_emotion'] = faceEmotion;
+    }
+
+    // 2. النبض (Heart Rate)
+    final hr = HealthService().currentHeartRate;
+    if (hr != null && hr > 90) {
+      ctx['biometric_stress'] = true;
+    }
+
+    return ctx;
+  }
+
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
 
@@ -205,7 +225,11 @@ class _ChatScreenState extends State<ChatScreen> {
     _controller.clear();
     FocusScope.of(context).unfocus();
     _scrollToBottom();
-    context.read<RecommendationBloc>().add(GetRecommendationEvent(text.trim()));
+    
+    final implicitCtx = _buildImplicitContext();
+    context.read<RecommendationBloc>().add(
+      GetRecommendationEvent(text.trim(), userContext: implicitCtx.isNotEmpty ? implicitCtx : null),
+    );
   }
 
   @override
@@ -601,7 +625,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 });
                 _saveMessage(userMsg);
                 _scrollToBottom();
-                context.read<RecommendationBloc>().add(AnalyzeAudioEvent(path));
+                final implicitCtx = _buildImplicitContext();
+                context.read<RecommendationBloc>().add(
+                  AnalyzeAudioEvent(path, userContext: implicitCtx.isNotEmpty ? implicitCtx : null),
+                );
               },
             ),
             const SizedBox(width: 8),
