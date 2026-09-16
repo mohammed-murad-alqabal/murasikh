@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/recommendation/models/recommendation_model.dart';
 import 'history_service.dart';
@@ -69,6 +70,20 @@ class ApiService {
   //  الدوال الداخلية
   // ============================================================
 
+  Future<Map<String, String>> _getHeaders({bool isMultipart = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    
+    final headers = <String, String>{};
+    if (!isMultipart) {
+      headers['Content-Type'] = 'application/json; charset=UTF-8';
+    }
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
   Future<RecommendationModel> _fetchFromServer(String text, {Map<String, dynamic>? userContext}) async {
     final settingsService = SettingsService();
     await settingsService.init();
@@ -81,10 +96,12 @@ class ApiService {
       mergedContext.addAll(userContext);
     }
 
+    final headers = await _getHeaders();
+
     final response = await http
         .post(
           Uri.parse('$baseUrl/analyze'),
-          headers: {'Content-Type': 'application/json; charset=UTF-8'},
+          headers: headers,
           body: jsonEncode({
             'text': text, 
             'user_context': mergedContext.isEmpty ? null : mergedContext
@@ -121,10 +138,11 @@ class ApiService {
   }
 
   Future<void> _sendFeedbackToServer(String id, int feedbackValue) async {
+    final headers = await _getHeaders();
     await http
         .post(
           Uri.parse('$baseUrl/history/feedback'),
-          headers: {'Content-Type': 'application/json'},
+          headers: headers,
           body: jsonEncode({'id': id, 'feedback': feedbackValue}),
         )
         .timeout(const Duration(seconds: 5));
@@ -160,10 +178,13 @@ class ApiService {
       mergedContext.addAll(userContext);
     }
 
+    final headers = await _getHeaders(isMultipart: true);
+
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/audio/analyze-audio'),
     );
+    request.headers.addAll(headers);
     request.files.add(await http.MultipartFile.fromPath('file', filePath));
     if (mergedContext.isNotEmpty) {
       request.fields['user_context'] = jsonEncode(mergedContext);
