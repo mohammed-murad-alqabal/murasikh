@@ -158,7 +158,7 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
 
         if (emotion != 'طبيعي' &&
             emotion != 'لم يتم اكتشاف وجه' &&
-            emotion != 'بشاشة') {
+            emotion != 'سكينة') {
           final contextQuery = _emotionToContext(emotion);
           final rec = await ApiService().getRecommendation(contextQuery);
           _recommendation = rec;
@@ -170,6 +170,7 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
             message: rec.message,
             source: rec.source,
             tafsir: rec.tafsir,
+            type: 'face',
           );
         }
       }
@@ -187,18 +188,18 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
     final avgEye = (leftEye + rightEye) / 2;
 
     if (smileProb > 0.75) return 'فرح';
-    if (smileProb > 0.45) return 'بشاشة';
-    if (avgEye < 0.25) return 'إجهاد أو حزن';
-    if (avgEye < 0.5 && smileProb < 0.2) return 'قلق أو توتر';
+    if (smileProb > 0.45) return 'سكينة';
+    if (avgEye < 0.25) return 'حزن';
+    if (avgEye < 0.5 && smileProb < 0.2) return 'قلق';
     return 'طبيعي';
   }
 
   String _emotionToContext(String emotion) {
     const map = {
       'فرح': 'أشعر بالفرح والسعادة وابتسامتي واسعة',
-      'بشاشة': 'أشعر بالراحة والبشاشة الخفيفة',
-      'إجهاد أو حزن': 'أنا حزين ومجهد وتبدو ملامحي متعبة',
-      'قلق أو توتر': 'أشعر بالقلق والتوتر المستمر',
+      'سكينة': 'أشعر بالراحة والسكينة الخفيفة',
+      'حزن': 'أنا حزين ومجهد وتبدو ملامحي متعبة',
+      'قلق': 'أشعر بالقلق والتوتر المستمر',
     };
     return map[emotion] ?? 'حالتي طبيعية';
   }

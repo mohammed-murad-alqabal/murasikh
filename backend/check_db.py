@@ -1,10 +1,7 @@
-import chromadb
+from app.db.database import SessionLocal
+from app.db.models import Interaction
 
-client = chromadb.PersistentClient(path="./chroma_db")
-try:
-    collection = client.get_collection("islamic_content")
-    print(f"Total documents: {collection.count()}")
-    results = collection.get(limit=2)
-    print("Sample:", results['documents'])
-except Exception as e:
-    print(e)
+db = SessionLocal()
+interactions = db.query(Interaction).order_by(Interaction.created_at.desc()).limit(10).all()
+for i in interactions:
+    print(f"User: {i.input_text}\nEmotion: {i.emotion}\nSource: {i.source}\nAI: {i.message}\n" + "-"*40)

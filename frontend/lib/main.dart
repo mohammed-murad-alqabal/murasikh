@@ -11,8 +11,11 @@ import 'services/history_service.dart';
 import 'services/offline_service.dart';
 import 'services/ambient_listening_service.dart';
 import 'services/settings_service.dart';
+import 'services/daily_verse_service.dart';
+import 'services/home_context_service.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import 'core/widgets/connectivity_wrapper.dart';
 
@@ -20,13 +23,17 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await Hive.initFlutter();
+    timeago.setLocaleMessages('ar', timeago.ArMessages());
     await Future.wait([
       SettingsService().init(),
       NotificationService().init(),
       HistoryService().init(),
       OfflineService().init(),
       AmbientListeningService().initialize(),
+      DailyVerseService().init(),
     ]);
+    // تهيئة HomeContextService بعد الخدمات الأخرى لضمان توافر البيانات
+    HomeContextService();
     runApp(const MurassikhApp());
   } catch (e, stack) {
     debugPrint("Initialization error: $e\n$stack");

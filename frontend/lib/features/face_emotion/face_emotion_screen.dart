@@ -26,9 +26,9 @@ class _FaceEmotionScreenState extends State<FaceEmotionScreen> {
   String _emotionToEmoji(String emotion) {
     const map = {
       'فرح': '😊',
-      'بشاشة': '🙂',
-      'إجهاد أو حزن': '😔',
-      'قلق أو توتر': '😟',
+      'سكينة': '🙂',
+      'حزن': '😔',
+      'قلق': '😟',
       'لم يتم اكتشاف وجه': '🔍',
     };
     return map[emotion] ?? '😐';
@@ -162,7 +162,7 @@ class _FaceEmotionScreenState extends State<FaceEmotionScreen> {
                       if (isAnalyzing &&
                           rec != null &&
                           emotion != 'طبيعي' &&
-                          emotion != 'بشاشة') ...[
+                          emotion != 'سكينة') ...[
                         const SizedBox(height: 20),
                         Card(
                           elevation: 4,

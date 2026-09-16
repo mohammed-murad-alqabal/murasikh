@@ -630,11 +630,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 _saveMessage(userMsg);
                 _scrollToBottom();
                 final implicitCtx = await _buildImplicitContext();
-                if (mounted) {
+                if (!context.mounted) return;
                   context.read<RecommendationBloc>().add(
                     AnalyzeAudioEvent(path, userContext: implicitCtx.isNotEmpty ? implicitCtx : null),
                   );
-                }
               },
             ),
             const SizedBox(width: 8),

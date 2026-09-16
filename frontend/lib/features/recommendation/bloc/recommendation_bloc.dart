@@ -7,7 +7,7 @@ import '../models/recommendation_model.dart';
 // --- Events ---
 abstract class RecommendationEvent extends Equatable {
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class GetRecommendationEvent extends RecommendationEvent {
@@ -15,13 +15,13 @@ class GetRecommendationEvent extends RecommendationEvent {
   final Map<String, dynamic>? userContext;
   GetRecommendationEvent(this.text, {this.userContext});
   @override
-  List<Object> get props => [text, if (userContext != null) userContext!];
+  List<Object?> get props => [text, userContext];
 }
 
 // --- States ---
 abstract class RecommendationState extends Equatable {
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class RecommendationInitial extends RecommendationState {}
@@ -47,7 +47,7 @@ class AnalyzeAudioEvent extends RecommendationEvent {
   final Map<String, dynamic>? userContext;
   AnalyzeAudioEvent(this.filePath, {this.userContext});
   @override
-  List<Object> get props => [filePath, if (userContext != null) userContext!];
+  List<Object?> get props => [filePath, userContext];
 }
 
 // --- Bloc ---

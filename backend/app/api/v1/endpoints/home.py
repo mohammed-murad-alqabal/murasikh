@@ -12,7 +12,6 @@ from app.db.database import get_db
 from app.services.ai.embeddings import EmbeddingService
 from app.services.ai.rag_engine import RAGEngine
 from app.services.history_manager import HistoryService
-from app.services.ai.time_context import get_time_context
 
 router = APIRouter()
 embedder = EmbeddingService()
@@ -105,7 +104,7 @@ def _time_verse_response(time_of_day: str | None) -> VerseResponse:
         verse=data["verse"],
         source=data["source"],
         tafsir=data["tafsir"],
-        emotion_context="طبيعي",
+        emotion_context=tod,
         signal_used="time",
         cached=True,
     )
@@ -151,12 +150,25 @@ async def get_home_verse(
                     history_service = HistoryService(db)
                     recent = history_service.get_history(user["id"])[:3]
                     if recent:
-                        # أكثر حالة متكررة في آخر 3 تفاعلات
-                        emotions = [
-                            r["recommendation"]["emotion"]
-                            for r in recent
-                            if r["recommendation"].get("emotion") not in ("طبيعي", None)
-                        ]
+                        from datetime import datetime, timezone
+                        import dateutil.parser
+                        
+                        now = datetime.now(timezone.utc)
+                        emotions = []
+                        for r in recent:
+                            emotion = r["recommendation"].get("emotion")
+                            if emotion in ("طبيعي", None, ""):
+                                continue
+                            try:
+                                # created_at is isoformat
+                                dt = dateutil.parser.isoparse(r["timestamp"])
+                                if dt.tzinfo is None:
+                                    dt = dt.replace(tzinfo=timezone.utc)
+                                if (now - dt).total_seconds() < 12 * 3600:
+                                    emotions.append(emotion)
+                            except:
+                                pass
+
                         if emotions:
                             from collections import Counter
                             dominant_emotion = Counter(emotions).most_common(1)[0][0]
