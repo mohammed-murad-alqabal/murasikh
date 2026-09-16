@@ -46,7 +46,7 @@ jobs:
           POSTGRES_PASSWORD: murassikh_pwd
           POSTGRES_DB: murassikh_db
           ENVIRONMENT: testing
-          SECRET_KEY: test-secret-key
+          SECRET_KEY: test-secret-key-for-ci-32-bytes-long
         run: |
           cd backend
           alembic upgrade head
@@ -57,7 +57,7 @@ jobs:
           POSTGRES_PASSWORD: murassikh_pwd
           POSTGRES_DB: murassikh_db
           ENVIRONMENT: testing
-          SECRET_KEY: test-secret-key
+          SECRET_KEY: test-secret-key-for-ci-32-bytes-long
         run: |
           cd backend
           python -m pytest

@@ -13,6 +13,8 @@
 
 The project uses `chromadb.PersistentClient` for a local embedded vector store and does not start a Chroma server or use `chromadb.HttpClient`. The dependency is therefore pinned to `0.4.16`, the last release before the affected `0.4.17+` ranges, until an upstream patched release is available.
 
+ChromaDB 0.4.16 uses NumPy APIs removed in NumPy 2.x. The requirements therefore pin NumPy to `1.26.4` and use the compatible audio-analysis set `librosa==0.10.2.post1`, `numba==0.59.1`, `llvmlite==0.42.0`, and `scipy==1.11.4` so the complete Backend dependency set remains resolvable.
+
 The CI pipeline also runs `pip-audit` against `backend/requirements.txt` so future vulnerable dependency resolutions fail the build instead of remaining silent.
 
 ## Sources
