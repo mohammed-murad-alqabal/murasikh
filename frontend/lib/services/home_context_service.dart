@@ -36,6 +36,40 @@ class ContextSnapshot {
       Object.hash(dominantEmotion, confidence.round(), signalSource);
 }
 
+/// سياسة القرار الخاصة بتحديث سياق الصفحة الرئيسية.
+///
+/// الدوال نقية ولا تعتمد على المستشعرات، مما يجعلها مناسبة لاختبارات الوحدة.
+class HomeContextPolicy {
+  static const double faceConfidenceThreshold = 0.65;
+  static const double audioConfidenceThreshold = 0.60;
+  static const double historyConfidence = 0.55;
+  static const Duration forceRefreshInterval = Duration(minutes: 60);
+
+  static bool isSignificantChange(
+    ContextSnapshot old,
+    ContextSnapshot candidate, {
+    DateTime? now,
+  }) {
+    if (old.dominantEmotion != candidate.dominantEmotion) return true;
+    if (candidate.confidence - old.confidence > 0.25) return true;
+    return (now ?? DateTime.now()).difference(old.timestamp) >
+        forceRefreshInterval;
+  }
+
+  static double thresholdForSource(String source) {
+    switch (source) {
+      case 'face':
+        return faceConfidenceThreshold;
+      case 'audio':
+        return audioConfidenceThreshold;
+      case 'history':
+        return historyConfidence;
+      default:
+        return 0.0;
+    }
+  }
+}
+
 /// ─────────────────────────────────────────────────────────────────────────
 /// HomeContextService — مُحكّم السياق الموحَّد
 ///
@@ -71,20 +105,8 @@ class HomeContextService extends ChangeNotifier {
 
   // ── عتبات التغيير ───────────────────────────────────────────────────────
 
-  /// الحد الأدنى لثقة الوجه لاعتبار الحالة ذات دلالة
-  static const double _faceConfidenceThreshold = 0.65;
-
-  /// الحد الأدنى لثقة الصوت
-  static const double _audioConfidenceThreshold = 0.60;
-
-  /// حد الثقة من السجل (تقدير لأن HistoryService لا يوفر confidence مباشرة)
-  static const double _historyConfidence = 0.55;
-
   /// الحد الأدنى للفارق الزمني بين تحديثين متتاليين (تجنب spam)
   static const Duration _minUpdateInterval = Duration(minutes: 3);
-
-  /// إعادة التحديث القسري كل 60 دقيقة حتى لو لم تتغير الحالة
-  static const Duration _forceRefreshInterval = Duration(minutes: 60);
 
   DateTime _lastNotifyTime = DateTime(2000);
 
@@ -106,7 +128,9 @@ class HomeContextService extends ChangeNotifier {
     }
 
     // الوجه يُعطى أعلى وزن للحالات الصريحة
-    final confidence = emotion == 'سكينة' ? 0.65 : 0.80;
+    final confidence = emotion == 'سكينة'
+        ? HomeContextPolicy.faceConfidenceThreshold
+        : 0.80;
 
     _evaluateAndMaybeNotify(ContextSnapshot(
       dominantEmotion: emotion,
@@ -125,7 +149,7 @@ class HomeContextService extends ChangeNotifier {
 
     _evaluateAndMaybeNotify(ContextSnapshot(
       dominantEmotion: emotion,
-      confidence: _audioConfidenceThreshold,
+      confidence: HomeContextPolicy.audioConfidenceThreshold,
       signalSource: 'audio',
       timestamp: DateTime.now(),
     ));
@@ -156,7 +180,7 @@ class HomeContextService extends ChangeNotifier {
 
       _evaluateAndMaybeNotify(ContextSnapshot(
         dominantEmotion: dominant,
-        confidence: _historyConfidence,
+        confidence: HomeContextPolicy.historyConfidence,
         signalSource: 'history',
         timestamp: DateTime.now(),
       ));
@@ -186,31 +210,11 @@ class HomeContextService extends ChangeNotifier {
   }
 
   bool _isSignificantChange(ContextSnapshot old, ContextSnapshot candidate) {
-    // تغيّر نوع الحالة العاطفية
-    if (old.dominantEmotion != candidate.dominantEmotion) return true;
-
-    // زيادة ملحوظة في الثقة (أكثر من 25 نقطة)
-    if (candidate.confidence - old.confidence > 0.25) return true;
-
-    // إعادة التحديث القسري بعد مرور ساعة
-    if (DateTime.now().difference(old.timestamp) > _forceRefreshInterval) {
-      return true;
-    }
-
-    return false;
+    return HomeContextPolicy.isSignificantChange(old, candidate);
   }
 
   double _thresholdForSource(String source) {
-    switch (source) {
-      case 'face':
-        return _faceConfidenceThreshold;
-      case 'audio':
-        return _audioConfidenceThreshold;
-      case 'history':
-        return _historyConfidence;
-      default:
-        return 0.0;
-    }
+    return HomeContextPolicy.thresholdForSource(source);
   }
 
   /// وقت اليوم الحالي بالعربية

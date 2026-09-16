@@ -37,6 +37,7 @@ class VerseResponse(BaseModel):
     tafsir: str | None = None
     emotion_context: str
     signal_used: str
+    confidence: float = 0.0
     cached: bool = False
 
 
@@ -96,7 +97,10 @@ def _get_time_of_day() -> str:
         return "ليل"
 
 
-def _time_verse_response(time_of_day: str | None) -> VerseResponse:
+def _time_verse_response(
+    time_of_day: str | None,
+    confidence: float = 0.0,
+) -> VerseResponse:
     """إرجاع آية مرتبطة بوقت اليوم كاحتياط."""
     tod = time_of_day or _get_time_of_day()
     data = _TIME_OF_DAY_VERSES.get(tod, _TIME_OF_DAY_VERSES["مساء"])
@@ -106,6 +110,7 @@ def _time_verse_response(time_of_day: str | None) -> VerseResponse:
         tafsir=data["tafsir"],
         emotion_context=tod,
         signal_used="time",
+        confidence=confidence,
         cached=True,
     )
 
@@ -114,7 +119,7 @@ def _time_verse_response(time_of_day: str | None) -> VerseResponse:
 # Endpoint الرئيسي
 # ────────────────────────────────────────────────────────────────────────────
 
-@router.post("", response_model=VerseResponse)
+@router.post("/verse", response_model=VerseResponse)
 @limiter.limit("20/minute")
 async def get_home_verse(
     request: Request,
@@ -242,6 +247,7 @@ async def get_home_verse(
             tafsir=tafsir,
             emotion_context=dominant_emotion,
             signal_used=signals.signal_source,
+            confidence=confidence,
             cached=False,
         )
 

@@ -13,7 +13,7 @@ import 'home_context_service.dart';
 /// DailyVerseService — خدمة الآية الديناميكية
 ///
 /// تستمع لـ HomeContextService، وعند تغيير السياق تستدعي
-/// GET /api/v1/home/verse لجلب آية مرشّحة مناسبة.
+/// POST /api/v1/home/verse لجلب آية مرشّحة مناسبة.
 ///
 /// الضمانات:
 /// - Debounce: لا استدعاء API إذا مرّ أقل من 3 دقائق على الآخير

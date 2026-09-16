@@ -9,6 +9,9 @@ class VerseCard {
   /// «face» | «audio» | «history» | «time»
   final String signalUsed;
 
+  /// درجة الثقة التي بُني عليها اختيار الآية.
+  final double confidence;
+
   /// هل جاءت من الكاش المحلي؟
   final bool cached;
 
@@ -20,6 +23,7 @@ class VerseCard {
     this.tafsir,
     required this.emotionContext,
     required this.signalUsed,
+    this.confidence = 0.0,
     this.cached = false,
     required this.fetchedAt,
   });
@@ -66,6 +70,7 @@ class VerseCard {
       tafsir: json['tafsir'] as String?,
       emotionContext: json['emotion_context'] as String? ?? 'طبيعي',
       signalUsed: json['signal_used'] as String? ?? 'time',
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
       cached: cached,
       fetchedAt: DateTime.now(),
     );
@@ -77,6 +82,7 @@ class VerseCard {
         'tafsir': tafsir,
         'emotion_context': emotionContext,
         'signal_used': signalUsed,
+        'confidence': confidence,
         'cached': cached,
         'fetched_at': fetchedAt.toIso8601String(),
       };
@@ -89,6 +95,7 @@ class VerseCard {
             'ذكر الله سبحانه هو مفتاح الطمأنينة والراحة النفسية في كل وقت وحين.',
         emotionContext: 'طبيعي',
         signalUsed: 'time',
+        confidence: 0.0,
         cached: true,
         fetchedAt: DateTime.now(),
       );

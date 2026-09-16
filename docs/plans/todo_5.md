@@ -76,7 +76,7 @@ Text('من ذكر الله في نفسه...')         // تفسير ثابت
 ### ─── Backend ───
 
 #### [x] [NEW] `app/api/v1/endpoints/home.py`
-**Endpoint جديد:** `GET /api/v1/home/verse`
+**Endpoint جديد:** `POST /api/v1/home/verse`
 
 يقبل سياق خفيفاً (context_signals) ويُعيد آية مرشّحة دون الحاجة لنص مستخدم صريح. يُعيد:
 ```json
@@ -85,8 +85,9 @@ Text('من ذكر الله في نفسه...')         // تفسير ثابت
   "source": "سورة البقرة: ١٥٦",
   "tafsir": "...",
   "emotion_context": "حزن",
+  "signal_used": "history",
   "confidence": 0.78,
-  "signal_used": "history"
+  "cached": false
 }
 ```
 
@@ -161,7 +162,7 @@ HomeContextService._evaluateContext()
         ▼
 DailyVerseService._onContextChanged()
   • هل مرّت 3 دقائق على آخر استدعاء API؟ (debounce)
-  • إذا نعم: استدعِ GET /api/v1/home/verse?emotion=...
+  • إذا نعم: استدعِ POST /api/v1/home/verse مع إشارات السياق في JSON body
   • خزّن النتيجة في Hive
   • أضف VerseCard إلى StreamController
         │
@@ -197,18 +198,8 @@ HomeScreen (StreamBuilder<VerseCard?>)
 
 ---
 
-## أسئلة مفتوحة
+## القرارات المعتمدة
 
-> [!IMPORTANT]
-> **هل تريد endpoint خلفيًا مخصصًا (`/home/verse`)**، أم يكفي استدعاء `/analyze` الموجود بنص سياق مصطنع (مثل: `"أشعر بالقلق"`)؟
-> — الأول أنظف وأسرع، الثاني أسرع تطبيقًا.
-
-> [!IMPORTANT]  
-> **كيف تريد معالجة حالة «طبيعي» (لا حالة بارزة)؟**
-> الخيارات:
-> - عرض آية الوقت (فجر/صباح/مساء/ليل) — **مقترح**
-> - عرض آية تهليل وحمد وتسبيح عامة
-> - الإبقاء على آخر آية معروضة دون تحديث
-
-> [!NOTE]
-> **بادج السياق:** هل تريد إظهار للمستخدم لماذا تغيّرت الآية؟ (مثلاً: «بناءً على ما يرصده مستشعر وجهك») أم تكون الآلية صامتة تمامًا في الخلفية دون أي إشارة؟
+- يعتمد التطبيق endpoint مخصصاً هو `POST /api/v1/home/verse`، وتُرسل إشارات السياق في JSON body.
+- عند عدم وجود حالة عاطفية واضحة، يستخدم Backend آية مرتبطة بوقت اليوم كـ fallback.
+- يعرض التطبيق بادج مصدر السياق مثل «بناءً على تفاعلاتك الأخيرة» أو «آية المساء».
