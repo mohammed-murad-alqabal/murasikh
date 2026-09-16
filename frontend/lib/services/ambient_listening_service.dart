@@ -89,12 +89,9 @@ class AmbientListeningService extends ChangeNotifier {
   AmbientListeningService._internal();
 
   final AudioRecorder _audioRecorder = AudioRecorder();
-  final ApiService _apiService = ApiService();
   final NotificationService _notificationService = NotificationService();
 
   bool _isListening = false;
-  final bool _isSampling = false;
-  Timer? _cycleTimer;
 
   String _errorMessage = '';
   String _liveSpeech = '';

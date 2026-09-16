@@ -60,7 +60,7 @@ class MurassikhApp extends StatelessWidget {
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
           final settings = settingsState.userSettings;
-          final Color primaryColor = Color(int.parse('FF${settings.accentColor ?? '115E59'}', radix: 16));
+          final Color primaryColor = Color(int.parse('FF${settings.accentColor}', radix: 16));
 
           return MaterialApp(
             title: 'مُرَسِّخ',

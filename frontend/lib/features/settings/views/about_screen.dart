@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 
@@ -216,29 +215,4 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLinkTile(
-    BuildContext context,
-    String title,
-    IconData icon,
-    String url,
-  ) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
-      title: Text(title),
-      trailing: const Icon(Icons.chevron_left, color: AppColors.textSecondary),
-      onTap: () => _launchUrl(context, url),
-    );
-  }
-
-  Future<void> _launchUrl(BuildContext context, String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('تعذر فتح الرابط')));
-      }
-    }
-  }
 }
