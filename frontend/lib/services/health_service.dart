@@ -10,27 +10,28 @@ class HealthService {
   final Health _health = Health();
 
   Future<bool> requestPermissions() async {
-    if (!defaultTargetPlatform.name.contains('android') && !defaultTargetPlatform.name.contains('ios')) {
+    if (!defaultTargetPlatform.name.contains('android') &&
+        !defaultTargetPlatform.name.contains('ios')) {
       return false;
     }
-    
+
     await Permission.activityRecognition.request();
     await Permission.sensors.request();
 
-    final types = [
-      HealthDataType.HEART_RATE,
-      HealthDataType.STEPS,
-    ];
-    
-    final permissions = [
-      HealthDataAccess.READ,
-      HealthDataAccess.READ,
-    ];
+    final types = [HealthDataType.HEART_RATE, HealthDataType.STEPS];
+
+    final permissions = [HealthDataAccess.READ, HealthDataAccess.READ];
 
     try {
-      bool? hasPermissions = await _health.hasPermissions(types, permissions: permissions);
+      bool? hasPermissions = await _health.hasPermissions(
+        types,
+        permissions: permissions,
+      );
       if (hasPermissions != true) {
-        bool authorized = await _health.requestAuthorization(types, permissions: permissions);
+        bool authorized = await _health.requestAuthorization(
+          types,
+          permissions: permissions,
+        );
         return authorized;
       }
       return true;

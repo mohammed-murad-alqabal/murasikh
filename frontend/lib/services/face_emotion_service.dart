@@ -35,8 +35,9 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_cameraController == null || !_cameraController!.value.isInitialized)
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
       return;
+    }
 
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {

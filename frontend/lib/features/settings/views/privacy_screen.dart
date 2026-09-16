@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive/hive.dart';
@@ -25,9 +26,11 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       final box = Hive.box('murassikh_chat_box');
       final data = box.values.toList();
       final String jsonStr = jsonEncode(data);
-      
+
       final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/murassikh_export_${DateTime.now().millisecondsSinceEpoch}.json');
+      final file = File(
+        '${directory.path}/murassikh_export_${DateTime.now().millisecondsSinceEpoch}.json',
+      );
       await file.writeAsString(jsonStr);
 
       if (mounted) {
@@ -37,9 +40,8 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ أثناء التصدير: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('حدث خطأ أثناء التصدير: $e')));
       }
     }
   }
@@ -123,15 +125,26 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               ]),
               _buildSection(context, 'إدارة البيانات', [
                 ListTile(
-                  leading: const Icon(Icons.download_rounded, color: AppColors.primary, size: 22),
-                  title: const Text('تصدير بياناتي', style: TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: Text('حفظ نسخة من محادثاتك وسجلاتك بصيغة JSON', style: Theme.of(context).textTheme.bodySmall),
+                  leading: const Icon(
+                    Icons.download_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                  title: const Text(
+                    'تصدير بياناتي',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: Text(
+                    'حفظ نسخة من محادثاتك وسجلاتك بصيغة JSON',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                   onTap: _exportData,
                 ),
                 _buildWarningTile(
                   context: context,
                   title: 'مسح السجل',
-                  subtitle: 'حذف جميع سجلات التوجيه والتفاعلات (لا يمكن الاسترجاع)',
+                  subtitle:
+                      'حذف جميع سجلات التوجيه والتفاعلات (لا يمكن الاسترجاع)',
                   onPressed: () =>
                       _showClearHistoryDialog(context, settingsBloc),
                 ),

@@ -193,9 +193,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
-    
+
     HapticFeedback.lightImpact(); // تفاعل لمسي عند إرسال رسالة
-    
+
     final userMsg = ChatMessage(text: text.trim(), isUser: true);
     setState(() {
       _messages.add(userMsg);

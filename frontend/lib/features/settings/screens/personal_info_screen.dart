@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/settings_bloc.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../auth/screens/auth_screen.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -161,8 +162,9 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return null;
                       final n = int.tryParse(v.trim());
-                      if (n == null || n < 1 || n > 120)
+                      if (n == null || n < 1 || n > 120) {
                         return 'الرجاء إدخال عمر صحيح';
+                      }
                       return null;
                     },
                   ),
@@ -201,6 +203,28 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     _buildInfoRow(
                       'تاريخ التسجيل',
                       _formatDate(state.userSettings.lastLogin),
+                    ),
+                  ]),
+                  const SizedBox(height: 24),
+                  _buildSection(context, 'الحساب السحابي (اختياري)', [
+                    ListTile(
+                      leading: const Icon(
+                        Icons.cloud_sync,
+                        color: AppColors.primary,
+                      ),
+                      title: const Text(
+                        'تسجيل الدخول / إنشاء حساب',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      subtitle: const Text('لمزامنة بياناتك عبر أجهزتك'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const AuthScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ]),
                 ],
