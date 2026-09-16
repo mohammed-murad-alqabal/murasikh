@@ -4,11 +4,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.main import app
+from app.core.config import settings
 from app.db.database import Base, get_db
 from app.services.user_manager import UserManager
 
 # Test Database setup (Use actual PostgreSQL to support JSONB/ARRAY)
-SQLALCHEMY_DATABASE_URL = "postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db"
+SQLALCHEMY_DATABASE_URL = settings.SQLALCHEMY_DATABASE_URI
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

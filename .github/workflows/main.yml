@@ -45,6 +45,7 @@ jobs:
           POSTGRES_USER: murassikh
           POSTGRES_PASSWORD: murassikh_pwd
           POSTGRES_DB: murassikh_db
+          POSTGRES_PORT: 5433
           ENVIRONMENT: testing
           SECRET_KEY: test-secret-key-for-ci-32-bytes-long
         run: |
@@ -60,6 +61,7 @@ jobs:
           POSTGRES_USER: murassikh
           POSTGRES_PASSWORD: murassikh_pwd
           POSTGRES_DB: murassikh_db
+          POSTGRES_PORT: 5433
           ENVIRONMENT: testing
           SECRET_KEY: test-secret-key-for-ci-32-bytes-long
         run: |
