@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../services/history_service.dart';
+import '../../../../services/offline_service.dart';
 import '../../../recommendation/bloc/recommendation_bloc.dart';
 import '../../../recommendation/models/recommendation_model.dart';
 import '../../../recommendation/views/mic_button.dart';
@@ -12,12 +15,14 @@ class ChatMessage {
   final bool isUser;
   final RecommendationModel? recommendation;
   final DateTime timestamp;
+  int? feedback; // null = unrated, 1 = helpful (like), -1 = unhelpful (dislike)
 
   ChatMessage({
     required this.text,
     required this.isUser,
     this.recommendation,
     DateTime? timestamp,
+    this.feedback,
   }) : timestamp = timestamp ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
@@ -26,6 +31,7 @@ class ChatMessage {
       'isUser': isUser,
       'recommendation': recommendation?.toJson(),
       'timestamp': timestamp.toIso8601String(),
+      'feedback': feedback,
     };
   }
 
@@ -39,6 +45,7 @@ class ChatMessage {
       timestamp: map['timestamp'] != null
           ? DateTime.tryParse(map['timestamp']) ?? DateTime.now()
           : DateTime.now(),
+      feedback: map['feedback'] as int?,
     );
   }
 }
@@ -236,7 +243,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   final msg = _messages[index];
                   return msg.isUser
                       ? _buildUserMessage(context, msg.text)
-                      : _buildSystemMessage(context, msg);
+                      : _buildSystemMessage(context, msg, index);
                 },
               ),
             ),
@@ -245,6 +252,42 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  void _rateMessage(int index, int rating) async {
+    if (index < 0 || index >= _messages.length) return;
+    final msg = _messages[index];
+    final newRating = msg.feedback == rating ? null : rating;
+
+    setState(() {
+      msg.feedback = newRating;
+    });
+
+    try {
+      await _chatBox.putAt(index, jsonEncode(msg.toMap()));
+    } catch (e) {
+      debugPrint("Error updating feedback in chat storage: $e");
+    }
+
+    if (newRating != null) {
+      final id = msg.recommendation?.source ?? msg.text;
+      await OfflineService().savePendingFeedback(id, newRating);
+      await HistoryService().updateFeedback(id, newRating);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              newRating == 1
+                  ? 'شكراً لتقييمك الإيجابي! 👍 سيساعد ذلك في تحسين التوصيات.'
+                  : 'شكراً لملاحظتك! 🌸 سنعمل على تحسين دقة الردود.',
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildTypingIndicator(BuildContext context) {
@@ -274,7 +317,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              'جارٍ البحث في الوحيين عما يواسيك...',
+              'جارٍ البحث في القرآن الكريم عما يواسيك...',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.primary,
                     fontStyle: FontStyle.italic,
@@ -305,7 +348,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildSystemMessage(BuildContext context, ChatMessage msg) {
+  Widget _buildSystemMessage(BuildContext context, ChatMessage msg, int index) {
     final rec = msg.recommendation;
     return Align(
       alignment: Alignment.centerRight,
@@ -335,7 +378,96 @@ class _ChatScreenState extends State<ChatScreen> {
             _buildSourceCard(context, rec),
             const SizedBox(height: 4),
           ],
-          const SizedBox(height: 12),
+          _buildMessageActions(context, msg, index),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageActions(BuildContext context, ChatMessage msg, int index) {
+    final isLiked = msg.feedback == 1;
+    final isDisliked = msg.feedback == -1;
+
+    return Container(
+      margin: const EdgeInsets.only(left: 48, top: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.copy_rounded, size: 16),
+            tooltip: 'نسخ الرسالة',
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(),
+            color: Colors.grey.shade600,
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: msg.text));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('تم نسخ الرسالة 📋'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => _rateMessage(index, 1),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isLiked ? Icons.thumb_up_rounded : Icons.thumb_up_alt_outlined,
+                    size: 16,
+                    color: isLiked ? Colors.green.shade700 : Colors.grey.shade600,
+                  ),
+                  if (isLiked) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      'مفيد',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          InkWell(
+            onTap: () => _rateMessage(index, -1),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isDisliked ? Icons.thumb_down_rounded : Icons.thumb_down_alt_outlined,
+                    size: 16,
+                    color: isDisliked ? Colors.red.shade700 : Colors.grey.shade600,
+                  ),
+                  if (isDisliked) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      'غير ملائم',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

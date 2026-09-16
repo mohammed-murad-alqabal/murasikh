@@ -131,7 +131,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'اكتب ما يجول في خاطرك، وسيجلب لك الله آيةً من القرآن وحديثاً نبوياً يواسيك',
+              'اكتب ما يجول في خاطرك، وسيجلب لك الله آيةً من القرآن الكريم تواسيك',
               style: Theme.of(context).textTheme.bodyMedium
                   ?.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
