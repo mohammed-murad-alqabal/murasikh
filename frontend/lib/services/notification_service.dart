@@ -9,15 +9,17 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  Future<void> init() async {
+  Future<void> init({bool isBackground = false}) async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+    );
 
     await _notificationsPlugin.initialize(
-      settings: initializationSettings,
+      initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         // يمكن فتح شاشة التفاصيل عند الضغط على الإشعار
       },
@@ -37,7 +39,9 @@ class NotificationService {
         importance: Importance.max,
       );
       await androidImplementation.createNotificationChannel(channel);
-      await androidImplementation.requestNotificationsPermission();
+      if (!isBackground) {
+        await androidImplementation.requestNotificationsPermission();
+      }
     }
   }
 

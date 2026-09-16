@@ -33,7 +33,7 @@ void onStart(ServiceInstance service) async {
   final audioRecorder = AudioRecorder();
   final apiService = ApiService();
   final notificationService = NotificationService();
-  await notificationService.init();
+  await notificationService.init(isBackground: true);
 
   Timer.periodic(const Duration(seconds: 15), (timer) async {
     if (service is AndroidServiceInstance) {
