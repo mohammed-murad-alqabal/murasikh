@@ -1,14 +1,16 @@
-from typing import Generic, TypeVar, Type, Optional, List
+from typing import Generic, TypeVar
+
 from sqlalchemy.orm import Session
+
 from app.db.database import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
 
 class CRUDBase(Generic[ModelType]):
-    def __init__(self, model: Type[ModelType]):
+    def __init__(self, model: type[ModelType]):
         self.model = model
         
-    def get(self, db: Session, id: int) -> Optional[ModelType]:
+    def get(self, db: Session, id: int) -> ModelType | None:
         return db.query(self.model).filter(self.model.id == id).first()
         
     def create(self, db: Session, *, obj_in: dict) -> ModelType:

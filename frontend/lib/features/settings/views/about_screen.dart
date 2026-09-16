@@ -57,7 +57,7 @@ class AboutScreen extends StatelessWidget {
               _buildInfoRow(context, 'نظام التشغيل', 'Flutter 3.16+'),
               _buildInfoRow(context, 'اللغة', 'العربية'),
             ]),
-            
+
             const SizedBox(height: 24),
             _buildSection(context, 'حقوق الملكية', [
               _buildText(context, '''
@@ -214,5 +214,4 @@ class AboutScreen extends StatelessWidget {
       ),
     );
   }
-
 }

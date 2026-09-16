@@ -1,8 +1,7 @@
-import sqlite3
 import os
-import json
+import sqlite3
 from datetime import datetime
-from typing import List, Dict
+
 
 class HistoryManager:
     def __init__(self, filepath="data/history.db"):
@@ -64,7 +63,7 @@ class HistoryManager:
         except Exception:
             return False
 
-    def get_history(self) -> List[Dict]:
+    def get_history(self) -> list[dict]:
         try:
             with sqlite3.connect(self.filepath) as conn:
                 conn.row_factory = sqlite3.Row

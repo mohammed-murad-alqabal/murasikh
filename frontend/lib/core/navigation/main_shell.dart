@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/chat/presentation/screens/chat_screen.dart';
 import '../../features/history/history_screen.dart';
@@ -35,10 +36,7 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       // OfflineBanner يلتف حول الشاشات كلها ويظهر تلقائياً عند انقطاع الإنترنت
       body: OfflineBanner(
-        child: IndexedStack(
-          index: _currentIndex,
-          children: _screens,
-        ),
+        child: IndexedStack(index: _currentIndex, children: _screens),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,

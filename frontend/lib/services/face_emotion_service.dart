@@ -1,8 +1,10 @@
 import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+
 import '../features/recommendation/models/recommendation_model.dart';
 import 'api_service.dart';
 import 'notification_service.dart';
@@ -16,11 +18,11 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
 
   CameraController? _cameraController;
   FaceDetector? _faceDetector;
-  
+
   bool _isAnalyzing = false;
   bool _isCameraReady = false;
   bool _isProcessingFrame = false;
-  
+
   String _detectedEmotion = 'طبيعي';
   RecommendationModel? _recommendation;
   DateTime _lastAnalysisTime = DateTime.now();
@@ -33,9 +35,11 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
+    if (_cameraController == null || !_cameraController!.value.isInitialized)
+      return;
 
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
       if (_isAnalyzing) {
         _cameraController!.stopImageStream();
       }
@@ -77,7 +81,9 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
       frontCamera,
       ResolutionPreset.low,
       enableAudio: false,
-      imageFormatGroup: Platform.isAndroid ? ImageFormatGroup.nv21 : ImageFormatGroup.bgra8888,
+      imageFormatGroup: Platform.isAndroid
+          ? ImageFormatGroup.nv21
+          : ImageFormatGroup.bgra8888,
     );
 
     await _cameraController!.initialize();
@@ -87,7 +93,7 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
 
   void toggleAnalysis() {
     if (!_isCameraReady || _cameraController == null) return;
-    
+
     _isAnalyzing = !_isAnalyzing;
     notifyListeners();
 
@@ -117,9 +123,15 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
       }
       final bytes = allBytes.done().buffer.asUint8List();
 
-      final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
-      final InputImageRotation imageRotation = InputImageRotation.rotation270deg; // Front camera on portrait
-      final InputImageFormat inputImageFormat = InputImageFormatValue.fromRawValue(image.format.raw) ?? InputImageFormat.nv21;
+      final Size imageSize = Size(
+        image.width.toDouble(),
+        image.height.toDouble(),
+      );
+      final InputImageRotation imageRotation =
+          InputImageRotation.rotation270deg; // Front camera on portrait
+      final InputImageFormat inputImageFormat =
+          InputImageFormatValue.fromRawValue(image.format.raw) ??
+          InputImageFormat.nv21;
 
       final metadata = InputImageMetadata(
         size: imageSize,
@@ -143,12 +155,14 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
         _detectedEmotion = emotion;
         notifyListeners();
 
-        if (emotion != 'طبيعي' && emotion != 'لم يتم اكتشاف وجه' && emotion != 'بشاشة') {
+        if (emotion != 'طبيعي' &&
+            emotion != 'لم يتم اكتشاف وجه' &&
+            emotion != 'بشاشة') {
           final contextQuery = _emotionToContext(emotion);
           final rec = await ApiService().getRecommendation(contextQuery);
           _recommendation = rec;
           notifyListeners();
-          
+
           await NotificationService().showSpiritualAlert(
             emotion: emotion,
             tier: rec.tier,

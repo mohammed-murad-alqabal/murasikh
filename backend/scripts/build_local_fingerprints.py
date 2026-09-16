@@ -4,12 +4,12 @@ build_local_fingerprints.py
 باستخدام نموذج AraBERT المدمج لحساب التقارب بين معاني الآية وقاموس المشاعر (65+ حالة).
 """
 
-import chromadb
 import json
-import os
 import sys
-import numpy as np
 from pathlib import Path
+
+import chromadb
+import numpy as np
 from sentence_transformers import SentenceTransformer
 
 SCRIPT_DIR = Path(__file__).parent
@@ -18,6 +18,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 FINGERPRINTS_FILE = SCRIPT_DIR / "verse_fingerprints.json"
 from app.core.taxonomy import EMOTION_TAXONOMY
+
 
 def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))

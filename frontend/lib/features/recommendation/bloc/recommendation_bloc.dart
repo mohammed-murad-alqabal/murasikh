@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+
 import '../../../services/api_service.dart';
 import '../models/recommendation_model.dart';
 
@@ -8,6 +9,7 @@ abstract class RecommendationEvent extends Equatable {
   @override
   List<Object> get props => [];
 }
+
 class GetRecommendationEvent extends RecommendationEvent {
   final String text;
   GetRecommendationEvent(this.text);
@@ -20,14 +22,18 @@ abstract class RecommendationState extends Equatable {
   @override
   List<Object> get props => [];
 }
+
 class RecommendationInitial extends RecommendationState {}
+
 class RecommendationLoading extends RecommendationState {}
+
 class RecommendationLoaded extends RecommendationState {
   final RecommendationModel recommendation;
   RecommendationLoaded(this.recommendation);
   @override
   List<Object> get props => [recommendation];
 }
+
 class RecommendationError extends RecommendationState {
   final String message;
   RecommendationError(this.message);
@@ -43,17 +49,21 @@ class AnalyzeAudioEvent extends RecommendationEvent {
 }
 
 // --- Bloc ---
-class RecommendationBloc extends Bloc<RecommendationEvent, RecommendationState> {
+class RecommendationBloc
+    extends Bloc<RecommendationEvent, RecommendationState> {
   final ApiService apiService;
 
-  RecommendationBloc({required this.apiService}) : super(RecommendationInitial()) {
+  RecommendationBloc({required this.apiService})
+    : super(RecommendationInitial()) {
     on<GetRecommendationEvent>((event, emit) async {
       emit(RecommendationLoading());
       try {
         final recommendation = await apiService.getRecommendation(event.text);
         emit(RecommendationLoaded(recommendation));
       } catch (e) {
-        emit(RecommendationError('تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً.'));
+        emit(
+          RecommendationError('تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً.'),
+        );
       }
     });
 
@@ -63,7 +73,11 @@ class RecommendationBloc extends Bloc<RecommendationEvent, RecommendationState> 
         final recommendation = await apiService.analyzeAudio(event.filePath);
         emit(RecommendationLoaded(recommendation));
       } catch (e) {
-        emit(RecommendationError('فشل تحليل الصوت، تأكد من اتصالك بالإنترنت والمحاولة مجدداً.'));
+        emit(
+          RecommendationError(
+            'فشل تحليل الصوت، تأكد من اتصالك بالإنترنت والمحاولة مجدداً.',
+          ),
+        );
       }
     });
   }

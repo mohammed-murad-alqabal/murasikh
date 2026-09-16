@@ -1,9 +1,8 @@
-import pytest
 from fastapi.testclient import TestClient
-from app.main import app
+
 from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES
+from app.main import app
 from app.services.ai.embeddings import EmbeddingService
-import json
 
 client = TestClient(app)
 

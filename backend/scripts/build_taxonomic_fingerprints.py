@@ -9,13 +9,14 @@ build_taxonomic_fingerprints.py
 4. **لا يقوم بالكتابة** على ChromaDB لتوفير موارد الجهاز! (سيتم قراءة الـ JSON لاحقاً في الذاكرة).
 """
 
-import chromadb
 import json
 import os
 import sys
 import time
-import google.generativeai as genai
 from pathlib import Path
+
+import chromadb
+import google.generativeai as genai
 
 SCRIPT_DIR = Path(__file__).parent
 BACKEND_DIR = SCRIPT_DIR.parent
@@ -24,6 +25,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 FINGERPRINTS_FILE = SCRIPT_DIR / "verse_fingerprints.json"
 
 from app.core.taxonomy import EMOTION_TAXONOMY
+
 ALL_DIMENSIONS = list(EMOTION_TAXONOMY.keys())
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
@@ -150,7 +152,7 @@ def main():
         except Exception as e:
             err = str(e).lower()
             if "quota" in err or "429" in err:
-                print(f"  ⏸️  تجاوز الحصة! ننتظر 60 ثانية ثم نعيد المحاولة...")
+                print("  ⏸️  تجاوز الحصة! ننتظر 60 ثانية ثم نعيد المحاولة...")
                 time.sleep(60)
                 # لا نزيد b_idx لنعيد المحاولة
             else:

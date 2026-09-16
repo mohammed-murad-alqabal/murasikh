@@ -1,12 +1,13 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
-from typing import Optional
-from app.services.ai.emotion_analyzer import EmotionAnalyzer
+
+from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
 from app.services.ai.embeddings import EmbeddingService
+from app.services.ai.emotion_analyzer import EmotionAnalyzer
 from app.services.ai.rag_engine import RAGEngine
 from app.services.history_manager import HistoryManager
-from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
-import logging
 
 router = APIRouter()
 analyzer = EmotionAnalyzer()
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class RecommendationRequest(BaseModel):
     text: str = Field(..., min_length=2, max_length=1000, description="نص المستخدم المراد تحليله")
-    user_context: Optional[dict] = Field(None, description="السياق الإضافي للمستخدم")
+    user_context: dict | None = Field(None, description="السياق الإضافي للمستخدم")
 
 
 
@@ -27,18 +28,19 @@ class RecommendationResponse(BaseModel):
     confidence: float
     tier: str
     message: str
-    delayed_message: Optional[str] = None
-    source: Optional[str] = None
-    tafsir: Optional[str] = None
+    delayed_message: str | None = None
+    source: str | None = None
+    tafsir: str | None = None
 
 from app.core.security import limiter
 
+
 @router.post("", response_model=RecommendationResponse)
 @limiter.limit("15/minute")
-async def get_recommendation(req: Request, request: RecommendationRequest):
+async def get_recommendation(request: Request, payload: RecommendationRequest):
     try:
         # 1. تحليل الحالة العاطفية/الإيمانية مع سياق المستخدم
-        analysis = await analyzer.analyze(request.text, user_context=request.user_context)
+        analysis = await analyzer.analyze(payload.text, user_context=payload.user_context)
         emotion = analysis.get("emotion", "طبيعي")
         confidence = float(analysis.get("confidence", 0.0))
 

@@ -118,12 +118,18 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     emit(state.copyWith(userSettings: userSettings, isLoading: false));
   }
 
-  Future<void> _onUpdateSettings(UpdateSettings event, Emitter<SettingsState> emit) async {
+  Future<void> _onUpdateSettings(
+    UpdateSettings event,
+    Emitter<SettingsState> emit,
+  ) async {
     await SettingsService().saveSettings(event.settings);
     emit(state.copyWith(userSettings: event.settings));
   }
 
-  Future<void> _onUpdateTheme(UpdateTheme event, Emitter<SettingsState> emit) async {
+  Future<void> _onUpdateTheme(
+    UpdateTheme event,
+    Emitter<SettingsState> emit,
+  ) async {
     final updatedSettings = state.userSettings.copyWith(
       darkMode: event.darkMode,
     );
@@ -131,7 +137,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     emit(state.copyWith(userSettings: updatedSettings));
   }
 
-  Future<void> _onUpdateLanguage(UpdateLanguage event, Emitter<SettingsState> emit) async {
+  Future<void> _onUpdateLanguage(
+    UpdateLanguage event,
+    Emitter<SettingsState> emit,
+  ) async {
     final updatedSettings = state.userSettings.copyWith(
       preferredLanguage: event.language,
     );
@@ -139,7 +148,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     emit(state.copyWith(userSettings: updatedSettings));
   }
 
-  Future<void> _onUpdateFontSize(UpdateFontSize event, Emitter<SettingsState> emit) async {
+  Future<void> _onUpdateFontSize(
+    UpdateFontSize event,
+    Emitter<SettingsState> emit,
+  ) async {
     final updatedSettings = state.userSettings.copyWith(
       fontSize: event.fontSize,
     );

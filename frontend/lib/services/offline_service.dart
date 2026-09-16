@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+
 import '../features/recommendation/models/recommendation_model.dart';
 
 /// خدمة العمل بدون إنترنت (Offline-First)
@@ -55,7 +57,9 @@ class OfflineService {
 
   /// احفظ توصية في التخزين المحلي مرتبطة بنص المدخل
   Future<void> cacheRecommendation(
-      String inputText, RecommendationModel rec) async {
+    String inputText,
+    RecommendationModel rec,
+  ) async {
     await init();
     // المفتاح: أول 50 حرف من النص لتجنب التكرار
     final key = inputText.length > 50 ? inputText.substring(0, 50) : inputText;
@@ -81,7 +85,8 @@ class OfflineService {
       try {
         final data = jsonDecode(raw) as Map<String, dynamic>;
         final rec = RecommendationModel.fromJson(
-            data['recommendation'] as Map<String, dynamic>);
+          data['recommendation'] as Map<String, dynamic>,
+        );
         if (rec.emotion == emotion) return rec;
       } catch (_) {}
     }
@@ -97,7 +102,8 @@ class OfflineService {
     try {
       final data = jsonDecode(raw) as Map<String, dynamic>;
       return RecommendationModel.fromJson(
-          data['recommendation'] as Map<String, dynamic>);
+        data['recommendation'] as Map<String, dynamic>,
+      );
     } catch (_) {
       return null;
     }
@@ -105,13 +111,13 @@ class OfflineService {
 
   /// آية ثابتة تُعرض عند عدم وجود أي بيانات محلية
   RecommendationModel get fallbackRecommendation => RecommendationModel(
-        emotion: 'طبيعي',
-        confidence: 1.0,
-        tier: 'full',
-        message: 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ',
-        source: 'سورة الرعد: 28',
-        tafsir: 'ذكر الله سبحانه هو مفتاح الطمأنينة والراحة النفسية.',
-      );
+    emotion: 'طبيعي',
+    confidence: 1.0,
+    tier: 'full',
+    message: 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ',
+    source: 'سورة الرعد: 28',
+    tafsir: 'ذكر الله سبحانه هو مفتاح الطمأنينة والراحة النفسية.',
+  );
 
   // ============================================================
   //  تأجيل التقييمات (Pending Feedback Sync)
@@ -129,13 +135,16 @@ class OfflineService {
 
   /// جلب قائمة التقييمات المؤجلة
   List<Map<String, dynamic>> getPendingFeedbacks() {
-    return _feedbackBox.values.map((raw) {
-      try {
-        return jsonDecode(raw) as Map<String, dynamic>;
-      } catch (_) {
-        return <String, dynamic>{};
-      }
-    }).where((m) => m.isNotEmpty).toList();
+    return _feedbackBox.values
+        .map((raw) {
+          try {
+            return jsonDecode(raw) as Map<String, dynamic>;
+          } catch (_) {
+            return <String, dynamic>{};
+          }
+        })
+        .where((m) => m.isNotEmpty)
+        .toList();
   }
 
   /// مسح التقييمات المؤجلة بعد إرسالها بنجاح

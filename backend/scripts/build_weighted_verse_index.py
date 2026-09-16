@@ -8,13 +8,14 @@ build_weighted_verse_index.py
 - يُحدِّث ChromaDB بالأوزان كـ metadata
 """
 
-import chromadb
 import json
 import os
 import sys
 import time
-import google.generativeai as genai
 from pathlib import Path
+
+import chromadb
+import google.generativeai as genai
 
 # ── إعداد المسارات ──────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).parent
@@ -26,6 +27,7 @@ OUTPUT_FILE   = SCRIPT_DIR / "verse_weights_final.json"
 
 # ── الحالات الـ 50+ ─────────────────────────────────────────
 from app.core.taxonomy import EMOTION_TAXONOMY
+
 ALL_EMOTIONS = list(EMOTION_TAXONOMY.keys())
 
 # ── إعداد Gemini ─────────────────────────────────────────────
@@ -194,7 +196,7 @@ def main():
             except Exception as e:
                 err = str(e).lower()
                 if "quota" in err or "429" in err or "resource_exhausted" in err:
-                    print(f"  ⏸️  تجاوز الحصة! انتظار 60 ثانية...")
+                    print("  ⏸️  تجاوز الحصة! انتظار 60 ثانية...")
                     time.sleep(60)
                     # إعادة المحاولة
                     b_idx -= 1

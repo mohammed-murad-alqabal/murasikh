@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
 import '../features/settings/models/user_settings.dart';
 
 class SettingsService {
@@ -51,7 +53,7 @@ class SettingsService {
         debugPrint('Error parsing settings: $e');
       }
     }
-    
+
     // Default settings
     return UserSettings(
       name: 'مستخدم مُرَسِّخ',

@@ -1,12 +1,14 @@
-import redis
 import json
-from typing import Optional, Any
+from typing import Any
+
+import redis
+
 
 class RedisCache:
     def __init__(self, host: str = "localhost", port: int = 6379):
         self.client = redis.Redis(host=host, port=port, decode_responses=True)
         
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         value = self.client.get(key)
         return json.loads(value) if value else None
         

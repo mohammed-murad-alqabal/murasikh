@@ -1,9 +1,16 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Request
-from app.services.ai.audio_analyzer import AudioAnalyzer
-from app.api.v1.endpoints.recommend import RecommendationResponse, embedder, rag_engine, history_manager
-from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
-from app.core.security import limiter
 import logging
+
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+
+from app.api.v1.endpoints.recommend import (
+    RecommendationResponse,
+    embedder,
+    history_manager,
+    rag_engine,
+)
+from app.core.security import limiter
+from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
+from app.services.ai.audio_analyzer import AudioAnalyzer
 
 router = APIRouter()
 audio_analyzer = AudioAnalyzer()
@@ -11,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @router.post("/analyze-audio", response_model=RecommendationResponse)
 @limiter.limit("5/minute")
-async def analyze_audio(req: Request, file: UploadFile = File(...)):
+async def analyze_audio(request: Request, file: UploadFile = File(...)):
     try:
         audio_bytes = await file.read()
         analysis = await audio_analyzer.analyze_tone(audio_bytes)

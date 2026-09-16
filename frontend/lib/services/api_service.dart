@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../features/recommendation/models/recommendation_model.dart';
 import 'history_service.dart';
 import 'offline_service.dart';
@@ -9,12 +11,16 @@ class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
 
   /// جلب التوصية مع دعم Offline-First
-  Future<RecommendationModel> getRecommendation(String text,
-      {bool forceOffline = false}) async {
+  Future<RecommendationModel> getRecommendation(
+    String text, {
+    bool forceOffline = false,
+  }) async {
     final offlineService = OfflineService();
     await offlineService.init();
 
-    final isConnected = forceOffline ? false : await offlineService.isConnected();
+    final isConnected = forceOffline
+        ? false
+        : await offlineService.isConnected();
 
     if (isConnected) {
       try {
@@ -66,7 +72,7 @@ class ApiService {
     final settingsService = SettingsService();
     await settingsService.init();
     final settings = settingsService.getSettings();
-    
+
     Map<String, dynamic>? userContext;
     if (settings.age != null || settings.gender != null) {
       userContext = {
@@ -82,7 +88,7 @@ class ApiService {
           body: jsonEncode({'text': text, 'user_context': userContext}),
         )
         .timeout(const Duration(seconds: 15));
-    
+
     if (response.statusCode == 200) {
       final decodedData = jsonDecode(utf8.decode(response.bodyBytes));
       return RecommendationModel.fromJson(decodedData);
@@ -92,7 +98,9 @@ class ApiService {
   }
 
   RecommendationModel _getOfflineRecommendation(
-      OfflineService offlineService, String text) {
+    OfflineService offlineService,
+    String text,
+  ) {
     // 1. ابحث عن نفس الحالة العاطفية في الكاش
     // (نجرب الكلمات الشائعة في النص)
     final emotions = ['غضب', 'حزن', 'قلق', 'فرح', 'يأس', 'توتر'];
@@ -138,12 +146,17 @@ class ApiService {
 
   /// إرسال مقطع صوتي لتحليله
   Future<RecommendationModel> analyzeAudio(String filePath) async {
-    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/analyze-audio'));
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/analyze-audio'),
+    );
     request.files.add(await http.MultipartFile.fromPath('file', filePath));
-    
-    final streamedResponse = await request.send().timeout(const Duration(seconds: 15));
+
+    final streamedResponse = await request.send().timeout(
+      const Duration(seconds: 15),
+    );
     final response = await http.Response.fromStream(streamedResponse);
-    
+
     if (response.statusCode == 200) {
       final decodedData = jsonDecode(utf8.decode(response.bodyBytes));
       final rec = RecommendationModel.fromJson(decodedData);

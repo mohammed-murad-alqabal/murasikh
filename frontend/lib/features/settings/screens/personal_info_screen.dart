@@ -44,7 +44,6 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
     return BlocBuilder<SettingsBloc, SettingsState>(
       builder: (context, state) {
-
         return Scaffold(
           appBar: AppBar(
             title: const Text('معلوماتي الشخصية'),
@@ -162,7 +161,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return null;
                       final n = int.tryParse(v.trim());
-                      if (n == null || n < 1 || n > 120) return 'الرجاء إدخال عمر صحيح';
+                      if (n == null || n < 1 || n > 120)
+                        return 'الرجاء إدخال عمر صحيح';
                       return null;
                     },
                   ),
@@ -172,9 +172,9 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                   Text(
                     'الجنس',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Row(
@@ -267,15 +267,16 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 34,
-                color: isSelected ? AppColors.primary : Colors.grey.shade500),
+            Icon(
+              icon,
+              size: 34,
+              color: isSelected ? AppColors.primary : Colors.grey.shade500,
+            ),
             const SizedBox(height: 6),
             Text(
               label,
               style: TextStyle(
-                fontWeight:
-                    isSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 color: isSelected ? AppColors.primary : AppColors.textSecondary,
                 fontSize: 15,
               ),
@@ -283,8 +284,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
             if (isSelected)
               const Padding(
                 padding: EdgeInsets.only(top: 4),
-                child: Icon(Icons.check_circle,
-                    color: AppColors.primary, size: 16),
+                child: Icon(
+                  Icons.check_circle,
+                  color: AppColors.primary,
+                  size: 16,
+                ),
               ),
           ],
         ),

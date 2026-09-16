@@ -17,7 +17,7 @@ class AppColors {
   // Text
   static const Color textPrimary = Color(0xFF1E293B); // Slate Dark
   static const Color textSecondary = Color(0xFF64748B);
-  
+
   // Status
   static const Color error = Color(0xFFB91C1C);
   static const Color success = Color(0xFF15803D);

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -19,7 +20,8 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
     super.initState();
     _checkInitialConnection();
     _subscription = Connectivity().onConnectivityChanged.listen((results) {
-      final isOffline = results.isEmpty || results.every((r) => r == ConnectivityResult.none);
+      final isOffline =
+          results.isEmpty || results.every((r) => r == ConnectivityResult.none);
       if (isOffline != _isOffline) {
         setState(() => _isOffline = isOffline);
       }
@@ -28,7 +30,8 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
 
   Future<void> _checkInitialConnection() async {
     final results = await Connectivity().checkConnectivity();
-    final isOffline = results.isEmpty || results.every((r) => r == ConnectivityResult.none);
+    final isOffline =
+        results.isEmpty || results.every((r) => r == ConnectivityResult.none);
     if (isOffline != _isOffline && mounted) {
       setState(() => _isOffline = isOffline);
     }
@@ -56,11 +59,18 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
                 color: Colors.transparent,
                 child: Container(
                   color: Colors.orange.shade800,
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 4,
+                    horizontal: 16,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 14),
+                      const Icon(
+                        Icons.wifi_off_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
                       const SizedBox(width: 8),
                       const Text(
                         'أنت في وضع عدم الاتصال. يتم توليد المواساة محلياً 🤍',

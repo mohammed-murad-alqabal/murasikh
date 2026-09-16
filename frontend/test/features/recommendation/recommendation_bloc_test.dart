@@ -42,10 +42,7 @@ void main() {
         return bloc;
       },
       act: (bloc) => bloc.add(GetRecommendationEvent('test text')),
-      expect: () => [
-        isA<RecommendationLoading>(),
-        isA<RecommendationLoaded>(),
-      ],
+      expect: () => [isA<RecommendationLoading>(), isA<RecommendationLoaded>()],
       verify: (_) {
         verify(() => mockApiService.getRecommendation('test text')).called(1);
       },
@@ -59,10 +56,7 @@ void main() {
         return bloc;
       },
       act: (bloc) => bloc.add(GetRecommendationEvent('test text')),
-      expect: () => [
-        isA<RecommendationLoading>(),
-        isA<RecommendationError>(),
-      ],
+      expect: () => [isA<RecommendationLoading>(), isA<RecommendationError>()],
     );
   });
 }

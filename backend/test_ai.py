@@ -1,10 +1,13 @@
 import asyncio
 import json
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from app.services.ai.emotion_analyzer import EmotionAnalyzer
 from app.services.notification.tiered_response import TieredResponse
+
 
 async def run_test():
     analyzer = EmotionAnalyzer()

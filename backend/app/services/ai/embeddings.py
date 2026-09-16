@@ -1,7 +1,9 @@
-import chromadb
-from sentence_transformers import SentenceTransformer
 import json
 import os
+
+import chromadb
+from sentence_transformers import SentenceTransformer
+
 
 class EmbeddingService:
     def __init__(self):

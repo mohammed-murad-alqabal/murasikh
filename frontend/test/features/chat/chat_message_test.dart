@@ -37,10 +37,7 @@ void main() {
     });
 
     test('ChatMessage defaults feedback to null when unrated', () {
-      final msg = ChatMessage(
-        text: 'رسالة مستخدم',
-        isUser: true,
-      );
+      final msg = ChatMessage(text: 'رسالة مستخدم', isUser: true);
 
       expect(msg.feedback, isNull);
       final map = msg.toMap();
@@ -50,28 +47,31 @@ void main() {
       expect(deserialized.feedback, isNull);
     });
 
-    test('ChatMessage with recommendation preserves recommendation and feedback', () {
-      final rec = RecommendationModel(
-        emotion: 'حزن',
-        confidence: 0.85,
-        tier: 'moderate',
-        message: 'لا تحزن إن الله معنا',
-        source: 'سورة التوبة: 40',
-      );
+    test(
+      'ChatMessage with recommendation preserves recommendation and feedback',
+      () {
+        final rec = RecommendationModel(
+          emotion: 'حزن',
+          confidence: 0.85,
+          tier: 'moderate',
+          message: 'لا تحزن إن الله معنا',
+          source: 'سورة التوبة: 40',
+        );
 
-      final msg = ChatMessage(
-        text: rec.message,
-        isUser: false,
-        recommendation: rec,
-        feedback: 1,
-      );
+        final msg = ChatMessage(
+          text: rec.message,
+          isUser: false,
+          recommendation: rec,
+          feedback: 1,
+        );
 
-      final map = msg.toMap();
-      final deserialized = ChatMessage.fromMap(map);
+        final map = msg.toMap();
+        final deserialized = ChatMessage.fromMap(map);
 
-      expect(deserialized.feedback, 1);
-      expect(deserialized.recommendation, isNotNull);
-      expect(deserialized.recommendation?.source, 'سورة التوبة: 40');
-    });
+        expect(deserialized.feedback, 1);
+        expect(deserialized.recommendation, isNotNull);
+        expect(deserialized.recommendation?.source, 'سورة التوبة: 40');
+      },
+    );
   });
 }

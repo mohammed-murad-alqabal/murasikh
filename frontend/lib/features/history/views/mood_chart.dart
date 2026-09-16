@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+
 import '../../../services/history_service.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -45,9 +46,12 @@ class MoodChart extends StatelessWidget {
 
     // نأخذ آخر 10 سجلات للمخطط (أو كلها إذا كانت أقل) ونرتبها زمنياً (من الأقدم للأحدث)
     final recentHistory = history.take(10).toList().reversed.toList();
-    
+
     final spots = recentHistory.asMap().entries.map((e) {
-      return FlSpot(e.key.toDouble(), _getEmotionScore(e.value.recommendation.emotion));
+      return FlSpot(
+        e.key.toDouble(),
+        _getEmotionScore(e.value.recommendation.emotion),
+      );
     }).toList();
 
     return Card(
@@ -73,16 +77,25 @@ class MoodChart extends StatelessWidget {
                 LineChartData(
                   gridData: const FlGridData(show: false),
                   titlesData: FlTitlesData(
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
                         interval: 1,
                         reservedSize: 48,
                         getTitlesWidget: (value, meta) {
-                          if (value != 0 && value != 1 && value != 2 && value != 3) {
+                          if (value != 0 &&
+                              value != 1 &&
+                              value != 2 &&
+                              value != 3) {
                             return const SizedBox.shrink();
                           }
                           return SideTitleWidget(
@@ -90,7 +103,10 @@ class MoodChart extends StatelessWidget {
                             space: 8,
                             child: Text(
                               _getEmotionLabel(value),
-                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
                               textAlign: TextAlign.left,
                             ),
                           );

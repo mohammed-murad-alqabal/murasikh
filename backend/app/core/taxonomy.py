@@ -138,4 +138,4 @@ def build_semantic_query(emotion: str) -> str:
     return f"آيات القرآن الكريم عن {emotion} والصبر والطمأنينة"
 
 
-EMOTION_SEMANTIC_QUERIES = {k: build_semantic_query(k) for k in EMOTION_TAXONOMY.keys()}
+EMOTION_SEMANTIC_QUERIES = {k: build_semantic_query(k) for k in EMOTION_TAXONOMY}

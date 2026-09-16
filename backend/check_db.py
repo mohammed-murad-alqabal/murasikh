@@ -1,4 +1,5 @@
 import chromadb
+
 client = chromadb.PersistentClient(path="./chroma_db")
 try:
     collection = client.get_collection("islamic_content")

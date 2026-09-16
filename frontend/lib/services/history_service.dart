@@ -1,7 +1,9 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
+
 import '../features/recommendation/models/recommendation_model.dart';
 
 class HistoryItem {
@@ -21,7 +23,9 @@ class HistoryItem {
 
   factory HistoryItem.fromMap(Map<String, dynamic> map) {
     return HistoryItem(
-      id: map['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id:
+          map['id']?.toString() ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
       timestamp: map['timestamp'] != null
           ? DateTime.tryParse(map['timestamp']) ?? DateTime.now()
           : DateTime.now(),
@@ -107,8 +111,10 @@ class HistoryService {
           .timeout(const Duration(seconds: 3));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
-        final remoteItems = data.map((json) => HistoryItem.fromMap(json)).toList();
-        
+        final remoteItems = data
+            .map((json) => HistoryItem.fromMap(json))
+            .toList();
+
         // دمج السجلات المحلية مع السجلات البعيدة بدون تكرار
         final Map<String, HistoryItem> merged = {};
         for (var item in remoteItems) {

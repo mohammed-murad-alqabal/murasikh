@@ -1,8 +1,10 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../services/history_service.dart';
 import '../../../../services/offline_service.dart';
@@ -147,7 +149,9 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('مسح المحادثة'),
-        content: const Text('هل تريد مسح رسائل المحادثة الحالية والبدء من جديد؟'),
+        content: const Text(
+          'هل تريد مسح رسائل المحادثة الحالية والبدء من جديد؟',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -237,9 +241,7 @@ class _ChatScreenState extends State<ChatScreen> {
               const Text('مُرَسِّخ'),
               Text(
                 'الرفيق الروحي',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
+                style: Theme.of(context).textTheme.bodySmall
                     ?.copyWith(color: AppColors.primary),
               ),
             ],
@@ -350,9 +352,9 @@ class _ChatScreenState extends State<ChatScreen> {
             Text(
               'جارٍ البحث في القرآن الكريم عما يواسيك...',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.primary,
-                    fontStyle: FontStyle.italic,
-                  ),
+                color: AppColors.primary,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
@@ -399,9 +401,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             child: Text(
               msg.text,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
+              style: Theme.of(context).textTheme.bodyLarge
                   ?.copyWith(color: Colors.white, height: 1.5),
             ),
           ),
@@ -416,7 +416,11 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageActions(BuildContext context, ChatMessage msg, int index) {
+  Widget _buildMessageActions(
+    BuildContext context,
+    ChatMessage msg,
+    int index,
+  ) {
     final isLiked = msg.feedback == 1;
     final isDisliked = msg.feedback == -1;
 
@@ -451,9 +455,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isLiked ? Icons.thumb_up_rounded : Icons.thumb_up_alt_outlined,
+                    isLiked
+                        ? Icons.thumb_up_rounded
+                        : Icons.thumb_up_alt_outlined,
                     size: 16,
-                    color: isLiked ? Colors.green.shade700 : Colors.grey.shade600,
+                    color: isLiked
+                        ? Colors.green.shade700
+                        : Colors.grey.shade600,
                   ),
                   if (isLiked) ...[
                     const SizedBox(width: 4),
@@ -480,9 +488,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isDisliked ? Icons.thumb_down_rounded : Icons.thumb_down_alt_outlined,
+                    isDisliked
+                        ? Icons.thumb_down_rounded
+                        : Icons.thumb_down_alt_outlined,
                     size: 16,
-                    color: isDisliked ? Colors.red.shade700 : Colors.grey.shade600,
+                    color: isDisliked
+                        ? Colors.red.shade700
+                        : Colors.grey.shade600,
                   ),
                   if (isDisliked) ...[
                     const SizedBox(width: 4),
@@ -519,7 +531,10 @@ class _ChatScreenState extends State<ChatScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 3,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(20),
@@ -564,7 +579,10 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             MicButton(
               onRecordComplete: (path) {
-                final userMsg = ChatMessage(text: '[رسالة صوتية 🎤]', isUser: true);
+                final userMsg = ChatMessage(
+                  text: '[رسالة صوتية 🎤]',
+                  isUser: true,
+                );
                 setState(() {
                   _messages.add(userMsg);
                   _isLoading = true;

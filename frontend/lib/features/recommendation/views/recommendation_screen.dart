@@ -15,11 +15,9 @@ class RecommendationScreen extends StatefulWidget {
 }
 
 class _RecommendationScreenState extends State<RecommendationScreen> {
-
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _hasFeedback = false;
-
 
   @override
   void dispose() {
@@ -185,10 +183,10 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha:0.07),
+                        color: AppColors.primary.withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primary.withValues(alpha:0.15),
+                          color: AppColors.primary.withValues(alpha: 0.15),
                         ),
                       ),
                       child: Column(
@@ -242,7 +240,6 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                     ),
                   ],
 
-
                   // أزرار التفاعل (نسخ + تقييم)
                   const SizedBox(height: 16),
                   Row(
@@ -268,18 +265,35 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                           foregroundColor: AppColors.primary,
                         ),
                       ),
-                      
+
                       // Feedback
                       if (!_hasFeedback)
                         Row(
                           children: [
-                            Text('هل ساعدتك؟', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                            Text(
+                              'هل ساعدتك؟',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
                             IconButton(
-                              icon: Icon(Icons.thumb_up_alt_outlined, size: 20, color: Colors.green.shade600),
+                              icon: Icon(
+                                Icons.thumb_up_alt_outlined,
+                                size: 20,
+                                color: Colors.green.shade600,
+                              ),
                               onPressed: () {
-                                setState(() { _hasFeedback = true; });
+                                setState(() {
+                                  _hasFeedback = true;
+                                });
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('شكراً لتقييمك الإيجابي! سيتعلم النظام منه.'), duration: Duration(seconds: 2)),
+                                  const SnackBar(
+                                    content: Text(
+                                      'شكراً لتقييمك الإيجابي! سيتعلم النظام منه.',
+                                    ),
+                                    duration: Duration(seconds: 2),
+                                  ),
                                 );
                               },
                               padding: EdgeInsets.zero,
@@ -287,11 +301,22 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                             ),
                             const SizedBox(width: 8),
                             IconButton(
-                              icon: Icon(Icons.thumb_down_alt_outlined, size: 20, color: Colors.red.shade600),
+                              icon: Icon(
+                                Icons.thumb_down_alt_outlined,
+                                size: 20,
+                                color: Colors.red.shade600,
+                              ),
                               onPressed: () {
-                                setState(() { _hasFeedback = true; });
+                                setState(() {
+                                  _hasFeedback = true;
+                                });
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('شكراً لملاحظتك. سنقوم بتحسين النتائج مستقبلاً.'), duration: Duration(seconds: 2)),
+                                  const SnackBar(
+                                    content: Text(
+                                      'شكراً لملاحظتك. سنقوم بتحسين النتائج مستقبلاً.',
+                                    ),
+                                    duration: Duration(seconds: 2),
+                                  ),
                                 );
                               },
                               padding: EdgeInsets.zero,
@@ -300,10 +325,16 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                           ],
                         )
                       else
-                        Text('شكراً لتقييمك!', style: TextStyle(fontSize: 12, color: Colors.green.shade700, fontWeight: FontWeight.bold)),
+                        Text(
+                          'شكراً لتقييمك!',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green.shade700,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                     ],
                   ),
-
                 ],
               ),
             ),
@@ -327,7 +358,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
         color: Theme.of(context).scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.07),
+            color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -363,18 +394,18 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
             builder: (context, state) {
               final isLoading = state is RecommendationLoading;
               if (isLoading) {
-                 return const CircleAvatar(
-                    radius: 24,
-                    backgroundColor: AppColors.primary,
-                    child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                        ),
+                return const CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.primary,
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
                     ),
-                 );
+                  ),
+                );
               }
               return Row(
                 children: [
@@ -384,11 +415,8 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                     radius: 24,
                     backgroundColor: AppColors.primary,
                     child: IconButton(
-                        icon: const Icon(
-                        Icons.send_rounded,
-                        color: Colors.white,
-                        ),
-                        onPressed: _submit,
+                      icon: const Icon(Icons.send_rounded, color: Colors.white),
+                      onPressed: _submit,
                     ),
                   ),
                 ],
@@ -460,9 +488,9 @@ class _EmotionChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: _emotionColor().withValues(alpha:0.1),
+        color: _emotionColor().withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _emotionColor().withValues(alpha:0.3)),
+        border: Border.all(color: _emotionColor().withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

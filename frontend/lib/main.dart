@@ -13,6 +13,7 @@ import 'services/ambient_listening_service.dart';
 import 'services/settings_service.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
+
 import 'core/widgets/connectivity_wrapper.dart';
 
 void main() async {
@@ -61,27 +62,39 @@ class MurassikhApp extends StatelessWidget {
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
           final settings = settingsState.userSettings;
-          final Color primaryColor = Color(int.parse('FF${settings.accentColor}', radix: 16));
+          final Color primaryColor = Color(
+            int.parse('FF${settings.accentColor}', radix: 16),
+          );
 
           return MaterialApp(
             title: 'مُرَسِّخ',
             debugShowCheckedModeBanner: false,
             builder: (context, child) => ConnectivityWrapper(child: child!),
-            themeMode: settings.themeMode == 'dark' 
-                ? ThemeMode.dark 
-                : (settings.themeMode == 'light' ? ThemeMode.light : ThemeMode.system),
+            themeMode: settings.themeMode == 'dark'
+                ? ThemeMode.dark
+                : (settings.themeMode == 'light'
+                      ? ThemeMode.light
+                      : ThemeMode.system),
             theme: AppTheme.lightTheme.copyWith(
               primaryColor: primaryColor,
-              colorScheme: AppTheme.lightTheme.colorScheme.copyWith(primary: primaryColor),
-              appBarTheme: AppTheme.lightTheme.appBarTheme.copyWith(backgroundColor: primaryColor),
+              colorScheme: AppTheme.lightTheme.colorScheme.copyWith(
+                primary: primaryColor,
+              ),
+              appBarTheme: AppTheme.lightTheme.appBarTheme.copyWith(
+                backgroundColor: primaryColor,
+              ),
               textTheme: AppTheme.lightTheme.textTheme.apply(
                 fontSizeFactor: settings.fontSize / 16.0,
               ),
             ),
             darkTheme: ThemeData.dark().copyWith(
               primaryColor: primaryColor,
-              colorScheme: const ColorScheme.dark().copyWith(primary: primaryColor),
-              appBarTheme: const AppBarTheme().copyWith(backgroundColor: primaryColor),
+              colorScheme: const ColorScheme.dark().copyWith(
+                primary: primaryColor,
+              ),
+              appBarTheme: const AppBarTheme().copyWith(
+                backgroundColor: primaryColor,
+              ),
               textTheme: AppTheme.lightTheme.textTheme.apply(
                 bodyColor: Colors.white,
                 displayColor: Colors.white,

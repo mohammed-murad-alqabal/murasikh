@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../services/history_service.dart';
 import '../../services/api_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -84,9 +85,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Text(
                 'لا يوجد سجل حتى الآن.\nتحدث أو استخدم الكاميرا لتبدأ التسجيل.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge
+                    ?.copyWith(color: AppColors.textSecondary),
               ),
             )
           : ListView.builder(
@@ -99,11 +99,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: MoodChart(history: _history),
                   );
                 }
-                
+
                 final item = _history[index - 1];
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   elevation: 2,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -114,60 +119,63 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.08),
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.08,
+                                ),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 'الشعور: ${item.recommendation.emotion}',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.primaryDark,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: AppColors.primaryDark,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
                             ),
                             Text(
                               _formatTime(item.timestamp),
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: AppColors.textSecondary),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'النص/الموقف:', 
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                          'النص/الموقف:',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: AppColors.textSecondary),
                         ),
                         Text(
-                          item.inputText, 
+                          item.inputText,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const Divider(height: 24),
                         Text(
-                          'توجيه مُرَسِّخ:', 
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.primary,
-                          ),
+                          'توجيه مُرَسِّخ:',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: AppColors.primary),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           item.recommendation.message,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            height: 1.5, 
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
+                                height: 1.5,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                         if (item.recommendation.source != null) ...[
                           const SizedBox(height: 4),
                           Text(
                             item.recommendation.source!,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.primaryLight,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.primaryLight),
                           ),
                         ],
                         const SizedBox(height: 16),
@@ -176,7 +184,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           children: [
                             Expanded(
                               child: Text(
-                                'هل كان التوجيه مناسباً؟', 
+                                'هل كان التوجيه مناسباً؟',
                                 style: Theme.of(context).textTheme.bodySmall,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -186,17 +194,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               children: [
                                 IconButton(
                                   icon: Icon(
-                                    item.feedback == 1 ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
-                                    color: item.feedback == 1 ? AppColors.success : AppColors.textSecondary,
+                                    item.feedback == 1
+                                        ? Icons.thumb_up
+                                        : Icons.thumb_up_alt_outlined,
+                                    color: item.feedback == 1
+                                        ? AppColors.success
+                                        : AppColors.textSecondary,
                                   ),
-                                  onPressed: () => _updateFeedback(item.id, item.feedback == 1 ? 0 : 1),
+                                  onPressed: () => _updateFeedback(
+                                    item.id,
+                                    item.feedback == 1 ? 0 : 1,
+                                  ),
                                 ),
                                 IconButton(
                                   icon: Icon(
-                                    item.feedback == -1 ? Icons.thumb_down : Icons.thumb_down_alt_outlined,
-                                    color: item.feedback == -1 ? AppColors.error : AppColors.textSecondary,
+                                    item.feedback == -1
+                                        ? Icons.thumb_down
+                                        : Icons.thumb_down_alt_outlined,
+                                    color: item.feedback == -1
+                                        ? AppColors.error
+                                        : AppColors.textSecondary,
                                   ),
-                                  onPressed: () => _updateFeedback(item.id, item.feedback == -1 ? 0 : -1),
+                                  onPressed: () => _updateFeedback(
+                                    item.id,
+                                    item.feedback == -1 ? 0 : -1,
+                                  ),
                                 ),
                               ],
                             ),

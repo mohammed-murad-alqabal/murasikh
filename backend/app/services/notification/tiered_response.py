@@ -1,5 +1,5 @@
-from typing import Dict
 import random
+
 
 class TieredResponse:
     """
@@ -24,7 +24,7 @@ class TieredResponse:
         # الحالة الطبيعية أو الانفعال الخفيف
         return 'full'
         
-    def get_minimal_response(self, emotion: str) -> Dict:
+    def get_minimal_response(self, emotion: str) -> dict:
         """إرجاع رد رمزي لتجنب الاستفزاز"""
         symbols = self.TIERS['minimal']['examples']
         return {

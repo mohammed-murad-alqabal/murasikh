@@ -1,7 +1,10 @@
 import json
+
 import google.generativeai as genai
+
 from app.core.config import settings
 from app.core.taxonomy import EMOTION_TAXONOMY
+
 
 class EmotionAnalyzer:
     def __init__(self):

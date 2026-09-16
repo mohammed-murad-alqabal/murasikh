@@ -1,4 +1,4 @@
 # API endpoints module
-from app.api.v1.endpoints import recommend, history
+from app.api.v1.endpoints import history, recommend
 
-__all__ = ["recommend", "history"]
+__all__ = ["history", "recommend"]

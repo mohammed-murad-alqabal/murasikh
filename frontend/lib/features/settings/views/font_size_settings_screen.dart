@@ -18,13 +18,13 @@ class FontSizeSettingsScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildPreviewCard(context, state.userSettings),
-                const SizedBox(height: 24),
-                _buildSizeSelector(context, state.userSettings),
-              ],
-            ),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildPreviewCard(context, state.userSettings),
+                  const SizedBox(height: 24),
+                  _buildSizeSelector(context, state.userSettings),
+                ],
+              ),
             ),
           );
         },
@@ -196,5 +196,3 @@ class FontSizeSettingsScreen extends StatelessWidget {
     );
   }
 }
-
-

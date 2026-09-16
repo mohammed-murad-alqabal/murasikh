@@ -1,6 +1,7 @@
-import sys
-import os
 import json
+import os
+import sys
+
 import chromadb
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm

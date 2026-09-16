@@ -1,8 +1,10 @@
-import google.generativeai as genai
-from app.core.config import settings
-import random
-import logging
 import asyncio
+import logging
+import random
+
+import google.generativeai as genai
+
+from app.core.config import settings
 
 try:
     import torch

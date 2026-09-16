@@ -6,15 +6,15 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-    );
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
 
     await _notificationsPlugin.initialize(
       settings: initializationSettings,
@@ -25,12 +25,15 @@ class NotificationService {
 
     // Create the notification channel explicitly for the Background Service
     final androidImplementation = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidImplementation != null) {
       const AndroidNotificationChannel channel = AndroidNotificationChannel(
         'murassikh_ambient_alerts',
         'تنبيهات السكينة والرفيق الروحي',
-        description: 'قناة إرسال التوجيهات القرآنية عند استشعار الانفعال في المحيط',
+        description:
+            'قناة إرسال التوجيهات القرآنية عند استشعار الانفعال في المحيط',
         importance: Importance.max,
       );
       await androidImplementation.createNotificationChannel(channel);
@@ -45,20 +48,24 @@ class NotificationService {
     String? source,
     String? tafsir,
   }) async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'murassikh_ambient_alerts',
-      'تنبيهات السكينة والرفيق الروحي',
-      channelDescription: 'قناة إرسال التوجيهات القرآنية عند استشعار الانفعال في المحيط',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: true,
-      enableVibration: true,
-      icon: '@mipmap/ic_launcher',
-      color: Color(0xFF115E59),
-      styleInformation: BigTextStyleInformation(''),
-    );
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'murassikh_ambient_alerts',
+          'تنبيهات السكينة والرفيق الروحي',
+          channelDescription:
+              'قناة إرسال التوجيهات القرآنية عند استشعار الانفعال في المحيط',
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: true,
+          enableVibration: true,
+          icon: '@mipmap/ic_launcher',
+          color: Color(0xFF115E59),
+          styleInformation: BigTextStyleInformation(''),
+        );
 
-    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
+    );
 
     String title;
     String body;
@@ -67,9 +74,13 @@ class NotificationService {
       title = '🌸 لحظة سكينة';
       body = 'تم استشعار انفعال في المحيط.. تمهل، خذ نفساً عميقاً وتذكر: لا تغضب ولك الجنة.';
     } else {
-      title = source != null && source.isNotEmpty ? '﴿ $source ﴾' : 'توجيه روحي للموقف';
+      title = source != null && source.isNotEmpty
+          ? '﴿ $source ﴾'
+          : 'توجيه روحي للموقف';
       body = message;
-      if (tafsir != null && tafsir.isNotEmpty && tafsir != 'التفسير متاح عند الطلب') {
+      if (tafsir != null &&
+          tafsir.isNotEmpty &&
+          tafsir != 'التفسير متاح عند الطلب') {
         body += '\n\nالمعنى: $tafsir';
       }
     }

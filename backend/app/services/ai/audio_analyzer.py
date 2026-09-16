@@ -1,6 +1,8 @@
+import io
+
 import librosa
 import numpy as np
-import io
+
 
 class AudioAnalyzer:
     def __init__(self):

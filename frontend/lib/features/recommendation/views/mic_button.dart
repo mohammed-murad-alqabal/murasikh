@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
+
 import '../bloc/recommendation_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 
@@ -13,7 +14,8 @@ class MicButton extends StatefulWidget {
   State<MicButton> createState() => _MicButtonState();
 }
 
-class _MicButtonState extends State<MicButton> with SingleTickerProviderStateMixin {
+class _MicButtonState extends State<MicButton>
+    with SingleTickerProviderStateMixin {
   late AudioRecorder _audioRecorder;
   bool _isRecording = false;
   late AnimationController _animationController;
@@ -39,8 +41,9 @@ class _MicButtonState extends State<MicButton> with SingleTickerProviderStateMix
     try {
       if (await _audioRecorder.hasPermission()) {
         final dir = await getTemporaryDirectory();
-        final filePath = '${dir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
-        
+        final filePath =
+            '${dir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
+
         await _audioRecorder.start(
           const RecordConfig(encoder: AudioEncoder.wav),
           path: filePath,
@@ -90,12 +93,20 @@ class _MicButtonState extends State<MicButton> with SingleTickerProviderStateMix
         animation: _animationController,
         builder: (context, child) {
           return Container(
-            padding: EdgeInsets.all(_isRecording ? 12.0 + (_animationController.value * 4) : 12.0),
+            padding: EdgeInsets.all(
+              _isRecording ? 12.0 + (_animationController.value * 4) : 12.0,
+            ),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _isRecording ? Colors.red : AppColors.primary,
               boxShadow: _isRecording
-                  ? [BoxShadow(color: Colors.red.withValues(alpha: 0.5), blurRadius: 10, spreadRadius: _animationController.value * 5)]
+                  ? [
+                      BoxShadow(
+                        color: Colors.red.withValues(alpha: 0.5),
+                        blurRadius: 10,
+                        spreadRadius: _animationController.value * 5,
+                      ),
+                    ]
                   : null,
             ),
             child: Icon(
