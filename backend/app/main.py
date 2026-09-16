@@ -28,7 +28,7 @@ app.add_middleware(
 # ربط واجهة التوصية (API Endpoint)
 app.include_router(recommend.router, prefix="/api/v1/analyze", tags=["recommendations"])
 app.include_router(history.router, prefix="/api/v1/history", tags=["history"])
-app.include_router(audio.router, prefix="/api/v1", tags=["audio"])
+app.include_router(audio.router, prefix="/api/v1/audio", tags=["audio"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 
 @app.get("/")
