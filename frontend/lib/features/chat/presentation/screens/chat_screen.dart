@@ -66,6 +66,30 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = false;
   bool _isBoxReady = false;
 
+  String get _currentEmotion {
+    for (var i = _messages.length - 1; i >= 0; i--) {
+      if (!_messages[i].isUser && _messages[i].recommendation != null) {
+        return _messages[i].recommendation!.emotion;
+      }
+    }
+    return 'طبيعي';
+  }
+
+  Color _getEmotionColor(BuildContext context, String emotion) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final alpha = isDark ? 0.05 : 0.08;
+    if (['حزن', 'اكتئاب', 'يأس', 'فقد', 'وحدة'].contains(emotion)) {
+      return Colors.blue.withValues(alpha: alpha);
+    } else if (['غضب', 'عصبية', 'استياء'].contains(emotion)) {
+      return Colors.teal.withValues(alpha: alpha);
+    } else if (['خوف', 'قلق', 'توتر', 'هلع'].contains(emotion)) {
+      return Colors.indigo.withValues(alpha: alpha);
+    } else if (['سعادة', 'فرح', 'شكر', 'رضا', 'طمأنينة'].contains(emotion)) {
+      return Colors.amber.withValues(alpha: alpha);
+    }
+    return Colors.transparent;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -229,26 +253,33 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
-                itemCount: _messages.length + (_isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (_isLoading && index == _messages.length) {
-                    return _buildTypingIndicator(context);
-                  }
-                  final msg = _messages[index];
-                  return msg.isUser
-                      ? _buildUserMessage(context, msg.text)
-                      : _buildSystemMessage(context, msg, index);
-                },
+        body: AnimatedContainer(
+          duration: const Duration(seconds: 2),
+          curve: Curves.easeInOut,
+          decoration: BoxDecoration(
+            color: _getEmotionColor(context, _currentEmotion),
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _messages.length + (_isLoading ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (_isLoading && index == _messages.length) {
+                      return _buildTypingIndicator(context);
+                    }
+                    final msg = _messages[index];
+                    return msg.isUser
+                        ? _buildUserMessage(context, msg.text)
+                        : _buildSystemMessage(context, msg, index);
+                  },
+                ),
               ),
-            ),
-            _buildInputArea(context),
-          ],
+              _buildInputArea(context),
+            ],
+          ),
         ),
       ),
     );
