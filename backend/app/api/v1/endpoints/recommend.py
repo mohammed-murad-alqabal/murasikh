@@ -8,12 +8,13 @@ from pydantic import BaseModel, Field
 
 from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
 from app.services.ai.embeddings import EmbeddingService
-from app.services.ai.emotion_analyzer import EmotionAnalyzer
+from app.services.ai.conversational_agent import ConversationalAgent
 from app.services.ai.rag_engine import RAGEngine
 from app.services.history_manager import HistoryService
+from app.core.security import limiter
 
 router = APIRouter()
-analyzer = EmotionAnalyzer()
+agent = ConversationalAgent()
 embedder = EmbeddingService()
 rag_engine = RAGEngine()
 logger = logging.getLogger(__name__)
@@ -31,37 +32,66 @@ class RecommendationResponse(BaseModel):
     source: str | None = None
     tafsir: str | None = None
 
-from app.core.security import limiter
-
 @router.post("", response_model=RecommendationResponse)
 @limiter.limit("15/minute")
 async def get_recommendation(request: Request, payload: RecommendationRequest, user: dict | None = Depends(get_current_user_optional), db: Session = Depends(get_db)):
     try:
-        # 1. تحليل الحالة العاطفية/الإيمانية مع سياق المستخدم
-        analysis = await analyzer.analyze(payload.text, user_context=payload.user_context)
+        history_service = HistoryService(db)
+        
+        # 1. جلب سياق المحادثة السابق إذا كان المستخدم مسجلاً
+        chat_history = []
+        if user:
+            recent_interactions = history_service.get_history(user["id"])[:5]
+            # Order from oldest to newest for context
+            for interaction in reversed(recent_interactions):
+                chat_history.append({"role": "user", "content": interaction["input_text"]})
+                # if there is an AI response in history, add it too
+                if interaction.get("recommendation") and interaction["recommendation"].get("message"):
+                    chat_history.append({"role": "ai", "content": interaction["recommendation"]["message"]})
+
+        # 2. تحليل الحالة العاطفية والموقف (الوكيل الاستقصائي)
+        analysis = await agent.analyze(payload.text, chat_history=chat_history, user_context=payload.user_context)
+        
+        action = analysis.get("action", "guide")
         emotion = analysis.get("emotion", "طبيعي")
         confidence = float(analysis.get("confidence", 0.0))
+        ai_message = analysis.get("ai_message", "")
 
-        history_service = HistoryService(db)
-        if emotion == "طبيعي":
-            msg = "يبدو أن الأمور هادئة بفضل الله. استمر في يومك بذكر الله."
+        if action == "ask":
+            # الوكيل قرر طرح سؤال توضيحي. لا حاجة لجلب آيات حالياً.
+            final_message = ai_message
+            if not final_message:
+                final_message = "هل يمكنك توضيح ما تشعر به أكثر لنتمكن من المساعدة؟"
+                
             if user:
                 history_service.add_record(
                     user_id=user["id"],
                     input_text=payload.text,
                     emotion=emotion,
-                    message=msg,
-                    source="سكينة واطمئنان",
+                    message=final_message,
+                    source=None,
                     tafsir=None
                 )
+                
             return RecommendationResponse(
                 emotion=emotion,
                 confidence=confidence,
                 tier="minimal",
-                message=msg
+                message=final_message,
+                source=None,
+                tafsir=None
             )
 
-        # 2. بناء استعلام دلالي محسَّن للحالة
+        # إذا كان القرار هو الإرشاد (guide)
+        if emotion == "طبيعي" and not ai_message:
+            ai_message = "يبدو أن الأمور هادئة بفضل الله. استمر في يومك بذكر الله."
+            if user:
+                history_service.add_record(
+                    user_id=user["id"], input_text=payload.text, emotion=emotion, message=ai_message, source="سكينة واطمئنان", tafsir=None
+                )
+            return RecommendationResponse(emotion=emotion, confidence=confidence, tier="minimal", message=ai_message)
+
+        # 3. بناء استعلام دلالي محسَّن للحالة
         semantic_query = EMOTION_SEMANTIC_QUERIES.get(
             emotion,
             f"الصبر والطمأنينة والتوكل على الله {payload.text}"
@@ -75,13 +105,11 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
             ctx = payload.user_context
             if ctx.get('age'): semantic_query += f" العمر: {ctx['age']}"
             if ctx.get('gender'): semantic_query += f" الجنس: {ctx['gender']}"
-            if ctx.get('biometric_stress'): semantic_query += f" يعاني من توتر جسدي أو نبض مرتفع"
-            if ctx.get('facial_emotion'): semantic_query += f" وملامح وجهه تظهر {ctx['facial_emotion']}"
 
-        # 3. البحث في القرآن الكريم حصراً (بدون أحاديث) مع استخدام البحث الهجين
+        # 4. البحث في القرآن الكريم
         verse_results = embedder.search_similar(
             query=semantic_query,
-            n_results=3,        # نسترجع 3 لاختيار الأنسب
+            n_results=3,
             filters={"type": "verse"},
             emotion=emotion
         )
@@ -90,10 +118,7 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
         tafsir = None
         base_message = "اذكر الله يهدأ قلبك."
 
-        if (verse_results and verse_results.get('documents')
-                and len(verse_results['documents'][0]) > 0):
-            
-            # تجهيز الآيات المسترجعة للفلترة الذكية
+        if (verse_results and verse_results.get('documents') and len(verse_results['documents'][0]) > 0):
             verses_list = []
             for i in range(len(verse_results['documents'][0])):
                 verses_list.append({
@@ -102,7 +127,6 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
                     "tafsir": verse_results['metadatas'][0][i].get("tafsir", "")
                 })
             
-            # اختيار أفضل آية للظرف الحالي عبر الذكاء الاصطناعي
             best_verse = await rag_engine.select_best_verse(
                 user_text=payload.text,
                 emotion=emotion,
@@ -113,31 +137,29 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
             source = best_verse.get("source", "")
             tafsir = best_verse.get("tafsir", "")
 
-        # 4. صياغة الرد الدافئ عبر Gemini
+        # 5. صياغة الرد الدافئ
         tier = "moderate"
         delayed_message = None
 
         if emotion in EXTREME_EMOTIONS:
-            # للحالات الشديدة: رد فوري مختصر + رسالة تفصيلية لاحقة
             tier = "minimal"
             final_message = "تعوذ بالله من الشيطان الرجيم، وخذ نفساً عميقاً."
-            delayed_message = await rag_engine.format_response(
-                user_text=payload.text,
-                emotion=emotion,
-                retrieved_text=base_message,
-                source=source,
-                tafsir=tafsir
-            )
+            if ai_message:
+                final_message = ai_message + f"\n\n📖 {source}\n{base_message}" if source else ai_message
+            else:
+                delayed_message = await rag_engine.format_response(
+                    user_text=payload.text, emotion=emotion, retrieved_text=base_message, source=source, tafsir=tafsir
+                )
         else:
-            final_message = await rag_engine.format_response(
-                user_text=payload.text,
-                emotion=emotion,
-                retrieved_text=base_message,
-                source=source,
-                tafsir=tafsir
-            )
+            # إذا وفر الوكيل رسالة دافئة، ندمجها مع الآية المسترجعة لتقليل طلبات Gemini
+            if ai_message:
+                final_message = ai_message + f"\n\n📖 {source}\n{base_message}" if source else ai_message
+            else:
+                final_message = await rag_engine.format_response(
+                    user_text=payload.text, emotion=emotion, retrieved_text=base_message, source=source, tafsir=tafsir
+                )
 
-        # 5. حفظ التفاعل
+        # 6. حفظ التفاعل
         if user:
             history_service.add_record(
                 user_id=user["id"],
