@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
 from typing import Optional
 from app.services.ai.emotion_analyzer import EmotionAnalyzer
 from app.services.ai.embeddings import EmbeddingService
@@ -17,8 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class RecommendationRequest(BaseModel):
-    text: str
-    user_context: Optional[dict] = None  # {"age": 25, "gender": "male"}
+    text: str = Field(..., min_length=2, max_length=1000, description="نص المستخدم المراد تحليله")
+    user_context: Optional[dict] = Field(None, description="السياق الإضافي للمستخدم")
+
 
 
 class RecommendationResponse(BaseModel):
@@ -30,9 +31,11 @@ class RecommendationResponse(BaseModel):
     source: Optional[str] = None
     tafsir: Optional[str] = None
 
+from app.core.security import limiter
 
 @router.post("", response_model=RecommendationResponse)
-async def get_recommendation(request: RecommendationRequest):
+@limiter.limit("15/minute")
+async def get_recommendation(req: Request, request: RecommendationRequest):
     try:
         # 1. تحليل الحالة العاطفية/الإيمانية مع سياق المستخدم
         analysis = await analyzer.analyze(request.text, user_context=request.user_context)

@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from app.core.security import limiter
 from app.core.config import settings
 from app.api.v1.endpoints import recommend, history, audio
 
@@ -9,11 +13,15 @@ app = FastAPI(
     description="API for Murassikh - The Smart Spiritual Companion"
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost", "http://127.0.0.1", "http://10.0.2.2"], # حظر النطاقات العشوائية (Strict CORS)
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -23,9 +31,12 @@ app.include_router(history.router, prefix="/api/v1/history", tags=["history"])
 app.include_router(audio.router, prefix="/api/v1", tags=["audio"])
 
 @app.get("/")
-def read_root():
+@limiter.limit("10/minute")
+def read_root(request: Request):
     return {"message": "مرحباً بك في واجهة برمجة تطبيقات مُرَسِّخ (Murassikh API)"}
 
 @app.get("/health")
-def health_check():
+@limiter.limit("20/minute")
+def health_check(request: Request):
     return {"status": "ok"}
+

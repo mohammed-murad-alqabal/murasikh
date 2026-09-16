@@ -13,6 +13,7 @@ import 'services/ambient_listening_service.dart';
 import 'services/settings_service.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'core/widgets/connectivity_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +66,7 @@ class MurassikhApp extends StatelessWidget {
           return MaterialApp(
             title: 'مُرَسِّخ',
             debugShowCheckedModeBanner: false,
+            builder: (context, child) => ConnectivityWrapper(child: child!),
             themeMode: settings.themeMode == 'dark' 
                 ? ThemeMode.dark 
                 : (settings.themeMode == 'light' ? ThemeMode.light : ThemeMode.system),
@@ -86,12 +88,7 @@ class MurassikhApp extends StatelessWidget {
                 fontSizeFactor: settings.fontSize / 16.0,
               ),
             ),
-            builder: (context, child) {
-              return Directionality(
-                textDirection: TextDirection.rtl,
-                child: child!,
-              );
-            },
+
             home: const MainShell(),
           );
         },
