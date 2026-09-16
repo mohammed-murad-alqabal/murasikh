@@ -60,7 +60,21 @@ def build_prompt(verses_batch: list) -> str:
   }}
 }}
 لا تكتب أي نص خارج ה-JSON.
-"""
+    """
+
+
+def normalize_fingerprint(data: dict) -> dict:
+    """Expand sparse model output into the canonical 67-dimension schema."""
+    raw_dimensions = data.get("dimensions", {})
+    dimensions = {
+        emotion: round(max(float(raw_dimensions.get(emotion, 0.0)), 0.0), 4)
+        for emotion in ALL_DIMENSIONS
+    }
+    primary = max(dimensions, key=dimensions.get) if dimensions else "غير محدد"
+    return {
+        "dimensions": dimensions,
+        "signature": data.get("signature") or f"صُنفت ضمن '{primary}' بناءً على التحليل الدلالي",
+    }
 
 def get_all_verses(collection) -> list:
     all_verses = []
@@ -130,7 +144,7 @@ def main():
                 vid = verse["id"]
                 data = results.get(vid)
                 if data and "dimensions" in data:
-                    progress[vid] = data
+                    progress[vid] = normalize_fingerprint(data)
                     print(f"  ✅ {vid} → {list(data['dimensions'].keys())[:2]}...")
                 else:
                     progress[vid] = {"dimensions": {}, "signature": "غير محدد"}
@@ -161,4 +175,3 @@ def main():
                 b_idx += 1 # skip on other errors to avoid infinite loop
 if __name__ == '__main__':
     main()
-

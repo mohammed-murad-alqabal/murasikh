@@ -8,6 +8,7 @@ class RecommendationModel {
   final String? source;
   final String? tafsir;
   final String? action;
+  final int? interactionId;
 
   RecommendationModel({
     required this.emotion,
@@ -19,6 +20,7 @@ class RecommendationModel {
     this.source,
     this.tafsir,
     this.action,
+    this.interactionId,
   });
 
   factory RecommendationModel.fromJson(Map<String, dynamic> json) {
@@ -26,12 +28,13 @@ class RecommendationModel {
       emotion: json['emotion'] ?? 'طبيعي',
       confidence: (json['confidence'] ?? 0.0).toDouble(),
       tier: json['tier'] ?? 'full',
-      contentType: json['content_type'],
+      contentType: json['content_type'] ?? json['contentType'],
       message: json['text'] ?? json['message'] ?? '',
       delayedMessage: json['delayed_message'],
       source: json['source'],
       tafsir: json['tafsir'],
       action: json['action'],
+      interactionId: (json['interaction_id'] as num?)?.toInt(),
     );
   }
 
@@ -40,12 +43,13 @@ class RecommendationModel {
       'emotion': emotion,
       'confidence': confidence,
       'tier': tier,
-      'contentType': contentType,
+      'content_type': contentType,
       'message': message,
       'delayed_message': delayedMessage,
       'source': source,
       'tafsir': tafsir,
       'action': action,
+      'interaction_id': interactionId,
     };
   }
 }

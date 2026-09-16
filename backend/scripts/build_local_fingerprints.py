@@ -1,7 +1,7 @@
 """
 build_local_fingerprints.py
 يولد بصمة تصنيفية لكل آية محلياً بالكامل (بدون إنترنت/Gemini)
-باستخدام نموذج AraBERT المدمج لحساب التقارب بين معاني الآية وقاموس المشاعر (65+ حالة).
+باستخدام MiniLM لحساب التقارب بين معاني الآية وقاموس المشاعر (67 حالة).
 """
 
 import json
@@ -25,11 +25,11 @@ def cosine_similarity(a, b):
 
 def main():
     print("=" * 60)
-    print("🧠 بناء البصمة التصنيفية محلياً (باستخدام AraBERT)")
+    print("🧠 بناء البصمة التصنيفية محلياً (باستخدام MiniLM)")
     print("=" * 60)
 
     # 1. تحميل الموديل المحلي
-    print("📥 تحميل نموذج GATE-AraBERT-v1 (محلي)...")
+    print("📥 تحميل نموذج MiniLM (محلي)...")
     model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
 
     # 2. تحضير أبعاد التصنيف (Embeddings)
@@ -93,19 +93,14 @@ def main():
             sim = cosine_similarity(verse_emb, e_emb)
             scores[emotion] = float(sim)
             
-        # اختيار أعلى 5 أبعاد
+        # حفظ متجه كامل من 67 بُعداً. الأبعاد غير المنطبقة تحفظ بصفر حتى
+        # يكون شكل البيانات ثابتاً وقابلاً للتحقق بين جميع الآيات.
         top_emotions = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:5]
-        
-        # تحويل القيم إلى أوزان مقبولة
-        # التشابه عادة بين 0 و 1 (ممكن سالب، لكن نتجاهل السالب)
-        dimensions = {}
-        for em, sc in top_emotions:
-            if sc > 0.1: # حد أدنى
-                # تطبيع مبسط
-                weight = round(sc, 2)
-                dimensions[em] = weight
-                
-        primary = top_emotions[0][0] if dimensions else "غير محدد"
+        dimensions = {
+            emotion: round(max(float(scores[emotion]), 0.0), 4)
+            for emotion in EMOTION_TAXONOMY
+        }
+        primary = top_emotions[0][0] if top_emotions else "غير محدد"
         
         progress[vid] = {
             "dimensions": dimensions,

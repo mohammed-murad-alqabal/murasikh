@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 import chromadb
 from sentence_transformers import SentenceTransformer
@@ -7,7 +8,9 @@ from sentence_transformers import SentenceTransformer
 
 class EmbeddingService:
     def __init__(self):
-        self.client = chromadb.PersistentClient(path="./chroma_db")
+        default_chroma_path = Path(__file__).resolve().parents[3] / "chroma_db"
+        chroma_path = os.environ.get("CHROMA_PATH", str(default_chroma_path))
+        self.client = chromadb.PersistentClient(path=chroma_path)
         self.collection = self.client.get_or_create_collection(
             name="islamic_content_minilm",
             metadata={"description": "القرآن", "hnsw:space": "cosine"}

@@ -46,13 +46,16 @@ async def analyze_audio(
         history_service = HistoryService(db)
         if emotion == "طبيعي":
             msg = "يبدو من نبرة صوتك أن الأمور هادئة بفضل الله. استمر في يومك بذكر الله."
+            interaction_id = None
             if user:
-                history_service.add_record(
+                interaction = history_service.add_record(
                     user_id=user["id"], input_text="رسالة صوتية", emotion=emotion, message=msg,
                     source="سكينة واطمئنان", tafsir=None
                 )
+                interaction_id = interaction.id
             return RecommendationResponse(
-                emotion=emotion, confidence=confidence, tier="minimal", message=msg
+                emotion=emotion, confidence=confidence, tier="minimal", message=msg,
+                interaction_id=interaction_id
             )
             
         semantic_query = EMOTION_SEMANTIC_QUERIES.get(emotion, "الصبر والطمأنينة والتوكل على الله")
@@ -114,16 +117,18 @@ async def analyze_audio(
                 retrieved_text=base_message, source=source, tafsir=tafsir
             )
 
+        interaction_id = None
         if user:
-            history_service.add_record(
+            interaction = history_service.add_record(
                 user_id=user["id"], input_text="رسالة صوتية", emotion=emotion,
                 message=final_message, source=source, tafsir=tafsir
             )
+            interaction_id = interaction.id
 
         return RecommendationResponse(
             emotion=emotion, confidence=confidence, tier=tier,
             message=final_message, delayed_message=delayed_message,
-            source=source, tafsir=tafsir
+            source=source, tafsir=tafsir, interaction_id=interaction_id
         )
     except Exception as e:
         logger.error(f"Error processing audio: {e}")

@@ -50,6 +50,10 @@ jobs:
         run: |
           cd backend
           alembic upgrade head
+      - name: Verify Quran dataset and fingerprint schema
+        run: |
+          cd backend
+          python scripts/normalize_fingerprints.py --check
       - name: Test with pytest
         env:
           POSTGRES_SERVER: localhost

@@ -1,53 +1,34 @@
-import os
+"""Deprecated compatibility entry point for Quran-only knowledge seeding.
+
+The old script mixed Quran verses with a sample hadith. That behavior is no
+longer allowed. Use ``scripts/seed_quran.py`` to build the production index.
+"""
+
+from __future__ import annotations
+
+import subprocess
 import sys
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from app.services.ai.embeddings import EmbeddingService
+from pathlib import Path
 
 
-def seed_database():
-    print("بدء تهيئة قاعدة المعرفة الشرعية (MVP Curated Data)...")
-    service = EmbeddingService()
-    
-    # بيانات أولية منتقاة بعناية للحالات العاطفية الأساسية
-    knowledge_base = [
-        {
-            "id": "verse_1",
-            "text": "وَالْكَاظِمِينَ الْغَيْظَ وَالْعَافِينَ عَنِ النَّاسِ ۗ وَاللَّهُ يُحِبُّ الْمُحْسِنِينَ",
-            "metadata": {"type": "verse", "emotion": "غضب", "source": "سورة آل عمران: 134", "tafsir": "الذين يمسكون ما في أنفسهم من الغضب، ويعفون عمن أساء إليهم."}
-        },
-        {
-            "id": "hadith_1",
-            "text": "لَيْسَ الشَّدِيدُ بِالصُّرَعَةِ، إِنَّمَا الشَّدِيدُ الَّذِي يَمْلِكُ نَفْسَهُ عِنْدَ الْغَضَبِ",
-            "metadata": {"type": "hadith", "emotion": "غضب", "source": "صحيح البخاري", "tafsir": "القوة الحقيقية ليست في الصراع البدني، بل في السيطرة على النفس عند الغضب."}
-        },
-        {
-            "id": "verse_2",
-            "text": "وَبَشِّرِ الصَّابِرِينَ * الَّذِينَ إِذَا أَصَابَتْهُمْ مُصِيبَةٌ قَالُوا إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ",
-            "metadata": {"type": "verse", "emotion": "حزن", "source": "سورة البقرة: 155-156", "tafsir": "بشارة عظيمة لمن يصبر على الحزن والمصيبة محتسباً الأجر من الله."}
-        },
-        {
-            "id": "verse_3",
-            "text": "أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ",
-            "metadata": {"type": "verse", "emotion": "قلق", "source": "سورة الرعد: 28", "tafsir": "القلوب تسكن وتستريح بذكر الله والتوكل عليه في أوقات التوتر والقلق."}
-        },
-        {
-            "id": "verse_4",
-            "text": "لَا تَحْزَنْ إِنَّ اللَّهَ مَعَنَا",
-            "metadata": {"type": "verse", "emotion": "يأس", "source": "سورة التوبة: 40", "tafsir": "لا تيأس ولا تحزن، فإن الله يحفظنا ويرعانا في أشد الأوقات ضيقاً."}
-        }
-    ]
-    
-    for item in knowledge_base:
-        print(f"جاري إضافة: {item['text'][:40]}...")
-        service.store_document(
-            doc_id=item["id"],
-            text=item["text"],
-            metadata=item["metadata"]
-        )
-        
-    print("✅ تم حفظ الآيات والأحاديث بنجاح في قاعدة بيانات ChromaDB (Vector DB).")
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+
+def seed_database() -> None:
+    raise RuntimeError(
+        "seed_knowledge.py no longer accepts curated mixed content. "
+        "Run `python scripts/seed_quran.py` to seed the Quran-only collection."
+    )
+
+
+def main() -> int:
+    print(
+        "This command is deprecated because mixed Quran/Hadith seeding violates "
+        "the Quran-only retrieval policy."
+    )
+    print("Use: python scripts/seed_quran.py")
+    return 2
+
 
 if __name__ == "__main__":
-    seed_database()
+    sys.exit(main())

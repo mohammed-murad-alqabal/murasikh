@@ -31,6 +31,7 @@ class RecommendationResponse(BaseModel):
     delayed_message: str | None = None
     source: str | None = None
     tafsir: str | None = None
+    interaction_id: int | None = None
 
 @router.post("", response_model=RecommendationResponse)
 @limiter.limit("15/minute")
@@ -63,8 +64,9 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
             if not final_message:
                 final_message = "هل يمكنك توضيح ما تشعر به أكثر لنتمكن من المساعدة؟"
                 
+            interaction_id = None
             if user:
-                history_service.add_record(
+                interaction = history_service.add_record(
                     user_id=user["id"],
                     input_text=payload.text,
                     emotion=emotion,
@@ -72,6 +74,7 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
                     source=None,
                     tafsir=None
                 )
+                interaction_id = interaction.id
                 
             return RecommendationResponse(
                 emotion=emotion,
@@ -79,17 +82,20 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
                 tier="minimal",
                 message=final_message,
                 source=None,
-                tafsir=None
+                tafsir=None,
+                interaction_id=interaction_id,
             )
 
         # إذا كان القرار هو الإرشاد (guide)
         if emotion == "طبيعي" and not ai_message:
             ai_message = "يبدو أن الأمور هادئة بفضل الله. استمر في يومك بذكر الله."
+            interaction_id = None
             if user:
-                history_service.add_record(
+                interaction = history_service.add_record(
                     user_id=user["id"], input_text=payload.text, emotion=emotion, message=ai_message, source="سكينة واطمئنان", tafsir=None
                 )
-            return RecommendationResponse(emotion=emotion, confidence=confidence, tier="minimal", message=ai_message)
+                interaction_id = interaction.id
+            return RecommendationResponse(emotion=emotion, confidence=confidence, tier="minimal", message=ai_message, interaction_id=interaction_id)
 
         # 3. بناء استعلام دلالي محسَّن للحالة
         semantic_query = EMOTION_SEMANTIC_QUERIES.get(
@@ -160,8 +166,9 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
                 )
 
         # 6. حفظ التفاعل
+        interaction_id = None
         if user:
-            history_service.add_record(
+            interaction = history_service.add_record(
                 user_id=user["id"],
                 input_text=payload.text,
                 emotion=emotion,
@@ -169,6 +176,7 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
                 source=source,
                 tafsir=tafsir
             )
+            interaction_id = interaction.id
 
         return RecommendationResponse(
             emotion=emotion,
@@ -177,7 +185,8 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
             message=final_message,
             delayed_message=delayed_message,
             source=source,
-            tafsir=tafsir
+            tafsir=tafsir,
+            interaction_id=interaction_id
         )
     except Exception as e:
         logger.error(f"Error processing recommendation: {e}")

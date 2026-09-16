@@ -1,37 +1,82 @@
-import sys
+"""Remove and verify hadith records from every local Chroma collection."""
+
+from __future__ import annotations
+
+import argparse
 import os
+import sys
+from pathlib import Path
+from typing import Any
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app.services.ai.embeddings import EmbeddingService
+import chromadb
 
-def purge():
-    es = EmbeddingService()
-    print("Fetching all items...")
-    results = es.collection.get()
-    
-    ids_to_delete = []
-    if results and results.get("ids"):
-        ids = results["ids"]
-        metas = results["metadatas"]
-        for idx, item_id in enumerate(ids):
-            meta = metas[idx] if metas else {}
-            item_type = meta.get("type", "")
-            if item_type == "hadith":
-                ids_to_delete.append(item_id)
-                
-    if ids_to_delete:
-        print(f"Found {len(ids_to_delete)} Hadiths to delete.")
-        es.collection.delete(ids=ids_to_delete)
-        print("Purge complete!")
-    else:
-        print("No Hadiths found in the database. Vector DB is already clean.")
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+CHROMA_DIR = Path(os.environ.get("CHROMA_PATH", str(BACKEND_DIR / "chroma_db")))
+
+
+def collection_name(collection: Any) -> str:
+    return getattr(collection, "name", str(collection))
+
+
+def hadith_ids(collection: Any) -> list[str]:
+    result = collection.get(include=["metadatas"])
+    return [
+        record_id
+        for record_id, metadata in zip(
+            result.get("ids", []), result.get("metadatas", [])
+        )
+        if metadata and metadata.get("type") == "hadith"
+    ]
+
+
+def scan_hadiths(client: Any) -> dict[str, list[str]]:
+    findings: dict[str, list[str]] = {}
+    for collection in client.list_collections():
+        ids = hadith_ids(collection)
+        if ids:
+            findings[collection_name(collection)] = ids
+    return findings
+
+
+def purge() -> int:
+    client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+    removed = 0
+    for collection in client.list_collections():
+        ids = hadith_ids(collection)
+        if ids:
+            collection.delete(ids=ids)
+            removed += len(ids)
+            print(f"Removed {len(ids)} hadith records from {collection_name(collection)}")
+
+    remaining = scan_hadiths(client)
+    if remaining:
+        print(f"Hadith records remain: {remaining}", file=sys.stderr)
+        return 1
+
+    print(f"Quran-only Chroma verification passed; removed={removed}")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Purge hadith records from local Chroma")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="verify only; do not delete records",
+    )
+    args = parser.parse_args()
+
+    client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+    if args.check:
+        remaining = scan_hadiths(client)
+        if remaining:
+            print(f"Hadith records found: {remaining}", file=sys.stderr)
+            return 1
+        print("Quran-only Chroma verification passed")
+        return 0
+
+    return purge()
+
 
 if __name__ == "__main__":
-    purge()
-
-    # Also drop the old unused collection if it exists
-    try:
-        es.client.delete_collection("islamic_content")
-        print("Dropped old 'islamic_content' collection.")
-    except Exception:
-        pass
+    sys.exit(main())

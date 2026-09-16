@@ -343,9 +343,12 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     if (newRating != null) {
-      final id = msg.recommendation?.source ?? msg.text;
-      await OfflineService().savePendingFeedback(id, newRating);
-      await HistoryService().updateFeedback(id, newRating);
+      final interactionId = msg.recommendation?.interactionId;
+      if (interactionId != null) {
+        final id = interactionId.toString();
+        await OfflineService().savePendingFeedback(id, newRating);
+        await HistoryService().updateFeedback(id, newRating);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
