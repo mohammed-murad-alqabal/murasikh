@@ -144,46 +144,85 @@ class RAGEngine:
             logging.error(f"Failed to load local LLM: {e}")
             self._local_llm_loaded = False
 
+    # كلمات الوعيد التي يجب تجنبها في الردود المواسية
+    AVOID_PATTERNS = [
+        "عَذَابٌ", "عذاب", "نَارٌ", "جَهَنَّمَ", "وَيْلٌ", "لَعَنَهُمُ",
+        "يُعَذِّبُ", "أَهْلَكْنَا", "دَمَّرْنَا", "فَأَخَذَهُمُ", "سَنُعَذِّبُهُمْ",
+        "فَاسِقِينَ", "الْكَافِرِينَ", "الْمُنَافِقِينَ", "حُشِرَ", "جُنُودُهُۥ"
+    ]
+    
+    # كلمات إيجابية مرتبطة بكل حالة للتصفية المحلية
+    EMOTION_POSITIVE_KEYWORDS = {
+        "يأس": ["رَحْمَةَ", "رحمة", "فَرَج", "فرج", "يَقْنَطُ", "لَا تَقْنَطُوا", "أَمَلٍ", "يُيَسِّرُ"],
+        "حزن": ["صَبَرُوا", "صبر", "يُصِيبُهُم", "اطْمَأَنَّ", "السَّكِينَةَ", "لَا تَحْزَنُوا"],
+        "قلق": ["تَوَكَّلَ", "حَسْبُنَا", "يَكْفِي", "يَحْفَظُ", "حَافِظُونَ"],
+        "غضب": ["اعْفُ", "يَعْفُو", "تَعْفُو", "حَلِيمٌ", "غَافِرٌ"],
+        "إرهاق": ["يُسْرًا", "يُسْرٌ", "لَا يُكَلِّفُ", "طَاقَتَهَا", "رَاحَةٍ"],
+        "وحدة": ["قَرِيبٌ", "مَعَكُمْ", "وَهُوَ مَعَكُمْ", "لَسْتُمْ"],
+    }
+
     async def select_best_verse(self, user_text: str, emotion: str, verses: list[dict]) -> dict:
         """
         يختار أفضل آية من قائمة الآيات المسترجعة لتكون 'الاستجابة المثالية' لحالة المستخدم الحالية.
-        بدلاً من الاعتماد فقط على التشابه الدلالي (الذي قد يخطئ في السياق)، يستخدم الذكاء الاصطناعي لاختيار الأنسب.
+        عند توفر Gemini يستخدمه، وعند النفاذ يُطبّق فلتراً محلياً ذكياً.
         """
-        if not self._gemini_available or not verses:
-            return verses[0]
+        if not verses:
+            return {"text": "اذكر الله يهدأ قلبك", "source": "", "tafsir": ""}
 
-        prompt = f"""
+        # --- فلترة محلية مبدئية: إزالة آيات الوعيد ---
+        def score_verse(v: dict) -> int:
+            text = v.get("text", "")
+            # عقوبة على كلمات الوعيد
+            if any(pat in text for pat in self.AVOID_PATTERNS):
+                return -100
+            # مكافأة على الكلمات الإيجابية المرتبطة بالحالة
+            score = 0
+            for kw in self.EMOTION_POSITIVE_KEYWORDS.get(emotion, []):
+                if kw in text:
+                    score += 10
+            return score
+
+        # إذا Gemini متاح، استخدمه للاختيار الدقيق
+        if self._gemini_available:
+            prompt = f"""
 لديك مستخدم يعاني من: {emotion}
 وقد قال: "{user_text}"
 
 استخرجنا {len(verses)} آيات قرآنية محتملة. بعضها قد يكون مجرد تطابق لفظي ولا يخدم هدف المواساة والتهدئة، وبعضها قد يكون مثالياً.
 
 """
-        for i, v in enumerate(verses):
-            prompt += f"الآية {i+1}: {v.get('text')}\nالمصدر {i+1}: {v.get('source')}\n\n"
+            for i, v in enumerate(verses):
+                prompt += f"الآية {i+1}: {v.get('text')}\nالمصدر {i+1}: {v.get('source')}\n\n"
 
-        prompt += """
+            prompt += """
 مهمتك:
 اختر الرقم للآية التي تعتبر "الاستجابة المثالية والأنسب والأكثر إلهاماً وطمأنينة" لحالة المستخدم.
-إذا كانت آية تحتوي على وعيد، تجنبها.
+إذا كانت آية تحتوي على وعيد أو تخص المنافقين أو الكافرين، تجنبها تماماً.
 
 أرجع الرقم فقط (مثال: 1).
 """
-        try:
-            import asyncio
-            response = await asyncio.to_thread(
-                self.model.generate_content,
-                prompt,
-                generation_config=genai.GenerationConfig(temperature=0.1)
-            )
-            text = response.text.strip()
-            for i in range(len(verses), 0, -1):
-                if str(i) in text:
-                    return verses[i-1]
-            return verses[0]
-        except Exception as e:
-            logging.error(f"Error selecting best verse: {e}")
-            return verses[0]
+            try:
+                response = await asyncio.to_thread(
+                    self.model.generate_content,
+                    prompt,
+                    generation_config=genai.GenerationConfig(temperature=0.1)
+                )
+                text = response.text.strip()
+                for i in range(len(verses), 0, -1):
+                    if str(i) in text:
+                        candidate = verses[i-1]
+                        # تحقق أخير: إذا كانت الآية تحتوي وعيداً رغم الطلب، استخدم الفلتر المحلي
+                        if score_verse(candidate) >= 0:
+                            return candidate
+                        break
+            except Exception as e:
+                logging.error(f"Error selecting best verse via Gemini: {e}")
+        
+        # --- Fallback محلي ذكي: اختيار الآية الأعلى درجة ---
+        scored = sorted(verses, key=score_verse, reverse=True)
+        best = scored[0]
+        # إذا أعلى درجة سلبية (كل الآيات وعيد)، أعد الأولى على أي حال
+        return best
 
 
     async def format_response(self, user_text: str, emotion: str,
