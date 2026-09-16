@@ -19,7 +19,7 @@ class NotificationService {
     );
 
     await _notificationsPlugin.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         // يمكن فتح شاشة التفاصيل عند الضغط على الإشعار
       },
