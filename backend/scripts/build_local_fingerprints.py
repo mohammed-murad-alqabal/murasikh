@@ -42,7 +42,7 @@ def main():
     # 3. جلب جميع الآيات من ChromaDB
     print("\n📖 جلب الآيات من ChromaDB...")
     client = chromadb.PersistentClient(path=str(BACKEND_DIR / "chroma_db"))
-    collection = client.get_or_create_collection("islamic_content")
+    collection = client.get_or_create_collection("islamic_content_minilm")
     
     all_verses = []
     offset = 0

@@ -13,7 +13,8 @@ services:
       - POSTGRES_PASSWORD=murassikh_pwd
       - POSTGRES_DB=murassikh_db
       - ENVIRONMENT=production
-      - SECRET_KEY=${JWT_SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     volumes:
       - ./backend/data:/app/data
     depends_on:

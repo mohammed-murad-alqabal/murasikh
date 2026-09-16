@@ -1,8 +1,8 @@
-import jwt
 from datetime import datetime, timedelta, timezone
-import os
+import jwt
+from app.core.config import settings
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super-secret-local-key-for-murassikh-which-should-be-changed")
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 1 week
 

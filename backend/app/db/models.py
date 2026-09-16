@@ -81,7 +81,12 @@ class Interaction(Base):
     emotion_confidence = Column(Float)
     recommendation_type = Column(String(20))
     recommendation_id = Column(Integer)
-    user_feedback = Column(Boolean)
+    # Added for history sync
+    message = Column(Text)
+    source = Column(String(255))
+    tafsir = Column(Text)
+    
+    user_feedback = Column(Integer, default=0) # Changed to Integer (-1, 0, 1)
     response_tier = Column(String(20))
     response_delayed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
@@ -105,12 +110,4 @@ class DelayedResponse(Base):
     user = relationship("User", back_populates="delayed_responses")
     interaction = relationship("Interaction", back_populates="delayed_response")
 
-class EmotionMapping(Base):
-    __tablename__ = "emotion_mappings"
-    id = Column(Integer, primary_key=True, index=True)
-    emotion = Column(String(50), nullable=False, unique=True)
-    keywords = Column(ARRAY(String))
-    example_verses = Column(ARRAY(Integer))
-    example_hadiths = Column(ARRAY(Integer))
-    description = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+

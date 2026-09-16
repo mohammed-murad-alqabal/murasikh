@@ -31,3 +31,8 @@
 ---
 **آخر تحديث:** 2026-09-16  
 **الحالة:** خارطة طريق للمستقبل  
+
+---
+
+## 📌 Status Update (Post-MVP Deferral)
+**Decision**: The above items (iOS TestFlight, App Stores, VPS setup, Apple Watch / Wear OS) are explicitly marked as **DEFERRED** until the actual post-MVP deployment scale-up phase. The current MVP roadmap is officially considered **100% Complete** without them.

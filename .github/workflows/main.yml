@@ -9,6 +9,22 @@ on:
 jobs:
   backend-test:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: murassikh
+          POSTGRES_PASSWORD: murassikh_pwd
+          POSTGRES_DB: murassikh_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
+
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -20,7 +36,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
           pip install pytest httpx pytest-asyncio
+      - name: Run Alembic migrations
+        env:
+          SQLALCHEMY_DATABASE_URI: postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db
+        run: |
+          cd backend
+          alembic upgrade head
       - name: Test with pytest
+        env:
+          SQLALCHEMY_DATABASE_URL: postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db
         run: |
           cd backend
           python -m pytest

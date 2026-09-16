@@ -28,3 +28,10 @@ def purge():
 
 if __name__ == "__main__":
     purge()
+
+    # Also drop the old unused collection if it exists
+    try:
+        es.client.delete_collection("islamic_content")
+        print("Dropped old 'islamic_content' collection.")
+    except Exception:
+        pass

@@ -1,27 +1,26 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
+from sqlalchemy.orm import Session
+from app.api.v1.endpoints.auth import get_current_user_optional
+from app.db.database import get_db
 from pydantic import BaseModel, Field
 
 from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
 from app.services.ai.embeddings import EmbeddingService
 from app.services.ai.emotion_analyzer import EmotionAnalyzer
 from app.services.ai.rag_engine import RAGEngine
-from app.services.history_manager import HistoryManager
+from app.services.history_manager import HistoryService
 
 router = APIRouter()
 analyzer = EmotionAnalyzer()
 embedder = EmbeddingService()
 rag_engine = RAGEngine()
-history_manager = HistoryManager()
 logger = logging.getLogger(__name__)
-
 
 class RecommendationRequest(BaseModel):
     text: str = Field(..., min_length=2, max_length=1000, description="نص المستخدم المراد تحليله")
     user_context: dict | None = Field(None, description="السياق الإضافي للمستخدم")
-
-
 
 class RecommendationResponse(BaseModel):
     emotion: str
@@ -34,22 +33,32 @@ class RecommendationResponse(BaseModel):
 
 from app.core.security import limiter
 
-
 @router.post("", response_model=RecommendationResponse)
 @limiter.limit("15/minute")
-async def get_recommendation(request: Request, payload: RecommendationRequest):
+async def get_recommendation(request: Request, payload: RecommendationRequest, user: dict | None = Depends(get_current_user_optional), db: Session = Depends(get_db)):
     try:
         # 1. تحليل الحالة العاطفية/الإيمانية مع سياق المستخدم
         analysis = await analyzer.analyze(payload.text, user_context=payload.user_context)
         emotion = analysis.get("emotion", "طبيعي")
         confidence = float(analysis.get("confidence", 0.0))
 
+        history_service = HistoryService(db)
         if emotion == "طبيعي":
+            msg = "يبدو أن الأمور هادئة بفضل الله. استمر في يومك بذكر الله."
+            if user:
+                history_service.add_record(
+                    user_id=user["id"],
+                    input_text=payload.text,
+                    emotion=emotion,
+                    message=msg,
+                    source="سكينة واطمئنان",
+                    tafsir=None
+                )
             return RecommendationResponse(
                 emotion=emotion,
                 confidence=confidence,
                 tier="minimal",
-                message="يبدو أن الأمور هادئة بفضل الله. استمر في يومك بذكر الله."
+                message=msg
             )
 
         # 2. بناء استعلام دلالي محسَّن للحالة
@@ -57,7 +66,8 @@ async def get_recommendation(request: Request, payload: RecommendationRequest):
             emotion,
             f"الصبر والطمأنينة والتوكل على الله {payload.text}"
         )
-        backend_context = history_manager.get_user_context()
+        
+        backend_context = history_service.get_user_context(user["id"]) if user else ""
         if backend_context:
             semantic_query = f"{semantic_query} {backend_context}"
 
@@ -128,13 +138,15 @@ async def get_recommendation(request: Request, payload: RecommendationRequest):
             )
 
         # 5. حفظ التفاعل
-        history_manager.add_record(
-            input_text=payload.text,
-            emotion=emotion,
-            message=final_message,
-            source=source,
-            tafsir=tafsir
-        )
+        if user:
+            history_service.add_record(
+                user_id=user["id"],
+                input_text=payload.text,
+                emotion=emotion,
+                message=final_message,
+                source=source,
+                tafsir=tafsir
+            )
 
         return RecommendationResponse(
             emotion=emotion,

@@ -130,7 +130,7 @@ def main():
 
     # اتصال ChromaDB
     client = chromadb.PersistentClient(path=str(BACKEND_DIR / "chroma_db"))
-    collection = client.get_or_create_collection("islamic_content")
+    collection = client.get_or_create_collection("islamic_content_minilm")
 
     # تحميل جميع الآيات
     print("\n📖 جلب الآيات من ChromaDB...")

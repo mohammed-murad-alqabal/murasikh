@@ -1,11 +1,15 @@
 import logging
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile, Depends, Form
+from sqlalchemy.orm import Session
+from app.db.database import get_db
+from app.api.v1.endpoints.auth import get_current_user_optional
+from app.services.history_manager import HistoryService
+import json
 
 from app.api.v1.endpoints.recommend import (
     RecommendationResponse,
     embedder,
-    history_manager,
     rag_engine,
 )
 from app.core.security import limiter
@@ -16,15 +20,14 @@ router = APIRouter()
 audio_analyzer = AudioAnalyzer()
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
-import json
-
 @router.post("/analyze-audio", response_model=RecommendationResponse)
 @limiter.limit("5/minute")
 async def analyze_audio(
     request: Request,
     file: UploadFile = File(...),
-    user_context: str = Form(None)
+    user_context: str = Form(None),
+    user: dict | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
 ):
     try:
         context_dict = None
@@ -40,18 +43,20 @@ async def analyze_audio(
         emotion = analysis.get("emotion", "طبيعي")
         confidence = analysis.get("confidence", 0.7)
         
+        history_service = HistoryService(db)
         if emotion == "طبيعي":
             msg = "يبدو من نبرة صوتك أن الأمور هادئة بفضل الله. استمر في يومك بذكر الله."
-            history_manager.add_record(
-                input_text="رسالة صوتية", emotion=emotion, message=msg,
-                source="سكينة واطمئنان", tafsir=None
-            )
+            if user:
+                history_service.add_record(
+                    user_id=user["id"], input_text="رسالة صوتية", emotion=emotion, message=msg,
+                    source="سكينة واطمئنان", tafsir=None
+                )
             return RecommendationResponse(
                 emotion=emotion, confidence=confidence, tier="minimal", message=msg
             )
             
         semantic_query = EMOTION_SEMANTIC_QUERIES.get(emotion, "الصبر والطمأنينة والتوكل على الله")
-        backend_context = history_manager.get_user_context()
+        backend_context = history_service.get_user_context(user["id"]) if user else ""
         if backend_context:
             semantic_query = f"{semantic_query} {backend_context}"
             
@@ -109,10 +114,11 @@ async def analyze_audio(
                 retrieved_text=base_message, source=source, tafsir=tafsir
             )
 
-        history_manager.add_record(
-            input_text="رسالة صوتية", emotion=emotion,
-            message=final_message, source=source, tafsir=tafsir
-        )
+        if user:
+            history_service.add_record(
+                user_id=user["id"], input_text="رسالة صوتية", emotion=emotion,
+                message=final_message, source=source, tafsir=tafsir
+            )
 
         return RecommendationResponse(
             emotion=emotion, confidence=confidence, tier=tier,
