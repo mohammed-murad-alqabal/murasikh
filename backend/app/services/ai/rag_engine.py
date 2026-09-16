@@ -144,6 +144,47 @@ class RAGEngine:
             logging.error(f"Failed to load local LLM: {e}")
             self._local_llm_loaded = False
 
+    async def select_best_verse(self, user_text: str, emotion: str, verses: list[dict]) -> dict:
+        """
+        يختار أفضل آية من قائمة الآيات المسترجعة لتكون 'الاستجابة المثالية' لحالة المستخدم الحالية.
+        بدلاً من الاعتماد فقط على التشابه الدلالي (الذي قد يخطئ في السياق)، يستخدم الذكاء الاصطناعي لاختيار الأنسب.
+        """
+        if not self._gemini_available or not verses:
+            return verses[0]
+
+        prompt = f"""
+لديك مستخدم يعاني من: {emotion}
+وقد قال: "{user_text}"
+
+استخرجنا {len(verses)} آيات قرآنية محتملة. بعضها قد يكون مجرد تطابق لفظي ولا يخدم هدف المواساة والتهدئة، وبعضها قد يكون مثالياً.
+
+"""
+        for i, v in enumerate(verses):
+            prompt += f"الآية {i+1}: {v.get('text')}\nالمصدر {i+1}: {v.get('source')}\n\n"
+
+        prompt += """
+مهمتك:
+اختر الرقم للآية التي تعتبر "الاستجابة المثالية والأنسب والأكثر إلهاماً وطمأنينة" لحالة المستخدم.
+إذا كانت آية تحتوي على وعيد، تجنبها.
+
+أرجع الرقم فقط (مثال: 1).
+"""
+        try:
+            import asyncio
+            response = await asyncio.to_thread(
+                self.model.generate_content,
+                prompt,
+                generation_config=genai.GenerationConfig(temperature=0.1)
+            )
+            text = response.text.strip()
+            for i in range(len(verses), 0, -1):
+                if str(i) in text:
+                    return verses[i-1]
+            return verses[0]
+        except Exception as e:
+            logging.error(f"Error selecting best verse: {e}")
+            return verses[0]
+
 
     async def format_response(self, user_text: str, emotion: str,
                                retrieved_text: str, source: str, tafsir: str) -> str:

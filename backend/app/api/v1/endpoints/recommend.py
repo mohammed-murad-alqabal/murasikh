@@ -75,11 +75,26 @@ async def get_recommendation(request: Request, payload: RecommendationRequest):
 
         if (verse_results and verse_results.get('documents')
                 and len(verse_results['documents'][0]) > 0):
-            # اختر أفضل آية (الأولى هي الأقرب دلالياً)
-            base_message = verse_results['documents'][0][0]
-            metadata = verse_results['metadatas'][0][0]
-            source = metadata.get("source")
-            tafsir = metadata.get("tafsir")
+            
+            # تجهيز الآيات المسترجعة للفلترة الذكية
+            verses_list = []
+            for i in range(len(verse_results['documents'][0])):
+                verses_list.append({
+                    "text": verse_results['documents'][0][i],
+                    "source": verse_results['metadatas'][0][i].get("source", ""),
+                    "tafsir": verse_results['metadatas'][0][i].get("tafsir", "")
+                })
+            
+            # اختيار أفضل آية للظرف الحالي عبر الذكاء الاصطناعي
+            best_verse = await rag_engine.select_best_verse(
+                user_text=payload.text,
+                emotion=emotion,
+                verses=verses_list
+            )
+            
+            base_message = best_verse.get("text", "")
+            source = best_verse.get("source", "")
+            tafsir = best_verse.get("tafsir", "")
 
         # 4. صياغة الرد الدافئ عبر Gemini
         tier = "moderate"
