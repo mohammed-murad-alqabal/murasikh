@@ -12,7 +12,9 @@ build==1.6.1
 certifi==2026.7.22
 cffi==2.1.1
 charset-normalizer==3.5.1
-chromadb==1.5.9
+# 0.4.16 is the last release before the affected 0.4.17+ ranges.
+# Keep Chroma embedded/local; do not expose a Chroma HTTP server.
+chromadb==0.4.16
 click==8.5.0
 cloudpickle==3.1.2
 cryptography==50.0.1

@@ -26,25 +26,38 @@ jobs:
           - 5433:5432
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
-          pip install pytest httpx pytest-asyncio
+          pip install pip-audit pytest httpx pytest-asyncio
+      - name: Audit Python dependencies
+        run: |
+          pip-audit -r backend/requirements.txt --strict
       - name: Run Alembic migrations
         env:
-          SQLALCHEMY_DATABASE_URI: postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db
+          POSTGRES_SERVER: localhost
+          POSTGRES_USER: murassikh
+          POSTGRES_PASSWORD: murassikh_pwd
+          POSTGRES_DB: murassikh_db
+          ENVIRONMENT: testing
+          SECRET_KEY: test-secret-key
         run: |
           cd backend
           alembic upgrade head
       - name: Test with pytest
         env:
-          SQLALCHEMY_DATABASE_URL: postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db
+          POSTGRES_SERVER: localhost
+          POSTGRES_USER: murassikh
+          POSTGRES_PASSWORD: murassikh_pwd
+          POSTGRES_DB: murassikh_db
+          ENVIRONMENT: testing
+          SECRET_KEY: test-secret-key
         run: |
           cd backend
           python -m pytest
@@ -52,7 +65,7 @@ jobs:
   frontend-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
