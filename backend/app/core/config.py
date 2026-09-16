@@ -18,10 +18,17 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    
     # JWT Settings
     SECRET_KEY: str = os.getenv("SECRET_KEY", "super-secret-key-change-in-production")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.ENVIRONMENT == "production" and self.SECRET_KEY == "super-secret-key-change-in-production":
+            raise ValueError("SECRET_KEY must be set in production environment")
 
     class Config:
         case_sensitive = True

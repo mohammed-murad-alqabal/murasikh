@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/recommendation/models/recommendation_model.dart';
+import 'auth_service.dart';
 import 'history_service.dart';
 import 'offline_service.dart';
 import 'settings_service.dart';
@@ -70,7 +71,7 @@ class ApiService {
   //  الدوال الداخلية
   // ============================================================
 
-  Future<Map<String, String>> _getHeaders({bool isMultipart = false}) async {
+  static Future<Map<String, String>> getHeaders({bool isMultipart = false}) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
     
@@ -96,7 +97,7 @@ class ApiService {
       mergedContext.addAll(userContext);
     }
 
-    final headers = await _getHeaders();
+    final headers = await getHeaders();
 
     final response = await http
         .post(
@@ -112,6 +113,10 @@ class ApiService {
     if (response.statusCode == 200) {
       final decodedData = jsonDecode(utf8.decode(response.bodyBytes));
       return RecommendationModel.fromJson(decodedData);
+    } else if (response.statusCode == 401) {
+      final authService = AuthService();
+      await authService.logout();
+      throw Exception('Session expired (401). Please login again.');
     } else {
       throw Exception('Server error: ${response.statusCode}');
     }
@@ -138,7 +143,7 @@ class ApiService {
   }
 
   Future<void> _sendFeedbackToServer(String id, int feedbackValue) async {
-    final headers = await _getHeaders();
+    final headers = await getHeaders();
     await http
         .post(
           Uri.parse('$baseUrl/history/feedback'),
@@ -178,7 +183,7 @@ class ApiService {
       mergedContext.addAll(userContext);
     }
 
-    final headers = await _getHeaders(isMultipart: true);
+    final headers = await getHeaders(isMultipart: true);
 
     final request = http.MultipartRequest(
       'POST',

@@ -8,6 +8,38 @@ services:
       - "8000:8000"
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=murassikh
+      - POSTGRES_PASSWORD=murassikh_pwd
+      - POSTGRES_DB=murassikh_db
+      - ENVIRONMENT=production
+      - SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
       - ./backend/data:/app/data
+    depends_on:
+      - db
+      - redis
     restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    container_name: murassikh_db
+    environment:
+      - POSTGRES_USER=murassikh
+      - POSTGRES_PASSWORD=murassikh_pwd
+      - POSTGRES_DB=murassikh_db
+    volumes:
+      - murassikh_pg_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: murassikh_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  murassikh_pg_data:
