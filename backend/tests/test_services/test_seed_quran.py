@@ -73,6 +73,9 @@ def test_load_verses_contract():
 
 def test_seed_quran_rebuilds_incomplete_collection_and_is_idempotent(monkeypatch):
     fake_client = FakeClient()
+    fake_client.collection.records["stale_record"] = {
+        "metadata": {"type": "verse"},
+    }
     monkeypatch.setattr(seed_quran.chromadb, "PersistentClient", lambda path: fake_client)
     monkeypatch.setitem(
         sys.modules,
@@ -83,7 +86,7 @@ def test_seed_quran_rebuilds_incomplete_collection_and_is_idempotent(monkeypatch
 
     seed_quran.seed_quran(batch_size=2048)
     assert fake_client.collection.count() == seed_quran.EXPECTED_VERSE_COUNT
-    assert fake_client.deleted == 0
+    assert fake_client.deleted == 1
     first_model_calls = FakeModel.calls
 
     seed_quran.seed_quran(batch_size=2048)
