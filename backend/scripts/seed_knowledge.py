@@ -6,12 +6,7 @@ longer allowed. Use ``scripts/seed_quran.py`` to build the production index.
 
 from __future__ import annotations
 
-import subprocess
 import sys
-from pathlib import Path
-
-
-SCRIPT_DIR = Path(__file__).resolve().parent
 
 
 def seed_database() -> None:

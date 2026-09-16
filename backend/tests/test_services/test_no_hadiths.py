@@ -3,9 +3,11 @@ from app.services.ai.embeddings import EmbeddingService
 
 def test_no_hadiths_in_collection():
     es = EmbeddingService()
-    results = es.collection.get()
-    
-    if results and results.get("metadatas"):
-        for meta in results["metadatas"]:
+    collections = es.client.list_collections()
+    for collection in collections:
+        results = collection.get(include=["metadatas"])
+        for meta in results.get("metadatas") or []:
             if meta:
-                assert meta.get("type", "") != "hadith", "Found hadith in vector DB! Strict Quran-only rule violated."
+                assert meta.get("type", "") != "hadith", (
+                    "Found hadith in vector DB! Strict Quran-only rule violated."
+                )

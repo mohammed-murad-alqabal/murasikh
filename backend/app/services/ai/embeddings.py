@@ -64,14 +64,17 @@ class EmbeddingService:
                 }
             return results
 
-        # ── إعادة الترتيب الهجين باستخدام البصمات التصنيفية (Fingerprints) ──
+        return self._rerank_results(results, n_results=n_results, emotion=emotion)
+
+    def _rerank_results(self, results: dict, n_results: int, emotion: str) -> dict:
+        """Apply deterministic semantic + fingerprint ranking to Chroma results."""
         doc_ids = results["ids"][0]
         distances = results["distances"][0]
         documents = results["documents"][0]
         metadatas = results["metadatas"][0]
         
         scored_results = []
-        max_dist = max(distances) if distances and max(distances) > 0 else 1.0
+        max_dist = max(distances, default=0.0)
         
         for i in range(len(doc_ids)):
             doc_id = doc_ids[i]
@@ -79,7 +82,7 @@ class EmbeddingService:
             meta = metadatas[i]
             
             # تقييم الدلالة (Semantic Score): 0.0 إلى 1.0
-            semantic_score = 1.0 - (dist / max_dist)
+            semantic_score = 1.0 if max_dist == 0 else 1.0 - (dist / max_dist)
             
             # استخراج وزن الحالة من البصمة التصنيفية في الذاكرة
             emotion_weight = 0.0

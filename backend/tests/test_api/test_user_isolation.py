@@ -64,6 +64,8 @@ def test_users_cannot_read_or_mutate_each_others_history(client, monkeypatch):
         headers=_headers(token_a),
     )
     assert record.status_code == 200, record.text
+    interaction_id = record.json().get("interaction_id")
+    assert isinstance(interaction_id, int)
 
     history_a = client.get("/api/v1/history", headers=_headers(token_a))
     history_b = client.get("/api/v1/history", headers=_headers(token_b))
@@ -73,6 +75,14 @@ def test_users_cannot_read_or_mutate_each_others_history(client, monkeypatch):
     assert history_b.json() == []
 
     record_id = str(history_a.json()[0]["id"])
+    assert record_id == str(interaction_id)
+    update_by_owner = client.post(
+        "/api/v1/history/feedback",
+        json={"id": record_id, "feedback": 1},
+        headers=_headers(token_a),
+    )
+    assert update_by_owner.status_code == 200
+
     update = client.post(
         "/api/v1/history/feedback",
         json={"id": record_id, "feedback": 1},
