@@ -55,7 +55,7 @@ async def get_recommendation(request: Request, payload: RecommendationRequest):
         # 2. بناء استعلام دلالي محسَّن للحالة
         semantic_query = EMOTION_SEMANTIC_QUERIES.get(
             emotion,
-            f"الصبر والطمأنينة والتوكل على الله {request.text}"
+            f"الصبر والطمأنينة والتوكل على الله {payload.text}"
         )
         backend_context = history_manager.get_user_context()
         if backend_context:
@@ -90,7 +90,7 @@ async def get_recommendation(request: Request, payload: RecommendationRequest):
             tier = "minimal"
             final_message = "تعوذ بالله من الشيطان الرجيم، وخذ نفساً عميقاً."
             delayed_message = await rag_engine.format_response(
-                user_text=request.text,
+                user_text=payload.text,
                 emotion=emotion,
                 retrieved_text=base_message,
                 source=source,
@@ -98,7 +98,7 @@ async def get_recommendation(request: Request, payload: RecommendationRequest):
             )
         else:
             final_message = await rag_engine.format_response(
-                user_text=request.text,
+                user_text=payload.text,
                 emotion=emotion,
                 retrieved_text=base_message,
                 source=source,
@@ -107,7 +107,7 @@ async def get_recommendation(request: Request, payload: RecommendationRequest):
 
         # 5. حفظ التفاعل
         history_manager.add_record(
-            input_text=request.text,
+            input_text=payload.text,
             emotion=emotion,
             message=final_message,
             source=source,
