@@ -126,7 +126,10 @@ class OfflineService {
   /// احفظ تقييماً لإرساله لاحقاً عند عودة الإنترنت
   Future<void> savePendingFeedback(String id, int feedbackValue) async {
     await init();
-    final key = 'fb_${DateTime.now().millisecondsSinceEpoch}';
+    var key = 'fb_${DateTime.now().microsecondsSinceEpoch}';
+    while (_feedbackBox.containsKey(key)) {
+      key = 'fb_${DateTime.now().microsecondsSinceEpoch + 1}';
+    }
     await _feedbackBox.put(
       key,
       jsonEncode({'id': id, 'feedback': feedbackValue}),
