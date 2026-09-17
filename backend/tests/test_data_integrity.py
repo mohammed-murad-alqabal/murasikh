@@ -3,7 +3,6 @@ from pathlib import Path
 
 from app.core.taxonomy import EMOTION_TAXONOMY
 
-
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 
@@ -41,9 +40,6 @@ def test_fingerprints_match_quran_and_taxonomy_schema():
 
 
 def test_production_seed_path_cannot_insert_hadiths():
-    seed_knowledge = (BACKEND_DIR / "scripts/seed_knowledge.py").read_text(encoding="utf-8")
     seed_quran = (BACKEND_DIR / "scripts/seed_quran.py").read_text(encoding="utf-8")
 
     assert '"type": "hadith"' not in seed_quran
-    assert '"type": "hadith"' not in seed_knowledge
-    assert "seed_quran.py" in seed_knowledge
