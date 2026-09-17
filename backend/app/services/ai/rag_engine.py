@@ -260,6 +260,19 @@ class RAGEngine:
 
         return self._format_with_template(emotion, retrieved_text, source)
 
+    def _format_with_template(
+        self,
+        emotion: str,
+        retrieved_text: str,
+        source: str | None,
+    ) -> str:
+        templates = self.WARM_TEMPLATES.get(emotion)
+        intro = random.choice(templates) if templates else (
+            f"أسمعك، وأشعر بما تمر به. وتذكر دائماً كلام الله في هذا الموقف:"
+        )
+        source_line = f"\n\n📖 {source}" if source else ""
+        return f"{intro}\n\n{retrieved_text}{source_line}"
+
     def _format_with_local_llm(self, user_text: str, emotion: str, retrieved_text: str, source: str) -> str:
         messages = [
             {"role": "system", "content": "أنت رفيق إسلامي دافئ وحنون تواسي المستخدم. اكتب رسالة مواساة وتعاطف قصيرة جداً (جملة واحدة فقط) للمستخدم، بدون كتابة آيات."},

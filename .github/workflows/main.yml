@@ -66,7 +66,19 @@ jobs:
           SECRET_KEY: test-secret-key-for-ci-32-bytes-long
         run: |
           cd backend
-          python -m pytest
+          python -m pytest -m "not performance"
+      - name: Performance smoke tests (semantic search and RAG)
+        env:
+          POSTGRES_SERVER: localhost
+          POSTGRES_USER: murassikh
+          POSTGRES_PASSWORD: murassikh_pwd
+          POSTGRES_DB: murassikh_db
+          POSTGRES_PORT: 5433
+          ENVIRONMENT: testing
+          SECRET_KEY: test-secret-key-for-ci-32-bytes-long
+        run: |
+          cd backend
+          python -m pytest tests/performance -m performance -q
 
   frontend-test:
     runs-on: ubuntu-latest
