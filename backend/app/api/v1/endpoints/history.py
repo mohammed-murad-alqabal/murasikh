@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
+from typing import Literal
+
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -10,8 +12,8 @@ from app.db.database import get_db
 router = APIRouter()
 
 class FeedbackRequest(BaseModel):
-    id: str
-    feedback: int
+    id: int
+    feedback: Literal[-1, 0, 1]
 
 @router.get("")
 @router.get("/")
@@ -32,13 +34,8 @@ async def clear_history(request: Request, user: dict = Depends(get_current_user)
 @router.post("/feedback")
 @limiter.limit("30/minute")
 async def update_feedback(request: Request, payload: FeedbackRequest, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    try:
-        record_id = int(payload.id)
-    except ValueError:
-        return {"status": "success"}
-
     history_service = HistoryService(db)
-    success = history_service.update_feedback(user["id"], record_id, payload.feedback)
+    success = history_service.update_feedback(user["id"], payload.id, payload.feedback)
     if success:
         return {"status": "success"}
     raise HTTPException(status_code=404, detail="Record not found")

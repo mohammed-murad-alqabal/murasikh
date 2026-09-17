@@ -49,13 +49,17 @@ class ApiService {
 
   /// إرسال تقييم مع دعم Offline (تأجيل عند انقطاع الإنترنت)
   Future<void> submitFeedback(String id, int feedbackValue) async {
+    final numericId = int.tryParse(id);
+    if (numericId == null || !const [-1, 0, 1].contains(feedbackValue)) {
+      return;
+    }
     final offlineService = OfflineService();
     await offlineService.init();
     final isConnected = await offlineService.isConnected();
 
     if (isConnected) {
       try {
-        await _sendFeedbackToServer(id, feedbackValue);
+        await _sendFeedbackToServer(numericId, feedbackValue);
         // مزامنة التقييمات المؤجلة القديمة
         _syncPendingFeedbacks(offlineService);
       } catch (_) {
@@ -142,7 +146,7 @@ class ApiService {
     return offlineService.fallbackRecommendation;
   }
 
-  Future<void> _sendFeedbackToServer(String id, int feedbackValue) async {
+  Future<void> _sendFeedbackToServer(int id, int feedbackValue) async {
     final headers = await getHeaders();
     await http
         .post(
@@ -160,7 +164,7 @@ class ApiService {
     try {
       for (final fb in pending) {
         await _sendFeedbackToServer(
-          fb['id'].toString(),
+          int.parse(fb['id'].toString()),
           (fb['feedback'] as num).toInt(),
         );
       }

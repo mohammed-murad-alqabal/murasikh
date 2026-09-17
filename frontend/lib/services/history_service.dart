@@ -143,6 +143,10 @@ class HistoryService {
 
   Future<void> updateFeedback(String id, int feedbackValue) async {
     await init();
+    final numericId = int.tryParse(id);
+    if (numericId == null || !const [-1, 0, 1].contains(feedbackValue)) {
+      return;
+    }
     // تحديث محلي
     try {
       final raw = _box.get(id);
@@ -160,7 +164,7 @@ class HistoryService {
           .post(
             Uri.parse('$baseUrl/feedback'),
             headers: headers,
-            body: jsonEncode({'id': id, 'feedback': feedbackValue}),
+            body: jsonEncode({'id': numericId, 'feedback': feedbackValue}),
           )
           .timeout(const Duration(seconds: 3));
     } catch (_) {}

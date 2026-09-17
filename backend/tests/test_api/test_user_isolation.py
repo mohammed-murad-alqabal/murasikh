@@ -98,3 +98,22 @@ def test_users_cannot_read_or_mutate_each_others_history(client, monkeypatch):
 def test_history_requires_authentication(client):
     response = client.get("/api/v1/history")
     assert response.status_code == 401
+
+
+def test_feedback_rejects_non_numeric_id_and_invalid_value(client):
+    token = _register_and_login(client)
+    headers = _headers(token)
+
+    non_numeric_id = client.post(
+        "/api/v1/history/feedback",
+        json={"id": "not-an-id", "feedback": 1},
+        headers=headers,
+    )
+    invalid_feedback = client.post(
+        "/api/v1/history/feedback",
+        json={"id": 1, "feedback": 2},
+        headers=headers,
+    )
+
+    assert non_numeric_id.status_code == 422
+    assert invalid_feedback.status_code == 422
