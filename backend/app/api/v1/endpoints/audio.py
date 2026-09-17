@@ -19,6 +19,17 @@ from app.services.ai.audio_analyzer import AudioAnalyzer
 router = APIRouter()
 audio_analyzer = AudioAnalyzer()
 logger = logging.getLogger(__name__)
+MAX_AUDIO_BYTES = 10 * 1024 * 1024
+ALLOWED_AUDIO_TYPES = {
+    "audio/mpeg",
+    "audio/mp3",
+    "audio/wav",
+    "audio/x-wav",
+    "audio/ogg",
+    "audio/webm",
+    "audio/mp4",
+    "audio/x-m4a",
+}
 
 @router.post("/analyze-audio", response_model=RecommendationResponse)
 @limiter.limit("5/minute")
@@ -30,6 +41,15 @@ async def analyze_audio(
     db: Session = Depends(get_db)
 ):
     try:
+        if file.content_type not in ALLOWED_AUDIO_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported audio content type")
+
+        audio_bytes = await file.read(MAX_AUDIO_BYTES + 1)
+        if not audio_bytes:
+            raise HTTPException(status_code=400, detail="Audio file is empty")
+        if len(audio_bytes) > MAX_AUDIO_BYTES:
+            raise HTTPException(status_code=413, detail="Audio file exceeds the 10 MB limit")
+
         context_dict = None
         if user_context:
             try:
@@ -37,7 +57,6 @@ async def analyze_audio(
             except json.JSONDecodeError:
                 pass
                 
-        audio_bytes = await file.read()
         analysis = await audio_analyzer.analyze_tone(audio_bytes)
         
         emotion = analysis.get("emotion", "طبيعي")
@@ -130,6 +149,8 @@ async def analyze_audio(
             message=final_message, delayed_message=delayed_message,
             source=source, tafsir=tafsir, interaction_id=interaction_id
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing audio: {e}")
         raise HTTPException(status_code=500, detail=str(e))
