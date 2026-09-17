@@ -56,7 +56,7 @@ async def analyze_audio(
             try:
                 context_dict = json.loads(user_context)
             except json.JSONDecodeError:
-                pass
+                raise HTTPException(status_code=400, detail="Invalid JSON in user_context")
                 
         analysis = await audio_analyzer.analyze_tone(audio_bytes)
         
