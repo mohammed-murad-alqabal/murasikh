@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 
@@ -202,7 +203,8 @@ async def get_home_verse(
                 pass
 
         # ── 4. البحث في قاعدة المعرفة ──
-        verse_results = embedder.search_similar(
+        verse_results = await asyncio.to_thread(
+            embedder.search_similar,
             query=semantic_query,
             n_results=3,
             filters={"type": "verse"},
