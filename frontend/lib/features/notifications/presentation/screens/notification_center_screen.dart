@@ -7,7 +7,8 @@ class NotificationCenterScreen extends StatefulWidget {
   const NotificationCenterScreen({super.key});
 
   @override
-  State<NotificationCenterScreen> createState() => _NotificationCenterScreenState();
+  State<NotificationCenterScreen> createState() =>
+      _NotificationCenterScreenState();
 }
 
 class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
@@ -67,7 +68,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                   context: context,
                   builder: (context) => AlertDialog(
                     title: const Text('مسح الإشعارات'),
-                    content: const Text('هل أنت متأكد من مسح جميع الإشعارات السابقة؟'),
+                    content: const Text(
+                      'هل أنت متأكد من مسح جميع الإشعارات السابقة؟',
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
@@ -78,7 +81,10 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                           _notificationService.clearAll();
                           Navigator.pop(context);
                         },
-                        child: const Text('مسح', style: TextStyle(color: Colors.red)),
+                        child: const Text(
+                          'مسح',
+                          style: TextStyle(color: Colors.red),
+                        ),
                       ),
                     ],
                   ),
@@ -92,7 +98,11 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.notifications_none, size: 80, color: Colors.grey.shade300),
+                  Icon(
+                    Icons.notifications_none,
+                    size: 80,
+                    color: Colors.grey.shade300,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'لا توجد إشعارات حالياً',
@@ -128,7 +138,10 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                         context: context,
                         builder: (ctx) => AlertDialog(
                           title: Text(notification.title),
-                          content: Text(notification.body, style: const TextStyle(height: 1.5)),
+                          content: Text(
+                            notification.body,
+                            style: const TextStyle(height: 1.5),
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx),
@@ -139,20 +152,29 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                       );
                     },
                     child: Container(
-                      color: isUnread ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      color: isUnread
+                          ? AppColors.primary.withValues(alpha: 0.05)
+                          : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: isUnread ? AppColors.primary : Colors.grey.shade300,
+                              color: isUnread
+                                  ? AppColors.primary
+                                  : Colors.grey.shade300,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               _getIconForType(notification.type),
-                              color: isUnread ? Colors.white : Colors.grey.shade700,
+                              color: isUnread
+                                  ? Colors.white
+                                  : Colors.grey.shade700,
                               size: 20,
                             ),
                           ),
@@ -162,20 +184,28 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: Text(
                                         notification.title,
                                         style: TextStyle(
-                                          fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
+                                          fontWeight: isUnread
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
                                           fontSize: 16,
-                                          color: isUnread ? AppColors.primary : Colors.black87,
+                                          color: isUnread
+                                              ? AppColors.primary
+                                              : Colors.black87,
                                         ),
                                       ),
                                     ),
                                     Text(
-                                      timeago.format(notification.timestamp, locale: 'ar'),
+                                      timeago.format(
+                                        notification.timestamp,
+                                        locale: 'ar',
+                                      ),
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey.shade600,

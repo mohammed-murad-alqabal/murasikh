@@ -35,7 +35,10 @@ void main() {
         timestamp: baseTime.add(const Duration(minutes: 1)),
       );
 
-      expect(HomeContextPolicy.isSignificantChange(old, candidate, now: baseTime), isTrue);
+      expect(
+        HomeContextPolicy.isSignificantChange(old, candidate, now: baseTime),
+        isTrue,
+      );
     });
 
     test('ignores a small confidence change before forced refresh', () {
@@ -52,7 +55,10 @@ void main() {
         timestamp: baseTime.add(const Duration(minutes: 1)),
       );
 
-      expect(HomeContextPolicy.isSignificantChange(old, candidate, now: baseTime), isFalse);
+      expect(
+        HomeContextPolicy.isSignificantChange(old, candidate, now: baseTime),
+        isFalse,
+      );
     });
 
     test('detects a confidence increase greater than 0.25', () {
@@ -69,7 +75,10 @@ void main() {
         timestamp: baseTime,
       );
 
-      expect(HomeContextPolicy.isSignificantChange(old, candidate, now: baseTime), isTrue);
+      expect(
+        HomeContextPolicy.isSignificantChange(old, candidate, now: baseTime),
+        isTrue,
+      );
     });
 
     test('forces a refresh after one hour', () {

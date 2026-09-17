@@ -127,12 +127,14 @@ class HomeContextService extends ChangeNotifier {
 
     if (emotion == 'طبيعي') {
       // الانحدار التدريجي (Decay) للوضع الطبيعي (سياق الوقت)
-      _evaluateAndMaybeNotify(ContextSnapshot(
-        dominantEmotion: 'طبيعي',
-        confidence: 1.0, // ثقة عالية بأن الحالة هادئة لكي تتجاوز العتبة
-        signalSource: 'time',
-        timestamp: DateTime.now(),
-      ));
+      _evaluateAndMaybeNotify(
+        ContextSnapshot(
+          dominantEmotion: 'طبيعي',
+          confidence: 1.0, // ثقة عالية بأن الحالة هادئة لكي تتجاوز العتبة
+          signalSource: 'time',
+          timestamp: DateTime.now(),
+        ),
+      );
       return;
     }
 
@@ -141,12 +143,14 @@ class HomeContextService extends ChangeNotifier {
         ? HomeContextPolicy.faceConfidenceThreshold
         : 0.80;
 
-    _evaluateAndMaybeNotify(ContextSnapshot(
-      dominantEmotion: emotion,
-      confidence: confidence,
-      signalSource: 'face',
-      timestamp: DateTime.now(),
-    ));
+    _evaluateAndMaybeNotify(
+      ContextSnapshot(
+        dominantEmotion: emotion,
+        confidence: confidence,
+        signalSource: 'face',
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   void _onAmbientChanged() {
@@ -156,12 +160,14 @@ class HomeContextService extends ChangeNotifier {
     final emotion = rec.emotion;
     if (emotion.isEmpty || emotion == 'طبيعي') return;
 
-    _evaluateAndMaybeNotify(ContextSnapshot(
-      dominantEmotion: emotion,
-      confidence: HomeContextPolicy.audioConfidenceThreshold,
-      signalSource: 'audio',
-      timestamp: DateTime.now(),
-    ));
+    _evaluateAndMaybeNotify(
+      ContextSnapshot(
+        dominantEmotion: emotion,
+        confidence: HomeContextPolicy.audioConfidenceThreshold,
+        signalSource: 'audio',
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   /// يُستدعى يدوياً من الشاشة الرئيسية عند بدء التشغيل
@@ -184,15 +190,18 @@ class HomeContextService extends ChangeNotifier {
       for (final e in recentEmotions) {
         emotionCounts[e] = (emotionCounts[e] ?? 0) + 1;
       }
-      final dominant =
-          emotionCounts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+      final dominant = emotionCounts.entries
+          .reduce((a, b) => a.value >= b.value ? a : b)
+          .key;
 
-      _evaluateAndMaybeNotify(ContextSnapshot(
-        dominantEmotion: dominant,
-        confidence: HomeContextPolicy.historyConfidence,
-        signalSource: 'history',
-        timestamp: DateTime.now(),
-      ));
+      _evaluateAndMaybeNotify(
+        ContextSnapshot(
+          dominantEmotion: dominant,
+          confidence: HomeContextPolicy.historyConfidence,
+          signalSource: 'history',
+          timestamp: DateTime.now(),
+        ),
+      );
     } catch (e) {
       debugPrint('HomeContextService.evaluateFromHistory error: $e');
     }

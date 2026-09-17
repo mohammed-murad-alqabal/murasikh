@@ -36,8 +36,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('حدث خطأ أثناء التصدير: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('حدث خطأ أثناء التصدير: $e')));
       }
     }
   }
@@ -242,8 +243,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       ),
       subtitle: Text(
         subtitle,
-        style: Theme.of(context).textTheme.bodySmall
-            ?.copyWith(color: AppColors.textSecondary),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
       ),
       trailing: const Icon(
         Icons.chevron_left,

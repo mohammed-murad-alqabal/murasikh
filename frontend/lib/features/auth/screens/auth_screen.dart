@@ -39,8 +39,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
     if (error != null) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error)));
       }
     } else {
       HapticFeedback.mediumImpact();

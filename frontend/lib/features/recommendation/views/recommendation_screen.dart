@@ -93,8 +93,9 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
             Text(
               msg,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge
-                  ?.copyWith(color: AppColors.error),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: AppColors.error),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -123,15 +124,17 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
             const SizedBox(height: 16),
             Text(
               'الرفيق مستعد للاستماع إليك 🤍',
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(color: AppColors.textSecondary),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'اكتب ما يجول في خاطرك، وسيجلب لك الله آيةً من القرآن الكريم تواسيك',
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondary),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -170,8 +173,9 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                       Expanded(
                         child: Text(
                           rec.message,
-                          style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(height: 1.7),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.copyWith(height: 1.7),
                         ),
                       ),
                     ],
@@ -235,8 +239,9 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                     const SizedBox(height: 8),
                     Text(
                       rec.tafsir!,
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(height: 1.5),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(height: 1.5),
                     ),
                   ],
 
@@ -547,8 +552,9 @@ class _DelayedMessageCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(height: 1.6),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.6),
             ),
           ],
         ),

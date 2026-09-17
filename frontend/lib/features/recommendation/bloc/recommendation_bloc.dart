@@ -60,7 +60,10 @@ class RecommendationBloc
     on<GetRecommendationEvent>((event, emit) async {
       emit(RecommendationLoading());
       try {
-        final recommendation = await apiService.getRecommendation(event.text, userContext: event.userContext);
+        final recommendation = await apiService.getRecommendation(
+          event.text,
+          userContext: event.userContext,
+        );
         emit(RecommendationLoaded(recommendation));
       } catch (e) {
         emit(
