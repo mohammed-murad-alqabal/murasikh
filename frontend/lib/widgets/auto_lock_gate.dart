@@ -115,6 +115,11 @@ class _AutoLockGateState extends State<AutoLockGate>
     });
     final unlocked = await _lockService.unlock();
     if (!mounted) return;
+    
+    // Clear the backgrounded timestamp so that the OS `resumed` event 
+    // (which fires after the biometric prompt closes) doesn't instantly re-lock.
+    _backgroundedAt = null;
+
     setState(() {
       _unlocking = false;
       if (unlocked) {
