@@ -10,6 +10,7 @@ def test_register_user(client):
     )
     assert response.status_code == 200
     assert "access_token" in response.json()
+    assert "refresh_token" in response.json()
     assert response.json()["token_type"] == "bearer"
 
 def test_register_existing_user(client):
@@ -27,6 +28,7 @@ def test_login_user(client):
     )
     assert response.status_code == 200
     assert "access_token" in response.json()
+    assert "refresh_token" in response.json()
 
 def test_login_wrong_password(client):
     response = client.post(
@@ -49,6 +51,16 @@ def test_jwt_expiration(client):
     )
     assert response.status_code == 401
 
+def test_refresh_token(client):
+    # First login to get tokens
+    res = client.post("/api/v1/auth/login", data={"username": "testuser", "password": "testpassword"})
+    refresh_token = res.json()["refresh_token"]
+
+    # Try refreshing
+    refresh_res = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    assert refresh_res.status_code == 200
+    assert "access_token" in refresh_res.json()
+    assert "refresh_token" in refresh_res.json()
 
 def test_export_requires_authentication_and_excludes_password(client):
     unauthenticated = client.get("/api/v1/auth/export")
