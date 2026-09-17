@@ -63,9 +63,9 @@ class HistoryService:
             self.db.rollback()
             return False
 
-    def get_history(self, user_id: int, limit: int = None) -> list[dict]:
+    def get_history(self, user_id: int, limit: int = 100) -> list[dict]:
         query = self.db.query(Interaction).filter(Interaction.user_id == user_id).order_by(desc(Interaction.created_at))
-        if limit is not None:
+        if limit:
             query = query.limit(limit)
         interactions = query.all()
         history = []
