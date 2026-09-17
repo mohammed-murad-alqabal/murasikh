@@ -51,6 +51,35 @@ class HistoryItem {
   }
 }
 
+class DelayedResponseItem {
+  final int id;
+  final int? interactionId;
+  final RecommendationModel recommendation;
+
+  const DelayedResponseItem({
+    required this.id,
+    required this.interactionId,
+    required this.recommendation,
+  });
+
+  factory DelayedResponseItem.fromMap(Map<String, dynamic> map) {
+    final recommendationJson = <String, dynamic>{
+      'emotion': map['emotion'],
+      'confidence': map['confidence'],
+      'tier': map['tier'],
+      'message': map['message'],
+      'source': map['source'],
+      'tafsir': map['tafsir'],
+      'interaction_id': map['interaction_id'],
+    };
+    return DelayedResponseItem(
+      id: (map['id'] as num).toInt(),
+      interactionId: (map['interaction_id'] as num?)?.toInt(),
+      recommendation: RecommendationModel.fromJson(recommendationJson),
+    );
+  }
+}
+
 class HistoryService {
   static final HistoryService _instance = HistoryService._internal();
   factory HistoryService() => _instance;
@@ -184,5 +213,24 @@ class HistoryService {
       } catch (_) {}
     }
     return remoteCleared;
+  }
+
+  Future<List<DelayedResponseItem>> getDueDelayedResponses() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/delayed'),
+            headers: await ApiService.getHeaders(),
+          )
+          .timeout(const Duration(seconds: 3));
+      if (response.statusCode != 200) return [];
+      final data = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(DelayedResponseItem.fromMap)
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 }

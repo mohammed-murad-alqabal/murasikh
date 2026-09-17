@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.api.v1.endpoints.auth import get_current_user_optional
 from app.services.history_manager import HistoryService
+from app.services.delayed_response_service import DelayedResponseService
 import json
 
 from app.api.v1.endpoints.recommend import (
@@ -138,15 +139,33 @@ async def analyze_audio(
 
         interaction_id = None
         if user:
-            interaction = history_service.add_record(
-                user_id=user["id"], input_text="رسالة صوتية", emotion=emotion,
-                message=final_message, source=source, tafsir=tafsir
-            )
-            interaction_id = interaction.id
+                interaction = history_service.add_record(
+                    user_id=user["id"], input_text="رسالة صوتية", emotion=emotion,
+                    message=final_message,
+                    source=source,
+                    tafsir=tafsir,
+                    confidence=confidence,
+                    response_tier=tier,
+                    response_delayed=bool(delayed_message),
+                )
+                interaction_id = interaction.id
+                if delayed_message:
+                    DelayedResponseService(db).schedule(
+                        user_id=user["id"],
+                        interaction_id=interaction.id,
+                        payload={
+                            "emotion": emotion,
+                            "confidence": confidence,
+                            "tier": "full",
+                            "message": delayed_message,
+                            "source": source,
+                            "tafsir": tafsir,
+                        },
+                    )
 
         return RecommendationResponse(
             emotion=emotion, confidence=confidence, tier=tier,
-            message=final_message, delayed_message=delayed_message,
+            message=final_message, delayed_message=None,
             source=source, tafsir=tafsir, interaction_id=interaction_id
         )
     except HTTPException:

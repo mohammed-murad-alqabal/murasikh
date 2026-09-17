@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -69,6 +70,7 @@ class _ChatScreenState extends State<ChatScreen> {
   List<ChatMessage> _messages = [];
   bool _isLoading = false;
   bool _isBoxReady = false;
+  Timer? _delayedResponseTimer;
 
   String get _currentEmotion {
     for (var i = _messages.length - 1; i >= 0; i--) {
@@ -98,6 +100,27 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _initChatStorage();
+    _delayedResponseTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => _pollDelayedResponses(),
+    );
+  }
+
+  Future<void> _pollDelayedResponses() async {
+    if (!_isBoxReady) return;
+    final responses = await HistoryService().getDueDelayedResponses();
+    if (!mounted || responses.isEmpty) return;
+
+    for (final item in responses) {
+      final message = ChatMessage(
+        text: item.recommendation.message,
+        isUser: false,
+        recommendation: item.recommendation,
+      );
+      setState(() => _messages.add(message));
+      await _saveMessage(message);
+    }
+    _scrollToBottom();
   }
 
   Future<void> _initChatStorage() async {
@@ -134,6 +157,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _isBoxReady = true;
       });
       _scrollToBottom();
+      _pollDelayedResponses();
     }
   }
 
@@ -176,6 +200,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _delayedResponseTimer?.cancel();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();

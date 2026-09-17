@@ -11,6 +11,7 @@ from app.services.ai.embeddings import EmbeddingService
 from app.services.ai.conversational_agent import ConversationalAgent
 from app.services.ai.rag_engine import RAGEngine
 from app.services.history_manager import HistoryService
+from app.services.delayed_response_service import DelayedResponseService
 from app.core.security import limiter
 
 router = APIRouter()
@@ -150,12 +151,13 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
         if emotion in EXTREME_EMOTIONS:
             tier = "minimal"
             final_message = "تعوذ بالله من الشيطان الرجيم، وخذ نفساً عميقاً."
-            if ai_message:
-                final_message = ai_message + f"\n\n📖 {source}\n{base_message}" if source else ai_message
-            else:
-                delayed_message = await rag_engine.format_response(
-                    user_text=payload.text, emotion=emotion, retrieved_text=base_message, source=source, tafsir=tafsir
-                )
+            delayed_message = await rag_engine.format_response(
+                user_text=payload.text,
+                emotion=emotion,
+                retrieved_text=base_message,
+                source=source,
+                tafsir=tafsir,
+            )
         else:
             # إذا وفر الوكيل رسالة دافئة، ندمجها مع الآية المسترجعة لتقليل طلبات Gemini
             if ai_message:
@@ -174,16 +176,33 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
                 emotion=emotion,
                 message=final_message,
                 source=source,
-                tafsir=tafsir
+                tafsir=tafsir,
+                confidence=confidence,
+                response_tier=tier,
+                response_delayed=bool(delayed_message and emotion in EXTREME_EMOTIONS),
             )
             interaction_id = interaction.id
+
+            if delayed_message and emotion in EXTREME_EMOTIONS:
+                DelayedResponseService(db).schedule(
+                    user_id=user["id"],
+                    interaction_id=interaction.id,
+                    payload={
+                        "emotion": emotion,
+                        "confidence": confidence,
+                        "tier": "full",
+                        "message": delayed_message,
+                        "source": source,
+                        "tafsir": tafsir,
+                    },
+                )
 
         return RecommendationResponse(
             emotion=emotion,
             confidence=confidence,
             tier=tier,
             message=final_message,
-            delayed_message=delayed_message,
+            delayed_message=None,
             source=source,
             tafsir=tafsir,
             interaction_id=interaction_id

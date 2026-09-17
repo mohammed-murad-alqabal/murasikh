@@ -1,13 +1,24 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
-from app.db.models import Interaction
+from app.db.models import DelayedResponse, Interaction
 
 class HistoryService:
     def __init__(self, db: Session):
         self.db = db
 
-    def add_record(self, user_id: int, input_text: str, emotion: str, message: str, source: str = None, tafsir: str = None):
+    def add_record(
+        self,
+        user_id: int,
+        input_text: str,
+        emotion: str,
+        message: str,
+        source: str = None,
+        tafsir: str = None,
+        confidence: float = 1.0,
+        response_tier: str = "moderate",
+        response_delayed: bool = False,
+    ):
         interaction = Interaction(
             user_id=user_id,
             query_text=input_text,
@@ -15,8 +26,9 @@ class HistoryService:
             message=message,
             source=source,
             tafsir=tafsir,
-            emotion_confidence=1.0,
-            response_tier="moderate",
+            emotion_confidence=confidence,
+            response_tier=response_tier,
+            response_delayed=response_delayed,
             user_feedback=0
         )
         self.db.add(interaction)
@@ -34,6 +46,9 @@ class HistoryService:
 
     def clear_history(self, user_id: int) -> bool:
         try:
+            self.db.query(DelayedResponse).filter(
+                DelayedResponse.user_id == user_id
+            ).delete()
             self.db.query(Interaction).filter(Interaction.user_id == user_id).delete()
             self.db.commit()
             return True

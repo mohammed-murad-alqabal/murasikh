@@ -105,9 +105,9 @@ class DelayedResponse(Base):
     is_delivered = Column(Boolean, default=False)
     scheduled_for = Column(DateTime)
     delivered_at = Column(DateTime)
+    payload = Column(JSONB, nullable=False, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="delayed_responses")
     interaction = relationship("Interaction", back_populates="delayed_response")
-
 
