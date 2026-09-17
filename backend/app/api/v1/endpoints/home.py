@@ -156,6 +156,7 @@ async def get_home_verse(
                     recent = history_service.get_history(user["id"])[:3]
                     if recent:
                         from datetime import datetime, timezone
+
                         import dateutil.parser
                         
                         now = datetime.now(timezone.utc)
@@ -171,16 +172,16 @@ async def get_home_verse(
                                     dt = dt.replace(tzinfo=timezone.utc)
                                 if (now - dt).total_seconds() < 12 * 3600:
                                     emotions.append(emotion)
-                            except:
-                                pass
+                            except (ValueError, TypeError, dateutil.parser.ParserError) as e:
+                                logger.warning(f"Failed to parse timestamp in history: {e}")
 
                         if emotions:
                             from collections import Counter
                             dominant_emotion = Counter(emotions).most_common(1)[0][0]
                             confidence = 0.55  # ثقة معتدلة من السجل
                             use_emotion = True
-                except Exception:
-                    pass
+                except Exception as e:  # noqa: BLE001
+                    logger.warning(f"Failed to extract emotion from history: {e}")
 
             if not use_emotion:
                 return _time_verse_response(time_of_day)
@@ -188,7 +189,7 @@ async def get_home_verse(
         # ── 3. بناء الاستعلام الدلالي المحسّن ──
         semantic_query = EMOTION_SEMANTIC_QUERIES.get(
             dominant_emotion,
-            f"الصبر والطمأنينة والتوكل على الله",
+            "الصبر والطمأنينة والتوكل على الله",
         )
 
         # إضافة سياق المستخدم إن كان مسجّلاً
@@ -198,8 +199,8 @@ async def get_home_verse(
                 user_ctx = history_service.get_user_context(user["id"])
                 if user_ctx:
                     semantic_query = f"{semantic_query} {user_ctx}"
-            except Exception:
-                pass
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"Failed to append user context to semantic query: {e}")
 
         # ── 4. البحث في قاعدة المعرفة ──
         verse_results = embedder.search_similar(
@@ -251,6 +252,6 @@ async def get_home_verse(
             cached=False,
         )
 
-    except Exception as e:
-        logger.error(f"Error in get_home_verse: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Error in get_home_verse")
         return _time_verse_response(signals.time_of_day)
