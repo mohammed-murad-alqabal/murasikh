@@ -1,5 +1,5 @@
-import pytest
 from app.services.ai.embeddings import EmbeddingService
+
 
 def test_no_hadiths_in_collection():
     es = EmbeddingService()

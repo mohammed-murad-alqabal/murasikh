@@ -1,7 +1,8 @@
-from datetime import timedelta
 import uuid
+from datetime import timedelta
+
 from app.core.auth import create_access_token
-import time
+
 
 def test_register_user(client):
     response = client.post(

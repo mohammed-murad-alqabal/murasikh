@@ -3,7 +3,6 @@ from pathlib import Path
 
 from app.core.taxonomy import EMOTION_TAXONOMY
 
-
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 

@@ -104,6 +104,23 @@ def test_production_settings_reject_default_secret():
             ENVIRONMENT="production",
             SECRET_KEY="super-secret-key-change-in-production",
         )
+    with pytest.raises(ValueError, match="SECRET_KEY"):
+        Settings(
+            ENVIRONMENT="production",
+            SECRET_KEY="",
+        )
+
+def test_development_settings_auto_generates_secure_key_when_empty():
+    settings = Settings(ENVIRONMENT="development", SECRET_KEY="")
+    assert settings.SECRET_KEY != ""
+    assert settings.SECRET_KEY != "super-secret-key-change-in-production"
+    assert len(settings.SECRET_KEY) >= 32
+
+def test_development_settings_auto_generates_secure_key_when_default_provided():
+    settings = Settings(ENVIRONMENT="development", SECRET_KEY="super-secret-key-change-in-production")
+    assert settings.SECRET_KEY != ""
+    assert settings.SECRET_KEY != "super-secret-key-change-in-production"
+    assert len(settings.SECRET_KEY) >= 32
 
 
 def test_cors_origins_are_parsed_from_configuration():

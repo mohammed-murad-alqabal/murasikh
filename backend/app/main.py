@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from app.api.v1.endpoints import audio, history, recommend, auth, home
+from app.api.v1.endpoints import audio, auth, history, home, recommend
 from app.core.config import settings
 from app.core.security import limiter
 

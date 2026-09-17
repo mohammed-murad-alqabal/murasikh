@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 REQUIREMENTS = Path(__file__).parents[2] / "requirements.txt"
 
 

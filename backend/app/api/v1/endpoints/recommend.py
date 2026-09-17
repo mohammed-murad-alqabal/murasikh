@@ -1,18 +1,18 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Request, Depends
-from sqlalchemy.orm import Session
-from app.api.v1.endpoints.auth import get_current_user_optional
-from app.db.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
-from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
-from app.services.ai.embeddings import EmbeddingService
-from app.services.ai.conversational_agent import ConversationalAgent
-from app.services.ai.rag_engine import RAGEngine
-from app.services.history_manager import HistoryService
-from app.services.delayed_response_service import DelayedResponseService
+from app.api.v1.endpoints.auth import get_current_user_optional
 from app.core.security import limiter
+from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
+from app.db.database import get_db
+from app.services.ai.conversational_agent import ConversationalAgent
+from app.services.ai.embeddings import EmbeddingService
+from app.services.ai.rag_engine import RAGEngine
+from app.services.delayed_response_service import DelayedResponseService
+from app.services.history_manager import HistoryService
 
 router = APIRouter()
 agent = ConversationalAgent()

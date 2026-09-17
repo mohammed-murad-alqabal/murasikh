@@ -1,13 +1,10 @@
+import json
 import logging
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile, Depends, Form
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
-from app.db.database import get_db
-from app.api.v1.endpoints.auth import get_current_user_optional
-from app.services.history_manager import HistoryService
-from app.services.delayed_response_service import DelayedResponseService
-import json
 
+from app.api.v1.endpoints.auth import get_current_user_optional
 from app.api.v1.endpoints.recommend import (
     RecommendationResponse,
     embedder,
@@ -15,7 +12,10 @@ from app.api.v1.endpoints.recommend import (
 )
 from app.core.security import limiter
 from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
+from app.db.database import get_db
 from app.services.ai.audio_analyzer import AudioAnalyzer
+from app.services.delayed_response_service import DelayedResponseService
+from app.services.history_manager import HistoryService
 
 router = APIRouter()
 audio_analyzer = AudioAnalyzer()
@@ -86,7 +86,7 @@ async def analyze_audio(
         if context_dict:
             if context_dict.get('age'): semantic_query += f" العمر: {context_dict['age']}"
             if context_dict.get('gender'): semantic_query += f" الجنس: {context_dict['gender']}"
-            if context_dict.get('biometric_stress'): semantic_query += f" يعاني من توتر جسدي أو نبض مرتفع"
+            if context_dict.get('biometric_stress'): semantic_query += " يعاني من توتر جسدي أو نبض مرتفع"
             if context_dict.get('facial_emotion'): semantic_query += f" وملامح وجهه تظهر {context_dict['facial_emotion']}"
             
         # بحث في القرآن حصراً مع البحث الهجين

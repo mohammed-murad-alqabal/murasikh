@@ -1,14 +1,15 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Depends, Request
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from app.services.user_manager import UserManager
-from app.services.history_manager import HistoryService
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from app.core.auth import create_access_token, verify_token
 from app.core.security import limiter
 from app.db.database import get_db
+from app.services.history_manager import HistoryService
+from app.services.user_manager import UserManager
 
 router = APIRouter()
 user_manager = UserManager()

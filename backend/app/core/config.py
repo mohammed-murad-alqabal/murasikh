@@ -1,5 +1,7 @@
-from pydantic_settings import BaseSettings
+import secrets
+
 from pydantic import computed_field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -26,15 +28,24 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost,http://127.0.0.1,http://10.0.2.2"
     
     # JWT Settings
-    SECRET_KEY: str = "super-secret-key-change-in-production"
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if self.ENVIRONMENT == "production":
-            if self.SECRET_KEY == "super-secret-key-change-in-production" or len(self.SECRET_KEY) < 32:
+
+        # Handle SECRET_KEY security
+        if not self.SECRET_KEY or self.SECRET_KEY == "super-secret-key-change-in-production":
+            if self.ENVIRONMENT == "production":
                 raise ValueError("SECRET_KEY must be set to at least 32 characters in production")
+            else:
+                # Generate a secure random key for development if not provided
+                self.SECRET_KEY = secrets.token_urlsafe(32)
+        elif self.ENVIRONMENT == "production" and len(self.SECRET_KEY) < 32:
+            raise ValueError("SECRET_KEY must be set to at least 32 characters in production")
+
+        if self.ENVIRONMENT == "production":
             if self.POSTGRES_PASSWORD == "postgres":
                 raise ValueError("POSTGRES_PASSWORD must be changed in production")
 

@@ -268,7 +268,7 @@ class RAGEngine:
     ) -> str:
         templates = self.WARM_TEMPLATES.get(emotion)
         intro = random.choice(templates) if templates else (
-            f"أسمعك، وأشعر بما تمر به. وتذكر دائماً كلام الله في هذا الموقف:"
+            "أسمعك، وأشعر بما تمر به. وتذكر دائماً كلام الله في هذا الموقف:"
         )
         source_line = f"\n\n📖 {source}" if source else ""
         return f"{intro}\n\n{retrieved_text}{source_line}"

@@ -1,6 +1,8 @@
 import json
 import logging
+
 import google.generativeai as genai
+
 from app.core.config import settings
 from app.core.taxonomy import EMOTION_TAXONOMY
 
@@ -52,7 +54,7 @@ class ConversationalAgent:
                 prompt += "\n\n[سياق إضافي عن المستخدم]:\n"
                 if user_context.get("age"): prompt += f"- العمر: {user_context['age']} سنة\n"
                 if user_context.get("gender"): prompt += f"- الجنس: {'ذكر' if user_context['gender'] == 'male' else 'أنثى'}\n"
-                if user_context.get("biometric_stress"): prompt += f"- مؤشرات حيوية: توتر جسدي أو نبض مرتفع\n"
+                if user_context.get("biometric_stress"): prompt += "- مؤشرات حيوية: توتر جسدي أو نبض مرتفع\n"
                 if user_context.get("facial_emotion"): prompt += f"- ملامح الوجه: {user_context['facial_emotion']}\n"
             
             prompt += "\n[سجل المحادثة الأخير]:\n"

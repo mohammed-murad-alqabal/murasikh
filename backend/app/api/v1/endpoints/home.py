@@ -156,6 +156,7 @@ async def get_home_verse(
                     recent = history_service.get_history(user["id"])[:3]
                     if recent:
                         from datetime import datetime, timezone
+
                         import dateutil.parser
                         
                         now = datetime.now(timezone.utc)
@@ -188,7 +189,7 @@ async def get_home_verse(
         # ── 3. بناء الاستعلام الدلالي المحسّن ──
         semantic_query = EMOTION_SEMANTIC_QUERIES.get(
             dominant_emotion,
-            f"الصبر والطمأنينة والتوكل على الله",
+            "الصبر والطمأنينة والتوكل على الله",
         )
 
         # إضافة سياق المستخدم إن كان مسجّلاً

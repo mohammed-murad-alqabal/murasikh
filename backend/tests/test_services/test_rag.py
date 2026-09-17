@@ -1,5 +1,5 @@
-import pytest
 from app.services.ai.embeddings import EmbeddingService
+
 
 def test_hybrid_weighted_retrieval():
     es = EmbeddingService()

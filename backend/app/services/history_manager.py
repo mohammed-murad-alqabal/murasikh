@@ -1,7 +1,8 @@
-from datetime import datetime
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
+
 from app.db.models import DelayedResponse, Interaction
+
 
 class HistoryService:
     def __init__(self, db: Session):
