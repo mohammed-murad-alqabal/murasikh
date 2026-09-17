@@ -7,9 +7,14 @@ from app.services.ai.embeddings import EmbeddingService
 from app.services.ai.rag_engine import RAGEngine
 
 
+class FakeEmbeddingVector(list):
+    def tolist(self):
+        return list(self)
+
+
 class FakeEmbeddingModel:
     def encode(self, text):
-        return [float(len(text) % 7)] * 8
+        return FakeEmbeddingVector([float(len(text) % 7)] * 8)
 
 
 class FakeCollection:
