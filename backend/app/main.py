@@ -19,7 +19,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost", "http://127.0.0.1", "http://10.0.2.2"], # حظر النطاقات العشوائية (Strict CORS)
+    allow_origins=settings.cors_origins, # حظر النطاقات العشوائية (Strict CORS)
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
@@ -41,4 +41,3 @@ def read_root(request: Request):
 @limiter.limit("20/minute")
 def health_check(request: Request):
     return {"status": "ok"}
-

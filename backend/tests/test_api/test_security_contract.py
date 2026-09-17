@@ -104,3 +104,12 @@ def test_production_settings_reject_default_secret():
             ENVIRONMENT="production",
             SECRET_KEY="super-secret-key-change-in-production",
         )
+
+
+def test_cors_origins_are_parsed_from_configuration():
+    settings = Settings(CORS_ORIGINS="https://app.example, https://admin.example")
+
+    assert settings.cors_origins == [
+        "https://app.example",
+        "https://admin.example",
+    ]

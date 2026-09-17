@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     
     ENVIRONMENT: str = "development"
+    CORS_ORIGINS: str = "http://localhost,http://127.0.0.1,http://10.0.2.2"
     
     # JWT Settings
     SECRET_KEY: str = "super-secret-key-change-in-production"
@@ -31,8 +32,15 @@ class Settings(BaseSettings):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if self.ENVIRONMENT == "production" and self.SECRET_KEY == "super-secret-key-change-in-production":
-            raise ValueError("SECRET_KEY must be set in production environment")
+        if self.ENVIRONMENT == "production":
+            if self.SECRET_KEY == "super-secret-key-change-in-production" or len(self.SECRET_KEY) < 32:
+                raise ValueError("SECRET_KEY must be set to at least 32 characters in production")
+            if self.POSTGRES_PASSWORD == "postgres":
+                raise ValueError("POSTGRES_PASSWORD must be changed in production")
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
     class Config:
         env_file = ".env"
