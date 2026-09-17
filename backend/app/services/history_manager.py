@@ -1,7 +1,13 @@
+import logging
 from datetime import datetime
-from sqlalchemy.orm import Session
+
 from sqlalchemy import desc
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
 from app.db.models import DelayedResponse, Interaction
+
+logger = logging.getLogger(__name__)
 
 class HistoryService:
     def __init__(self, db: Session):
@@ -52,7 +58,8 @@ class HistoryService:
             self.db.query(Interaction).filter(Interaction.user_id == user_id).delete()
             self.db.commit()
             return True
-        except Exception:
+        except SQLAlchemyError as e:
+            logger.error(f"Database error in clear_history: {e}")
             self.db.rollback()
             return False
 
@@ -101,5 +108,6 @@ class HistoryService:
             if disliked:
                 context += f"User disliked previous guidance for: {', '.join(disliked)}."
             return context
-        except Exception:
+        except SQLAlchemyError as e:
+            logger.error(f"Database error in get_user_context: {e}")
             return ""
