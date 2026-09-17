@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -39,7 +40,8 @@ class OfflineService {
     try {
       final results = await Connectivity().checkConnectivity();
       return results.any((r) => r != ConnectivityResult.none);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('OfflineService.isConnected error: $e\n$st');
       return false;
     }
   }
@@ -88,7 +90,11 @@ class OfflineService {
           data['recommendation'] as Map<String, dynamic>,
         );
         if (rec.emotion == emotion) return rec;
-      } catch (_) {}
+      } catch (e, st) {
+        debugPrint(
+          'OfflineService.getCachedRecommendation error decoding JSON: $e\n$st',
+        );
+      }
     }
     return null;
   }
@@ -104,7 +110,10 @@ class OfflineService {
       return RecommendationModel.fromJson(
         data['recommendation'] as Map<String, dynamic>,
       );
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint(
+        'OfflineService.getLatestCachedRecommendation error decoding JSON: $e\n$st',
+      );
       return null;
     }
   }
@@ -142,7 +151,10 @@ class OfflineService {
         .map((raw) {
           try {
             return jsonDecode(raw) as Map<String, dynamic>;
-          } catch (_) {
+          } catch (e, st) {
+            debugPrint(
+              'OfflineService.getPendingFeedbacks error decoding JSON: $e\n$st',
+            );
             return <String, dynamic>{};
           }
         })
@@ -156,7 +168,9 @@ class OfflineService {
     for (final raw in _cacheBox.values) {
       try {
         cachedRecommendations.add(jsonDecode(raw));
-      } catch (_) {}
+      } catch (e, st) {
+        debugPrint('OfflineService.exportData error decoding JSON: $e\n$st');
+      }
     }
     return {
       'cached_recommendations': cachedRecommendations,

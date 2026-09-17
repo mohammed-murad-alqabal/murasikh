@@ -37,8 +37,9 @@ void main() {
     blocTest<RecommendationBloc, RecommendationState>(
       'emits [RecommendationLoading, RecommendationLoaded] on success',
       build: () {
-        when(() => mockApiService.getRecommendation('test text'))
-            .thenAnswer((_) async => testModel);
+        when(
+          () => mockApiService.getRecommendation('test text'),
+        ).thenAnswer((_) async => testModel);
         return bloc;
       },
       act: (bloc) => bloc.add(GetRecommendationEvent('test text')),
@@ -51,8 +52,9 @@ void main() {
     blocTest<RecommendationBloc, RecommendationState>(
       'emits [RecommendationLoading, RecommendationError] on failure',
       build: () {
-        when(() => mockApiService.getRecommendation('test text'))
-            .thenThrow(Exception('Network Error'));
+        when(
+          () => mockApiService.getRecommendation('test text'),
+        ).thenThrow(Exception('Network Error'));
         return bloc;
       },
       act: (bloc) => bloc.add(GetRecommendationEvent('test text')),

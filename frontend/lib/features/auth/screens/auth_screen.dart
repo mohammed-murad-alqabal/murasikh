@@ -5,7 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../services/auth_service.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  final AuthService? authService;
+  const AuthScreen({super.key, this.authService});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -19,6 +20,8 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLogin = true;
   bool _isLoading = false;
 
+  AuthService get _authService => widget.authService ?? AuthService();
+
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -30,17 +33,18 @@ class _AuthScreenState extends State<AuthScreen> {
 
     String? error;
     if (_isLogin) {
-      error = await AuthService().login(username, password);
+      error = await _authService.login(username, password);
     } else {
-      error = await AuthService().register(username, password);
+      error = await _authService.register(username, password);
     }
 
     setState(() => _isLoading = false);
 
     if (error != null) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error)));
       }
     } else {
       HapticFeedback.mediumImpact();

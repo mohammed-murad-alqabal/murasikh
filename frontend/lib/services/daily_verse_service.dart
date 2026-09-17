@@ -92,19 +92,14 @@ class DailyVerseService extends ChangeNotifier {
 
       final headers = await ApiService.getHeaders();
       final body = jsonEncode({
-        'dominant_emotion':
-            ctx.isNeutral ? null : ctx.dominantEmotion,
+        'dominant_emotion': ctx.isNeutral ? null : ctx.dominantEmotion,
         'confidence': ctx.confidence,
         'signal_source': ctx.signalSource,
         'time_of_day': timeOfDay,
       });
 
       final response = await http
-          .post(
-            Uri.parse('$_baseUrl/home/verse'),
-            headers: headers,
-            body: body,
-          )
+          .post(Uri.parse('$_baseUrl/home/verse'), headers: headers, body: body)
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {

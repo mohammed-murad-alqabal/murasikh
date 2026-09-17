@@ -1,7 +1,6 @@
 from pydantic_settings import BaseSettings
 from pydantic import computed_field
 
-
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Murassikh API"
     API_V1_STR: str = "/api/v1"
@@ -27,8 +26,9 @@ class Settings(BaseSettings):
     
     # JWT Settings
     SECRET_KEY: str = "super-secret-key-change-in-production"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    ALGORITHM: str = "HS512"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # 15 minutes
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

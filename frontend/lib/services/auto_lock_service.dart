@@ -22,7 +22,7 @@ class AutoLockPolicy {
 
 class AutoLockService {
   AutoLockService({LocalAuthentication? authenticator})
-      : _authenticator = authenticator ?? LocalAuthentication();
+    : _authenticator = authenticator ?? LocalAuthentication();
 
   final LocalAuthentication _authenticator;
 

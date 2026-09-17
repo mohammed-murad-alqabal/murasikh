@@ -123,8 +123,8 @@ class RAGEngine:
                 genai.configure(api_key=settings.GEMINI_API_KEY)
                 self.model = genai.GenerativeModel('gemini-3.6-flash')
                 self._gemini_available = True
-            except Exception:
-                pass
+            except Exception as e:
+                logging.error(f"Failed to initialize Gemini: {e}")
                 
     def _load_local_llm(self):
         if not LOCAL_LLM_AVAILABLE or self._local_llm_loaded:

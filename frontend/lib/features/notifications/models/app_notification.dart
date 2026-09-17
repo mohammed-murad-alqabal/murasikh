@@ -37,7 +37,9 @@ class AppNotification {
       title: map['title'] ?? '',
       body: map['body'] ?? '',
       type: map['type'] ?? 'system',
-      timestamp: map['timestamp'] != null ? DateTime.tryParse(map['timestamp']) ?? DateTime.now() : DateTime.now(),
+      timestamp: map['timestamp'] != null
+          ? DateTime.tryParse(map['timestamp']) ?? DateTime.now()
+          : DateTime.now(),
       isRead: map['isRead'] ?? false,
       payload: map['payload'],
     );
@@ -45,5 +47,6 @@ class AppNotification {
 
   String toJson() => json.encode(toMap());
 
-  factory AppNotification.fromJson(String source) => AppNotification.fromMap(json.decode(source));
+  factory AppNotification.fromJson(String source) =>
+      AppNotification.fromMap(json.decode(source));
 }

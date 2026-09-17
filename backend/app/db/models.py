@@ -111,3 +111,14 @@ class DelayedResponse(Base):
     user = relationship("User", back_populates="delayed_responses")
     interaction = relationship("Interaction", back_populates="delayed_response")
 
+
+
+class AppRating(Base):
+    __tablename__ = "app_ratings"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    rating = Column(Integer, nullable=False)
+    feedback = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", backref="app_ratings")

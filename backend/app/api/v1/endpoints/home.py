@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 
@@ -9,6 +10,7 @@ from app.api.v1.endpoints.auth import get_current_user_optional
 from app.core.security import limiter
 from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES
 from app.db.database import get_db
+from app.db.models import AppRating
 from app.services.ai.embeddings import EmbeddingService
 from app.services.ai.rag_engine import RAGEngine
 from app.services.history_manager import HistoryService
@@ -21,6 +23,12 @@ logger = logging.getLogger(__name__)
 # ────────────────────────────────────────────────────────────────────────────
 # نماذج البيانات
 # ────────────────────────────────────────────────────────────────────────────
+
+
+
+class AppRatingRequest(BaseModel):
+    rating: int
+    feedback: str | None = None
 
 class ContextSignalsRequest(BaseModel):
     """إشارات السياق الواردة من العميل (الجهاز)."""
@@ -153,9 +161,10 @@ async def get_home_verse(
             if user:
                 try:
                     history_service = HistoryService(db)
-                    recent = history_service.get_history(user["id"])[:3]
+                    recent = history_service.get_history(user["id"], limit=3)
                     if recent:
                         from datetime import datetime, timezone
+
                         import dateutil.parser
                         
                         now = datetime.now(timezone.utc)
@@ -171,16 +180,16 @@ async def get_home_verse(
                                     dt = dt.replace(tzinfo=timezone.utc)
                                 if (now - dt).total_seconds() < 12 * 3600:
                                     emotions.append(emotion)
-                            except:
-                                pass
+                            except (ValueError, TypeError, dateutil.parser.ParserError) as e:
+                                logger.warning(f"Failed to parse timestamp in history: {e}")
 
                         if emotions:
                             from collections import Counter
                             dominant_emotion = Counter(emotions).most_common(1)[0][0]
                             confidence = 0.55  # ثقة معتدلة من السجل
                             use_emotion = True
-                except Exception:
-                    pass
+                except Exception as e:  # noqa: BLE001
+                    logger.warning(f"Failed to extract emotion from history: {e}")
 
             if not use_emotion:
                 return _time_verse_response(time_of_day)
@@ -188,7 +197,7 @@ async def get_home_verse(
         # ── 3. بناء الاستعلام الدلالي المحسّن ──
         semantic_query = EMOTION_SEMANTIC_QUERIES.get(
             dominant_emotion,
-            f"الصبر والطمأنينة والتوكل على الله",
+            "الصبر والطمأنينة والتوكل على الله",
         )
 
         # إضافة سياق المستخدم إن كان مسجّلاً
@@ -198,11 +207,12 @@ async def get_home_verse(
                 user_ctx = history_service.get_user_context(user["id"])
                 if user_ctx:
                     semantic_query = f"{semantic_query} {user_ctx}"
-            except Exception:
-                pass
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"Failed to append user context to semantic query: {e}")
 
         # ── 4. البحث في قاعدة المعرفة ──
-        verse_results = embedder.search_similar(
+        verse_results = await asyncio.to_thread(
+            embedder.search_similar,
             query=semantic_query,
             n_results=3,
             filters={"type": "verse"},
@@ -251,6 +261,32 @@ async def get_home_verse(
             cached=False,
         )
 
-    except Exception as e:
-        logger.error(f"Error in get_home_verse: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Error in get_home_verse")
         return _time_verse_response(signals.time_of_day)
+
+
+@router.post("/rating")
+@limiter.limit("5/minute")
+async def submit_app_rating(
+    request: Request,
+    payload: AppRatingRequest,
+    user: dict | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+):
+    """يستقبل تقييم التطبيق ويحفظه في قاعدة البيانات"""
+    try:
+        user_id = user["id"] if user else None
+        new_rating = AppRating(
+            user_id=user_id,
+            rating=payload.rating,
+            feedback=payload.feedback
+        )
+        db.add(new_rating)
+        db.commit()
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Error saving app rating: {e}", exc_info=True)
+        db.rollback()
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail="Internal Server Error")

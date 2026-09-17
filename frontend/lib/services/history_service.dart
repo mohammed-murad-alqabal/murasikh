@@ -204,7 +204,9 @@ class HistoryService {
     var remoteCleared = false;
     try {
       final headers = await ApiService.getHeaders();
-      final response = await http.delete(Uri.parse(baseUrl), headers: headers).timeout(const Duration(seconds: 3));
+      final response = await http
+          .delete(Uri.parse(baseUrl), headers: headers)
+          .timeout(const Duration(seconds: 3));
       remoteCleared = response.statusCode == 200;
     } catch (_) {}
     if (remoteCleared) {

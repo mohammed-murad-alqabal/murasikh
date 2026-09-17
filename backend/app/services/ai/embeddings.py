@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import functools
 
 import chromadb
 from sentence_transformers import SentenceTransformer
@@ -28,6 +29,7 @@ class EmbeddingService:
             except Exception as e:
                 print(f"Warning: Could not load fingerprints: {e}")
 
+    @functools.lru_cache(maxsize=128)
     def create_embedding(self, text: str) -> list:
         # Generate the embedding and convert to list of floats for ChromaDB
         embedding = self.model.encode(text)
