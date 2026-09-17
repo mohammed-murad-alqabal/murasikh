@@ -1,3 +1,14 @@
+import uuid
+
+import jwt
+import pytest
+
+from app.core.auth import SECRET_KEY
+from app.core.config import Settings
+from app.db.models import User
+from app.services.user_manager import UserManager
+
+
 def test_cors_allows_configured_local_origin_and_rejects_unknown_origin(client):
     allowed = client.get(
         "/health",
@@ -51,3 +62,45 @@ def test_audio_upload_rejects_files_over_10_mb(client):
 
     assert response.status_code == 413
     assert "10 MB" in response.json()["detail"]
+
+
+@pytest.mark.parametrize("is_active,is_deleted", [(False, False), (True, True)])
+def test_inactive_or_deleted_accounts_cannot_login(client, db_session, is_active, is_deleted):
+    suffix = uuid.uuid4().hex[:10]
+    username = f"blocked_{suffix}"
+    db_session.add(
+        User(
+            username=username,
+            email=f"{username}@example.com",
+            password_hash=UserManager().get_password_hash("password"),
+            is_active=is_active,
+            is_deleted=is_deleted,
+        )
+    )
+    db_session.commit()
+
+    response = client.post(
+        "/api/v1/auth/login",
+        data={"username": username, "password": "password"},
+    )
+
+    assert response.status_code == 401
+
+
+def test_jwt_signed_with_wrong_secret_cannot_access_private_route(client):
+    token = jwt.encode({"sub": "testuser"}, "wrong-secret", algorithm="HS256")
+    response = client.get(
+        "/api/v1/history",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 401
+    assert SECRET_KEY != "wrong-secret"
+
+
+def test_production_settings_reject_default_secret():
+    with pytest.raises(ValueError, match="SECRET_KEY"):
+        Settings(
+            ENVIRONMENT="production",
+            SECRET_KEY="super-secret-key-change-in-production",
+        )

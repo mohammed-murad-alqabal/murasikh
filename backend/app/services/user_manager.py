@@ -30,7 +30,11 @@ class UserManager:
             return None # Username or email already exists
 
     def get_user_by_username(self, db: Session, username: str) -> dict:
-        user = db.query(User).filter(User.username == username).first()
+        user = db.query(User).filter(
+            User.username == username,
+            User.is_active.is_(True),
+            User.is_deleted.is_(False),
+        ).first()
         if user:
             return {
                 "id": user.id,
