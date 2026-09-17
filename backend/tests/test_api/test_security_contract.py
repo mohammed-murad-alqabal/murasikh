@@ -113,3 +113,27 @@ def test_cors_origins_are_parsed_from_configuration():
         "https://app.example",
         "https://admin.example",
     ]
+
+
+
+
+
+
+from unittest.mock import patch, MagicMock
+from app.main import app
+from app.db.database import get_db
+
+def test_audio_upload_masks_internal_server_errors(client):
+    with patch("app.api.v1.endpoints.audio.audio_analyzer.analyze_tone", side_effect=Exception("Secret internal database connection string error")):
+        # Mock get_db so we don't connect to postgres
+        app.dependency_overrides[get_db] = lambda: MagicMock()
+        try:
+            response = client.post(
+                "/api/v1/audio/analyze-audio",
+                files={"file": ("test.wav", b"fake audio data", "audio/wav")},
+            )
+            assert response.status_code == 500
+            assert "Secret internal" not in response.text
+            assert response.json()["detail"] == "Internal Server Error"
+        finally:
+            app.dependency_overrides.pop(get_db, None)
