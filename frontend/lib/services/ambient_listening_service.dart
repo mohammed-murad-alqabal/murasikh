@@ -68,15 +68,26 @@ void onStart(ServiceInstance service) async {
                     tafsir: rec.tafsir,
                   );
                 }
-              } catch (_) {
+              } catch (e, stackTrace) {
+                debugPrint(
+                  'AmbientListeningService - Error analyzing audio: $e\n$stackTrace',
+                );
               } finally {
                 try {
                   File(recordedPath).deleteSync();
-                } catch (_) {}
+                } catch (e, stackTrace) {
+                  debugPrint(
+                    'AmbientListeningService - Error deleting audio file: $e\n$stackTrace',
+                  );
+                }
               }
             }
           }
-        } catch (_) {}
+        } catch (e, stackTrace) {
+          debugPrint(
+            'AmbientListeningService - Error in background audio loop: $e\n$stackTrace',
+          );
+        }
       }
     }
   });
