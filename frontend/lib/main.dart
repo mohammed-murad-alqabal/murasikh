@@ -18,6 +18,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'core/widgets/connectivity_wrapper.dart';
+import 'widgets/auto_lock_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -109,7 +110,7 @@ class MurassikhApp extends StatelessWidget {
               ),
             ),
 
-            home: const MainShell(),
+            home: const AutoLockGate(child: MainShell()),
           );
         },
       ),

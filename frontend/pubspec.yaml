@@ -51,6 +51,7 @@ dependencies:
   fl_chart: ^1.2.0
   flutter_background_service: ^5.1.0
   permission_handler: ^13.0.2
+  local_auth: ^2.3.0
   shared_preferences: ^2.5.5
   health: ^13.3.2
   timezone: ^0.11.1
