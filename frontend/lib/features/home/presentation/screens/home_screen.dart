@@ -125,12 +125,27 @@ class _HomeScreenState extends State<HomeScreen> {
   String _formatArabicDate() {
     final now = DateTime.now();
     const months = [
-      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
     ];
     const days = [
-      'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس',
-      'الجمعة', 'السبت', 'الأحد',
+      'الإثنين',
+      'الثلاثاء',
+      'الأربعاء',
+      'الخميس',
+      'الجمعة',
+      'السبت',
+      'الأحد',
     ];
     final dayName = days[now.weekday - 1];
     final monthName = months[now.month - 1];
@@ -256,12 +271,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 alignment: Alignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+                    icon: const Icon(
+                      Icons.notifications_none,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const NotificationCenterScreen(),
+                          builder: (context) =>
+                              const NotificationCenterScreen(),
                         ),
                       );
                     },
@@ -336,9 +356,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          (!isLoading && card != null && card.signalUsed != 'time') 
-                             ? card.signalLabel 
-                             : 'آية اليوم وسكينة القلب',
+                          (!isLoading &&
+                                  card != null &&
+                                  card.signalUsed != 'time')
+                              ? card.signalLabel
+                              : 'آية اليوم وسكينة القلب',
                           style: const TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
@@ -473,7 +495,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 value: isGuardianActive,
                 onChanged: _toggleGuardian,
                 activeThumbColor: AppColors.primary,
@@ -487,7 +512,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: Icon(
                     isGuardianActive ? Icons.hearing : Icons.hearing_disabled,
-                    color: isGuardianActive ? AppColors.primary : AppColors.textSecondary,
+                    color: isGuardianActive
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
                     size: 26,
                   ),
                 ),
@@ -496,12 +523,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const Text(
                       'حارس السكينة',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     if (isGuardianActive) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.green.shade50,
                           borderRadius: BorderRadius.circular(10),
@@ -509,7 +542,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: const Text(
                           'مُفعّل 🌿',
-                          style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -523,7 +560,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         : 'متوقف حالياً، فعّله لمراقبة سكينتك',
                     style: TextStyle(
                       fontSize: 12,
-                      color: isGuardianActive ? AppColors.primary : AppColors.textSecondary,
+                      color: isGuardianActive
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -541,25 +580,46 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 12,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              liveSpeech.isNotEmpty ? liveSpeech : 'النظام في وضع الاستماع المحيطي الهادئ...',
-                              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: AppColors.textPrimary),
+                              liveSpeech.isNotEmpty
+                                  ? liveSpeech
+                                  : 'النظام في وضع الاستماع المحيطي الهادئ...',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                                color: AppColors.textPrimary,
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           TextButton.icon(
                             style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               visualDensity: VisualDensity.compact,
                             ),
-                            icon: const Icon(Icons.notifications_active_outlined, size: 14, color: AppColors.secondary),
-                            label: const Text('اختبار', style: TextStyle(fontSize: 11, color: AppColors.primary)),
+                            icon: const Icon(
+                              Icons.notifications_active_outlined,
+                              size: 14,
+                              color: AppColors.secondary,
+                            ),
+                            label: const Text(
+                              'اختبار',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primary,
+                              ),
+                            ),
                             onPressed: () => _ambientService.testTriggerAlert(),
                           ),
                         ],
@@ -571,19 +631,29 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.2),
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.lightbulb_rounded, color: AppColors.primary, size: 16),
+                                  const Icon(
+                                    Icons.lightbulb_rounded,
+                                    color: AppColors.primary,
+                                    size: 16,
+                                  ),
                                   const SizedBox(width: 6),
                                   Flexible(
                                     child: Text(
                                       'تنبيه السكينة (${latestAlert.emotion}):',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: AppColors.primary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -591,7 +661,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(height: 6),
                               Text(
                                 latestAlert.message,
-                                style: const TextStyle(fontSize: 13, height: 1.4, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  height: 1.4,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -622,7 +696,9 @@ class _HomeScreenState extends State<HomeScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
             side: BorderSide(
-              color: isAnalyzing ? AppColors.primary.withValues(alpha: 0.5) : Colors.black12,
+              color: isAnalyzing
+                  ? AppColors.primary.withValues(alpha: 0.5)
+                  : Colors.black12,
               width: 1.5,
             ),
           ),
@@ -630,25 +706,35 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 value: isAnalyzing,
                 onChanged: _toggleFaceAnalysis,
                 activeThumbColor: AppColors.primary,
                 secondary: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isAnalyzing ? AppColors.primary.withValues(alpha: 0.12) : Colors.grey.shade100,
+                    color: isAnalyzing
+                        ? AppColors.primary.withValues(alpha: 0.12)
+                        : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: _isCameraInitializing
                       ? const SizedBox(
                           width: 26,
                           height: 26,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
                         )
                       : Icon(
                           Icons.face_retouching_natural,
-                          color: isAnalyzing ? AppColors.primary : AppColors.textSecondary,
+                          color: isAnalyzing
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
                           size: 26,
                         ),
                 ),
@@ -659,10 +745,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4.0),
                   child: Text(
-                    isAnalyzing ? 'يحلل تعابيرك محلياً لتقديم مواساة فورية' : 'مستشعر الوجه مغلق لتوفير الطاقة',
+                    isAnalyzing
+                        ? 'يحلل تعابيرك محلياً لتقديم مواساة فورية'
+                        : 'مستشعر الوجه مغلق لتوفير الطاقة',
                     style: TextStyle(
                       fontSize: 12,
-                      color: isAnalyzing ? AppColors.primary : AppColors.textSecondary,
+                      color: isAnalyzing
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -698,20 +788,31 @@ class _HomeScreenState extends State<HomeScreen> {
                           Expanded(
                             child: Text(
                               'الشعور المكتشف: $emotion',
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.open_in_full, size: 18, color: AppColors.primary),
+                            icon: const Icon(
+                              Icons.open_in_full,
+                              size: 18,
+                              color: AppColors.primary,
+                            ),
                             tooltip: 'الشاشة الكاملة',
                             onPressed: () => Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const FaceEmotionScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const FaceEmotionScreen(),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      if (rec != null && emotion != 'طبيعي' && emotion != 'سكينة') ...[
+                      if (rec != null &&
+                          emotion != 'طبيعي' &&
+                          emotion != 'سكينة') ...[
                         const SizedBox(height: 8),
                         Container(
                           padding: const EdgeInsets.all(12),
@@ -742,10 +843,11 @@ class _HomeScreenState extends State<HomeScreen> {
       animation: _contextService,
       builder: (context, _) {
         final currentEmotion = _contextService.current.dominantEmotion;
-        final displayEmotion = (currentEmotion == 'طبيعي' || currentEmotion.isEmpty)
+        final displayEmotion =
+            (currentEmotion == 'طبيعي' || currentEmotion.isEmpty)
             ? 'في سكينة واطمئنان 🌿'
             : currentEmotion;
-            
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
@@ -774,17 +876,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const Text(
                       'مؤشر السكينة اليومي',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'الحالة الحالية: $displayEmotion',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.textSecondary),
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 12,
+                color: AppColors.textSecondary,
+              ),
             ],
           ),
         );

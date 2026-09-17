@@ -78,10 +78,12 @@ class ApiService {
   //  الدوال الداخلية
   // ============================================================
 
-  static Future<Map<String, String>> getHeaders({bool isMultipart = false}) async {
+  static Future<Map<String, String>> getHeaders({
+    bool isMultipart = false,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    
+
     final headers = <String, String>{};
     if (!isMultipart) {
       headers['Content-Type'] = 'application/json; charset=UTF-8';
@@ -92,7 +94,10 @@ class ApiService {
     return headers;
   }
 
-  Future<RecommendationModel> _fetchFromServer(String text, {Map<String, dynamic>? userContext}) async {
+  Future<RecommendationModel> _fetchFromServer(
+    String text, {
+    Map<String, dynamic>? userContext,
+  }) async {
     final settingsService = SettingsService();
     await settingsService.init();
     final settings = settingsService.getSettings();
@@ -111,8 +116,8 @@ class ApiService {
           Uri.parse('$baseUrl/analyze'),
           headers: headers,
           body: jsonEncode({
-            'text': text, 
-            'user_context': mergedContext.isEmpty ? null : mergedContext
+            'text': text,
+            'user_context': mergedContext.isEmpty ? null : mergedContext,
           }),
         )
         .timeout(const Duration(seconds: 15));
@@ -173,10 +178,7 @@ class ApiService {
             !const [-1, 0, 1].contains(pendingFeedback)) {
           continue;
         }
-        await _sendFeedbackToServer(
-          pendingId,
-          pendingFeedback,
-        );
+        await _sendFeedbackToServer(pendingId, pendingFeedback);
       }
       await offlineService.clearPendingFeedbacks();
     } catch (_) {
@@ -185,7 +187,10 @@ class ApiService {
   }
 
   /// إرسال مقطع صوتي لتحليله
-  Future<RecommendationModel> analyzeAudio(String filePath, {Map<String, dynamic>? userContext}) async {
+  Future<RecommendationModel> analyzeAudio(
+    String filePath, {
+    Map<String, dynamic>? userContext,
+  }) async {
     final settingsService = SettingsService();
     await settingsService.init();
     final settings = settingsService.getSettings();
