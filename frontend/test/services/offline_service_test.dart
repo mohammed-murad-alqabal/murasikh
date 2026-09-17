@@ -20,7 +20,9 @@ void main() {
   }
 
   setUpAll(() async {
-    hiveDirectory = await Directory.systemTemp.createTemp('murassikh_hive_test_');
+    hiveDirectory = await Directory.systemTemp.createTemp(
+      'murassikh_hive_test_',
+    );
     Hive.init(hiveDirectory.path);
     offlineService = OfflineService();
     await offlineService.init();
@@ -33,7 +35,8 @@ void main() {
   tearDownAll(() async {
     await offlineService.clearLocalData();
     await Hive.close();
-    if (await hiveDirectory.exists()) await hiveDirectory.delete(recursive: true);
+    if (await hiveDirectory.exists())
+      await hiveDirectory.delete(recursive: true);
   });
 
   test('fallbackRecommendation returns correct default message', () {
@@ -47,8 +50,14 @@ void main() {
   });
 
   test('caches recommendations and retrieves them by emotion', () async {
-    await offlineService.cacheRecommendation('رسالة حزن', recommendation('حزن'));
-    await offlineService.cacheRecommendation('رسالة قلق', recommendation('قلق'));
+    await offlineService.cacheRecommendation(
+      'رسالة حزن',
+      recommendation('حزن'),
+    );
+    await offlineService.cacheRecommendation(
+      'رسالة قلق',
+      recommendation('قلق'),
+    );
 
     expect(offlineService.getCachedRecommendation('حزن')?.emotion, 'حزن');
     expect(offlineService.getCachedRecommendation('قلق')?.emotion, 'قلق');
@@ -71,15 +80,21 @@ void main() {
     expect(offlineService.getCachedRecommendation('حالة20')?.emotion, 'حالة20');
   });
 
-  test('stores separate pending feedback records even when ids match', () async {
-    await offlineService.savePendingFeedback('42', 1);
-    await offlineService.savePendingFeedback('42', -1);
+  test(
+    'stores separate pending feedback records even when ids match',
+    () async {
+      await offlineService.savePendingFeedback('42', 1);
+      await offlineService.savePendingFeedback('42', -1);
 
-    final pending = offlineService.getPendingFeedbacks();
-    expect(pending, hasLength(2));
-    expect(pending.map((item) => item['id']), everyElement('42'));
-    expect(pending.map((item) => item['feedback']), containsAll(<int>[1, -1]));
-  });
+      final pending = offlineService.getPendingFeedbacks();
+      expect(pending, hasLength(2));
+      expect(pending.map((item) => item['id']), everyElement('42'));
+      expect(
+        pending.map((item) => item['feedback']),
+        containsAll(<int>[1, -1]),
+      );
+    },
+  );
 
   test('ignores malformed pending feedback and exports valid data', () async {
     final pendingBox = Hive.box<String>('pending_feedback');

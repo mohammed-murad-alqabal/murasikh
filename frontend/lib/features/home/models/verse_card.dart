@@ -77,26 +77,26 @@ class VerseCard {
   }
 
   Map<String, dynamic> toJson() => {
-        'verse': verse,
-        'source': source,
-        'tafsir': tafsir,
-        'emotion_context': emotionContext,
-        'signal_used': signalUsed,
-        'confidence': confidence,
-        'cached': cached,
-        'fetched_at': fetchedAt.toIso8601String(),
-      };
+    'verse': verse,
+    'source': source,
+    'tafsir': tafsir,
+    'emotion_context': emotionContext,
+    'signal_used': signalUsed,
+    'confidence': confidence,
+    'cached': cached,
+    'fetched_at': fetchedAt.toIso8601String(),
+  };
 
   /// نسخة احتياطية تُعرض عند انعدام الإنترنت وفراغ الكاش
   static VerseCard get fallback => VerseCard(
-        verse: 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ',
-        source: 'سورة الرعد: ٢٨',
-        tafsir:
-            'ذكر الله سبحانه هو مفتاح الطمأنينة والراحة النفسية في كل وقت وحين.',
-        emotionContext: 'طبيعي',
-        signalUsed: 'time',
-        confidence: 0.0,
-        cached: true,
-        fetchedAt: DateTime.now(),
-      );
+    verse: 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ',
+    source: 'سورة الرعد: ٢٨',
+    tafsir:
+        'ذكر الله سبحانه هو مفتاح الطمأنينة والراحة النفسية في كل وقت وحين.',
+    emotionContext: 'طبيعي',
+    signalUsed: 'time',
+    confidence: 0.0,
+    cached: true,
+    fetchedAt: DateTime.now(),
+  );
 }

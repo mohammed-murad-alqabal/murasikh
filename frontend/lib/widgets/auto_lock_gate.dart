@@ -115,8 +115,8 @@ class _AutoLockGateState extends State<AutoLockGate>
     });
     final unlocked = await _lockService.unlock();
     if (!mounted) return;
-    
-    // Clear the backgrounded timestamp so that the OS `resumed` event 
+
+    // Clear the backgrounded timestamp so that the OS `resumed` event
     // (which fires after the biometric prompt closes) doesn't instantly re-lock.
     _backgroundedAt = null;
 
@@ -180,7 +180,9 @@ class _AutoLockGateState extends State<AutoLockGate>
                           ElevatedButton.icon(
                             onPressed: _unlocking ? null : _attemptUnlock,
                             icon: const Icon(Icons.fingerprint),
-                            label: Text(_unlocking ? 'جارٍ التحقق...' : 'فتح التطبيق'),
+                            label: Text(
+                              _unlocking ? 'جارٍ التحقق...' : 'فتح التطبيق',
+                            ),
                           ),
                         ],
                       ),
