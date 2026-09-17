@@ -36,7 +36,9 @@ class AutoLockService {
           useErrorDialogs: true,
         ),
       );
-    } catch (_) {
+    } catch (e, stackTrace) {
+      print('AutoLockService error: $e');
+      print('AutoLockService stackTrace: $stackTrace');
       return false;
     }
   }
