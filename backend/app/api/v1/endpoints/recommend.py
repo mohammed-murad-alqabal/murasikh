@@ -43,7 +43,7 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
         # 1. جلب سياق المحادثة السابق إذا كان المستخدم مسجلاً
         chat_history = []
         if user:
-            recent_interactions = history_service.get_history(user["id"])[:5]
+            recent_interactions = history_service.get_history(user["id"], limit=5)
             # Order from oldest to newest for context
             for interaction in reversed(recent_interactions):
                 chat_history.append({"role": "user", "content": interaction["input_text"]})

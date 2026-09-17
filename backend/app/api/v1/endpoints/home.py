@@ -160,7 +160,7 @@ async def get_home_verse(
             if user:
                 try:
                     history_service = HistoryService(db)
-                    recent = history_service.get_history(user["id"])[:3]
+                    recent = history_service.get_history(user["id"], limit=3)
                     if recent:
                         from datetime import datetime, timezone
                         import dateutil.parser
