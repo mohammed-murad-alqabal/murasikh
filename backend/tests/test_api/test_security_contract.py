@@ -113,3 +113,13 @@ def test_cors_origins_are_parsed_from_configuration():
         "https://app.example",
         "https://admin.example",
     ]
+
+def test_audio_upload_rejects_malformed_user_context(client):
+    response = client.post(
+        "/api/v1/audio/analyze-audio",
+        files={"file": ("test.wav", b"12345678", "audio/wav")},
+        data={"user_context": "{malformed_json: true"}
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid JSON in user_context"
