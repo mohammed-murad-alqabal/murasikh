@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.services.user_manager import UserManager
 from app.services.history_manager import HistoryService
-from app.core.auth import create_access_token, verify_token
+from app.core.auth import create_access_token, create_refresh_token, verify_token
 from app.core.security import limiter
 from app.db.database import get_db
 
@@ -23,6 +23,7 @@ class UserCreate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    refresh_token: str | None = None
 
 @router.post("/register")
 @limiter.limit("5/minute")
@@ -32,7 +33,8 @@ async def register(request: Request, user: UserCreate, db: Session = Depends(get
         raise HTTPException(status_code=400, detail="Username or email already exists")
     
     access_token = create_access_token(data={"sub": new_user["username"]})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(data={"sub": new_user["username"]})
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
 
 @router.post("/login", response_model=Token)
 @limiter.limit("10/minute")
@@ -46,8 +48,31 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
         )
     
     access_token = create_access_token(data={"sub": user["username"]})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(data={"sub": user["username"]})
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
 
+class RefreshToken(BaseModel):
+    refresh_token: str
+
+@router.post("/refresh", response_model=Token)
+@limiter.limit("5/minute")
+async def refresh_token(request: Request, body: RefreshToken, db: Session = Depends(get_db)):
+    payload = verify_token(body.refresh_token, token_type="refresh")
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    username = payload.get("sub")
+    if username is None:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = user_manager.get_user_by_username(db, username)
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    new_access_token = create_access_token(data={"sub": user["username"]})
+    new_refresh_token = create_refresh_token(data={"sub": user["username"]})
+
+    return {"access_token": new_access_token, "token_type": "bearer", "refresh_token": new_refresh_token}
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     payload = verify_token(token)
