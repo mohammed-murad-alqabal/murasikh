@@ -1,7 +1,8 @@
-from datetime import datetime
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
+
 from app.db.models import DelayedResponse, Interaction
+
 
 class HistoryService:
     def __init__(self, db: Session):
@@ -78,19 +79,23 @@ class HistoryService:
             
     def get_user_context(self, user_id: int) -> str:
         try:
-            interactions = self.db.query(Interaction).filter(
+            liked_interactions = self.db.query(Interaction).filter(
                 Interaction.user_id == user_id,
-                Interaction.user_feedback != 0
-            ).order_by(desc(Interaction.created_at)).all()
+                Interaction.user_feedback == 1
+            ).order_by(desc(Interaction.created_at)).limit(3).all()
+
+            disliked_interactions = self.db.query(Interaction).filter(
+                Interaction.user_id == user_id,
+                Interaction.user_feedback == -1
+            ).order_by(desc(Interaction.created_at)).limit(3).all()
             
             liked = set()
+            for row in liked_interactions:
+                liked.add(row.detected_emotion)
+
             disliked = set()
-            
-            for row in interactions:
-                if row.user_feedback == 1 and len(liked) < 3:
-                    liked.add(row.detected_emotion)
-                elif row.user_feedback == -1 and len(disliked) < 3:
-                    disliked.add(row.detected_emotion)
+            for row in disliked_interactions:
+                disliked.add(row.detected_emotion)
             
             if not liked and not disliked:
                 return ""
