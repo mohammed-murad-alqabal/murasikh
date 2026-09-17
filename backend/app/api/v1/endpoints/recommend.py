@@ -147,17 +147,29 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
         # 5. صياغة الرد الدافئ
         tier = "moderate"
         delayed_message = None
+        should_delay = emotion in EXTREME_EMOTIONS and confidence > 0.85
 
         if emotion in EXTREME_EMOTIONS:
             tier = "minimal"
-            final_message = "تعوذ بالله من الشيطان الرجيم، وخذ نفساً عميقاً."
-            delayed_message = await rag_engine.format_response(
-                user_text=payload.text,
-                emotion=emotion,
-                retrieved_text=base_message,
-                source=source,
-                tafsir=tafsir,
-            )
+            if should_delay:
+                final_message = "تعوذ بالله من الشيطان الرجيم، وخذ نفساً عميقاً."
+                delayed_message = await rag_engine.format_response(
+                    user_text=payload.text,
+                    emotion=emotion,
+                    retrieved_text=base_message,
+                    source=source,
+                    tafsir=tafsir,
+                )
+            elif ai_message:
+                final_message = ai_message + f"\n\n📖 {source}\n{base_message}" if source else ai_message
+            else:
+                final_message = await rag_engine.format_response(
+                    user_text=payload.text,
+                    emotion=emotion,
+                    retrieved_text=base_message,
+                    source=source,
+                    tafsir=tafsir,
+                )
         else:
             # إذا وفر الوكيل رسالة دافئة، ندمجها مع الآية المسترجعة لتقليل طلبات Gemini
             if ai_message:
@@ -179,11 +191,11 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
                 tafsir=tafsir,
                 confidence=confidence,
                 response_tier=tier,
-                response_delayed=bool(delayed_message and emotion in EXTREME_EMOTIONS),
+                response_delayed=bool(delayed_message and should_delay),
             )
             interaction_id = interaction.id
 
-            if delayed_message and emotion in EXTREME_EMOTIONS:
+            if delayed_message and should_delay:
                 DelayedResponseService(db).schedule(
                     user_id=user["id"],
                     interaction_id=interaction.id,

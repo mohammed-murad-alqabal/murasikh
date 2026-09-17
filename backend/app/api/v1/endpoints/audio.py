@@ -122,15 +122,22 @@ async def analyze_audio(
 
         tier = "moderate"
         delayed_message = None
+        should_delay = emotion in EXTREME_EMOTIONS and confidence > 0.85
         user_text = f"أشعر بـ {emotion} (تم تحليله من نبرة الصوت)"
         
         if emotion in EXTREME_EMOTIONS:
             tier = "minimal"
-            final_message = "تعوذ بالله من الشيطان الرجيم، وخذ نفساً عميقاً."
-            delayed_message = await rag_engine.format_response(
-                user_text=user_text, emotion=emotion,
-                retrieved_text=base_message, source=source, tafsir=tafsir
-            )
+            if should_delay:
+                final_message = "تعوذ بالله من الشيطان الرجيم، وخذ نفساً عميقاً."
+                delayed_message = await rag_engine.format_response(
+                    user_text=user_text, emotion=emotion,
+                    retrieved_text=base_message, source=source, tafsir=tafsir
+                )
+            else:
+                final_message = await rag_engine.format_response(
+                    user_text=user_text, emotion=emotion,
+                    retrieved_text=base_message, source=source, tafsir=tafsir
+                )
         else:
             final_message = await rag_engine.format_response(
                 user_text=user_text, emotion=emotion,
@@ -146,10 +153,10 @@ async def analyze_audio(
                     tafsir=tafsir,
                     confidence=confidence,
                     response_tier=tier,
-                    response_delayed=bool(delayed_message),
+                    response_delayed=bool(delayed_message and should_delay),
                 )
                 interaction_id = interaction.id
-                if delayed_message:
+                if delayed_message and should_delay:
                     DelayedResponseService(db).schedule(
                         user_id=user["id"],
                         interaction_id=interaction.id,
