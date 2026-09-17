@@ -9,6 +9,7 @@ from app.api.v1.endpoints.auth import get_current_user_optional
 from app.core.security import limiter
 from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES
 from app.db.database import get_db
+from app.db.models import AppRating
 from app.services.ai.embeddings import EmbeddingService
 from app.services.ai.rag_engine import RAGEngine
 from app.services.history_manager import HistoryService
@@ -21,6 +22,12 @@ logger = logging.getLogger(__name__)
 # ────────────────────────────────────────────────────────────────────────────
 # نماذج البيانات
 # ────────────────────────────────────────────────────────────────────────────
+
+
+
+class AppRatingRequest(BaseModel):
+    rating: int
+    feedback: str | None = None
 
 class ContextSignalsRequest(BaseModel):
     """إشارات السياق الواردة من العميل (الجهاز)."""
@@ -254,3 +261,29 @@ async def get_home_verse(
     except Exception as e:
         logger.error(f"Error in get_home_verse: {e}", exc_info=True)
         return _time_verse_response(signals.time_of_day)
+
+
+@router.post("/rating")
+@limiter.limit("5/minute")
+async def submit_app_rating(
+    request: Request,
+    payload: AppRatingRequest,
+    user: dict | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+):
+    """يستقبل تقييم التطبيق ويحفظه في قاعدة البيانات"""
+    try:
+        user_id = user["id"] if user else None
+        new_rating = AppRating(
+            user_id=user_id,
+            rating=payload.rating,
+            feedback=payload.feedback
+        )
+        db.add(new_rating)
+        db.commit()
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Error saving app rating: {e}", exc_info=True)
+        db.rollback()
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail="Internal Server Error")

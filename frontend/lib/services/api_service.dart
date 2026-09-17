@@ -74,6 +74,27 @@ class ApiService {
     }
   }
 
+  /// إرسال تقييم التطبيق
+  Future<void> submitRating(int rating, String? feedback) async {
+    final headers = await getHeaders();
+    final body = <String, dynamic>{'rating': rating};
+    if (feedback != null && feedback.isNotEmpty) {
+      body['feedback'] = feedback;
+    }
+
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/home/rating'),
+          headers: headers,
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to submit rating: ${response.statusCode}');
+    }
+  }
+
   // ============================================================
   //  الدوال الداخلية
   // ============================================================

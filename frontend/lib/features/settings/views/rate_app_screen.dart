@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../services/api_service.dart';
 
 class RateAppScreen extends StatefulWidget {
   const RateAppScreen({super.key});
@@ -57,8 +58,9 @@ class _RateAppScreenState extends State<RateAppScreen> {
         Text(
           'ساعدنا في تحسين مُرَسِّخ من خلال مشاركتك تجربتك',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -234,8 +236,9 @@ class _RateAppScreenState extends State<RateAppScreen> {
                   ? 'لقد قرأنا ملاحظاتك وسنأخذها بعين الاعتبار.'
                   : 'يسعدنا أنك استمتعت باستخدام مُرَسِّخ!',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondary),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -253,8 +256,18 @@ class _RateAppScreenState extends State<RateAppScreen> {
 
   Future<void> _submitRating() async {
     setState(() => _isSubmitted = true);
-    // TODO: Implement rating submission to backend
-    // await ApiService().submitRating(_rating, _feedback);
+    try {
+      await ApiService().submitRating(_rating, _feedback);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('حدث خطأ أثناء إرسال التقييم. حاول مرة أخرى.'),
+          ),
+        );
+        setState(() => _isSubmitted = false);
+      }
+    }
   }
 
   Future<void> _rateInStore() async {
@@ -265,8 +278,9 @@ class _RateAppScreenState extends State<RateAppScreen> {
       await launchUrl(uri);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('تعذر فتح المتجر')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('تعذر فتح المتجر')));
       }
     }
   }

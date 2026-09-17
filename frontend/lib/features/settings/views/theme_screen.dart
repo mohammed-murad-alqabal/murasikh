@@ -64,8 +64,9 @@ class _ThemeScreenState extends State<ThemeScreen> {
                     children: [
                       Text(
                         'اختر لون التمييز للتطبيق',
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(color: AppColors.textSecondary),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Wrap(

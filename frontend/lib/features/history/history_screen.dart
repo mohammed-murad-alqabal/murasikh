@@ -85,8 +85,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Text(
                 'لا يوجد سجل حتى الآن.\nتحدث أو استخدم الكاميرا لتبدأ التسجيل.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge
-                    ?.copyWith(color: AppColors.textSecondary),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
               ),
             )
           : ListView.builder(

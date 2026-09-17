@@ -51,14 +51,16 @@ class FontSizeSettingsScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'السلام عليكم ورحمة الله وبركاته،',
-              style: Theme.of(context).textTheme.bodyLarge
-                  ?.copyWith(fontSize: settings.fontSize.toDouble()),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontSize: settings.fontSize.toDouble(),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'هذا مثال على كيفية تأثير حجم الخط على عرض النصوص في التطبيق.',
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(fontSize: settings.fontSize.toDouble()),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: settings.fontSize.toDouble(),
+              ),
             ),
             const SizedBox(height: 16),
             Divider(color: AppColors.textSecondary.withValues(alpha: 0.3)),
@@ -92,8 +94,9 @@ class FontSizeSettingsScreen extends StatelessWidget {
       children: [
         Text(
           'اختر حجم الخط',
-          style: Theme.of(context).textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Row(

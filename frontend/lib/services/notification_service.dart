@@ -245,7 +245,8 @@ class NotificationService extends ChangeNotifier {
 
     if (tier == 'minimal') {
       title = '🌸 لحظة سكينة';
-      body = 'تم استشعار انفعال في المحيط.. تمهل، خذ نفساً عميقاً وتذكر: لا تغضب ولك الجنة.';
+      body =
+          'تم استشعار انفعال في المحيط.. تمهل، خذ نفساً عميقاً وتذكر: لا تغضب ولك الجنة.';
     } else {
       title = source != null && source.isNotEmpty
           ? '﴿ $source ﴾'

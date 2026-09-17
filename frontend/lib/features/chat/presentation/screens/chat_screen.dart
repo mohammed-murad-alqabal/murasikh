@@ -144,7 +144,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (loaded.isEmpty) {
       final initial = ChatMessage(
-        text: 'السلام عليكم، أنا رفيقك الروحي مُرَسِّخ. كيف حالك اليوم؟ شاركني ما يدور في خاطرك أو يثقل صدرك.',
+        text:
+            'السلام عليكم، أنا رفيقك الروحي مُرَسِّخ. كيف حالك اليوم؟ شاركني ما يدور في خاطرك أو يثقل صدرك.',
         isUser: false,
       );
       loaded.add(initial);
@@ -282,7 +283,8 @@ class _ChatScreenState extends State<ChatScreen> {
           _scrollToBottom();
         } else if (state is RecommendationError) {
           final errMsg = ChatMessage(
-            text: 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ\n(تعذّر الاتصال بالخادم، تذكر دائماً أن الله قريب مجيب).',
+            text:
+                'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ\n(تعذّر الاتصال بالخادم، تذكر دائماً أن الله قريب مجيب).',
             isUser: false,
           );
           setState(() {
@@ -300,8 +302,9 @@ class _ChatScreenState extends State<ChatScreen> {
               const Text('مُرَسِّخ'),
               Text(
                 'الرفيق الروحي',
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColors.primary),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.primary),
               ),
             ],
           ),
@@ -472,8 +475,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             child: Text(
               msg.text,
-              style: Theme.of(context).textTheme.bodyLarge
-                  ?.copyWith(color: Colors.white, height: 1.5),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: Colors.white, height: 1.5),
             ),
           ),
           if (rec != null && rec.source != null) ...[

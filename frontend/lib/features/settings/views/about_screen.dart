@@ -98,14 +98,17 @@ class AboutScreen extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           'مُرَسِّخ',
-          style: Theme.of(context).textTheme.displaySmall
-              ?.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           'الرفيق الروحي الذكي',
-          style: Theme.of(context).textTheme.bodyLarge
-              ?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -143,8 +146,10 @@ class AboutScreen extends StatelessWidget {
   Widget _buildText(BuildContext context, String text) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.bodyMedium
-          ?.copyWith(color: AppColors.textPrimary, height: 1.6),
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: AppColors.textPrimary,
+        height: 1.6,
+      ),
     );
   }
 
@@ -181,8 +186,9 @@ class AboutScreen extends StatelessWidget {
                 ),
                 Text(
                   description,
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(color: AppColors.textSecondary),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -200,8 +206,9 @@ class AboutScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: AppColors.textSecondary),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
           Text(
             value,
