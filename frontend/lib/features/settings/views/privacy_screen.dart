@@ -86,10 +86,13 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   _buildSettingsTile(
                     context: context,
                     title: 'وقت القفل التلقائي',
-                    subtitle:
-                        '${state.userSettings.autoLockTimeoutMinutes} دقائق',
+                    subtitle: _formatAutoLockTimeout(
+                      state.userSettings.autoLockTimeoutMinutes,
+                    ),
                     trailing: Text(
-                      '${state.userSettings.autoLockTimeoutMinutes}د',
+                      _formatAutoLockTimeout(
+                        state.userSettings.autoLockTimeoutMinutes,
+                      ),
                     ),
                     onTap: () => _showAutoLockDialog(
                       context,
@@ -214,6 +217,11 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       trailing: trailing,
       onTap: onTap,
     );
+  }
+
+  String _formatAutoLockTimeout(double minutes) {
+    if (minutes == 0.5) return '30 ثانية';
+    return '${minutes.toStringAsFixed(0)} دقائق';
   }
 
   Widget _buildWarningTile({

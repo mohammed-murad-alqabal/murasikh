@@ -45,5 +45,17 @@ void main() {
       expect(updated.gender, 'male');
       expect(updated.preferredLanguage, 'ar'); // defaults
     });
+
+    test('preserves the 30-second auto-lock value', () {
+      final settings = UserSettings(
+        name: 'test',
+        email: 'test@test.com',
+        autoLockTimeoutMinutes: 0.5,
+      );
+
+      final restored = UserSettings.fromJson(settings.toJson());
+
+      expect(restored.autoLockTimeoutMinutes, 0.5);
+    });
   });
 }

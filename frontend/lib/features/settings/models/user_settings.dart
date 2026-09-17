@@ -15,7 +15,7 @@ class UserSettings {
   final bool hideContentInLockScreen;
   final bool enableBiometricAuth;
   final bool autoLockEnabled;
-  final int autoLockTimeoutMinutes;
+  final double autoLockTimeoutMinutes;
   final bool clearHistoryOnExit;
   final bool shareAnalytics;
 
@@ -48,7 +48,7 @@ class UserSettings {
     this.hideContentInLockScreen = true,
     this.enableBiometricAuth = false,
     this.autoLockEnabled = false,
-    this.autoLockTimeoutMinutes = 5,
+    this.autoLockTimeoutMinutes = 5.0,
     this.clearHistoryOnExit = false,
     this.shareAnalytics = false,
     this.notificationSound = true,
@@ -113,7 +113,8 @@ class UserSettings {
       hideContentInLockScreen: json['hideContentInLockScreen'] ?? true,
       enableBiometricAuth: json['enableBiometricAuth'] ?? false,
       autoLockEnabled: json['autoLockEnabled'] ?? false,
-      autoLockTimeoutMinutes: json['autoLockTimeoutMinutes'] ?? 5,
+      autoLockTimeoutMinutes:
+          (json['autoLockTimeoutMinutes'] as num?)?.toDouble() ?? 5.0,
       clearHistoryOnExit: json['clearHistoryOnExit'] ?? false,
       shareAnalytics: json['shareAnalytics'] ?? false,
       notificationSound: json['notificationSound'] ?? true,
@@ -144,7 +145,7 @@ class UserSettings {
     bool? hideContentInLockScreen,
     bool? enableBiometricAuth,
     bool? autoLockEnabled,
-    int? autoLockTimeoutMinutes,
+    double? autoLockTimeoutMinutes,
     bool? clearHistoryOnExit,
     bool? shareAnalytics,
     bool? notificationSound,

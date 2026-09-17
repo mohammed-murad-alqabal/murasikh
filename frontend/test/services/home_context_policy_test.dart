@@ -106,6 +106,73 @@ void main() {
     });
   });
 
+  group('HomeContextPolicy.shouldNotify', () {
+    final baseTime = DateTime(2026, 1, 1, 12);
+    final old = snapshot(
+      emotion: 'قلق',
+      confidence: 0.8,
+      source: 'face',
+      timestamp: baseTime,
+    );
+
+    test('rejects a candidate during the debounce interval', () {
+      final candidate = snapshot(
+        emotion: 'حزن',
+        confidence: 0.9,
+        source: 'face',
+        timestamp: baseTime.add(const Duration(minutes: 1)),
+      );
+
+      expect(
+        HomeContextPolicy.shouldNotify(
+          old: old,
+          candidate: candidate,
+          lastNotifyTime: baseTime,
+          now: baseTime.add(const Duration(minutes: 1)),
+        ),
+        isFalse,
+      );
+    });
+
+    test('rejects a face signal below its confidence threshold', () {
+      final candidate = snapshot(
+        emotion: 'حزن',
+        confidence: 0.64,
+        source: 'face',
+        timestamp: baseTime.add(const Duration(minutes: 4)),
+      );
+
+      expect(
+        HomeContextPolicy.shouldNotify(
+          old: old,
+          candidate: candidate,
+          lastNotifyTime: baseTime,
+          now: baseTime.add(const Duration(minutes: 4)),
+        ),
+        isFalse,
+      );
+    });
+
+    test('accepts a significant high-confidence change after debounce', () {
+      final candidate = snapshot(
+        emotion: 'حزن',
+        confidence: 0.8,
+        source: 'face',
+        timestamp: baseTime.add(const Duration(minutes: 4)),
+      );
+
+      expect(
+        HomeContextPolicy.shouldNotify(
+          old: old,
+          candidate: candidate,
+          lastNotifyTime: baseTime,
+          now: baseTime.add(const Duration(minutes: 4)),
+        ),
+        isTrue,
+      );
+    });
+  });
+
   test('VerseCard preserves the API confidence field', () {
     final card = VerseCard.fromJson({
       'verse': 'آية اختبارية',

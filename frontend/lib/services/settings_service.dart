@@ -37,7 +37,8 @@ class SettingsService {
           hideContentInLockScreen: map['hideContentInLockScreen'] ?? true,
           enableBiometricAuth: map['enableBiometricAuth'] ?? false,
           autoLockEnabled: map['autoLockEnabled'] ?? false,
-          autoLockTimeoutMinutes: map['autoLockTimeoutMinutes'] ?? 5,
+          autoLockTimeoutMinutes:
+              (map['autoLockTimeoutMinutes'] as num?)?.toDouble() ?? 5.0,
           clearHistoryOnExit: map['clearHistoryOnExit'] ?? false,
           shareAnalytics: map['shareAnalytics'] ?? false,
           notificationSound: map['notificationSound'] ?? true,
@@ -68,7 +69,7 @@ class SettingsService {
       hideContentInLockScreen: true,
       enableBiometricAuth: false,
       autoLockEnabled: false,
-      autoLockTimeoutMinutes: 5,
+      autoLockTimeoutMinutes: 5.0,
       clearHistoryOnExit: false,
       shareAnalytics: false,
     );

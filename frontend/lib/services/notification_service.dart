@@ -10,6 +10,43 @@ import 'settings_service.dart';
 import 'api_service.dart';
 import 'home_context_service.dart';
 
+class NotificationSchedulePolicy {
+  static DateTime nextInstanceOfTime(
+    DateTime now,
+    int hour,
+    int minute,
+  ) {
+    var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
+    if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+    return scheduled;
+  }
+
+  static bool isWithinQuietHours(
+    DateTime now,
+    String start,
+    String end,
+  ) {
+    final startParts = start.split(':');
+    final endParts = end.split(':');
+    if (startParts.length != 2 || endParts.length != 2) return false;
+    final startMinutes =
+        (int.tryParse(startParts[0]) ?? 0) * 60 +
+        (int.tryParse(startParts[1]) ?? 0);
+    final endMinutes =
+        (int.tryParse(endParts[0]) ?? 0) * 60 +
+        (int.tryParse(endParts[1]) ?? 0);
+    final currentMinutes = now.hour * 60 + now.minute;
+
+    if (startMinutes == endMinutes) return true;
+    if (startMinutes < endMinutes) {
+      return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+    }
+    return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+  }
+}
+
 class NotificationService extends ChangeNotifier {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -125,6 +162,16 @@ class NotificationService extends ChangeNotifier {
     String? payload,
     String channelId = 'murassikh_alerts',
   }) async {
+    final settings = SettingsService().getSettings();
+    if (settings.quietHoursEnabled &&
+        NotificationSchedulePolicy.isWithinQuietHours(
+          DateTime.now(),
+          settings.quietHoursStart,
+          settings.quietHoursEnd,
+        )) {
+      return;
+    }
+
     // 1. Anti-spam/Throttling check (for 'face' and 'ambient' types)
     if (type == 'ambient' || type == 'face') {
       final now = DateTime.now();
@@ -266,6 +313,23 @@ class NotificationService extends ChangeNotifier {
     final hour = int.tryParse(timeParts[0]) ?? 8;
     final minute = int.tryParse(timeParts[1]) ?? 0;
 
+    final scheduledToday = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+      hour,
+      minute,
+    );
+    if (settings.quietHoursEnabled &&
+        NotificationSchedulePolicy.isWithinQuietHours(
+          scheduledToday,
+          settings.quietHoursStart,
+          settings.quietHoursEnd,
+        )) {
+      await _notificationsPlugin.cancel(id: 9999);
+      return;
+    }
+
     // جلب آخر حالة للمستخدم
     final context = HomeContextService().current;
     
@@ -284,7 +348,19 @@ class NotificationService extends ChangeNotifier {
     } catch (_) {} // Fallback to default if offline
     
     // We schedule it for the next occurrence of the requested time
-    tz.TZDateTime scheduledDate = _nextInstanceOfTime(hour, minute);
+    final next = NotificationSchedulePolicy.nextInstanceOfTime(
+      DateTime.now(),
+      hour,
+      minute,
+    );
+    final tz.TZDateTime scheduledDate = tz.TZDateTime(
+      tz.local,
+      next.year,
+      next.month,
+      next.day,
+      next.hour,
+      next.minute,
+    );
     
     final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'murassikh_daily',
@@ -314,16 +390,6 @@ class NotificationService extends ChangeNotifier {
 
   }
 
-  tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate =
-        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-    }
-    return scheduledDate;
-  }
-  
   void _scheduleDailyRemindersIfNeeded() {
     scheduleContextualDailyReminder();
   }

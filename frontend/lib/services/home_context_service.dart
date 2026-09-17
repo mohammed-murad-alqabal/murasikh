@@ -44,6 +44,7 @@ class HomeContextPolicy {
   static const double audioConfidenceThreshold = 0.60;
   static const double historyConfidence = 0.55;
   static const Duration forceRefreshInterval = Duration(minutes: 60);
+  static const Duration minUpdateInterval = Duration(minutes: 3);
 
   static bool isSignificantChange(
     ContextSnapshot old,
@@ -67,6 +68,17 @@ class HomeContextPolicy {
       default:
         return 0.0;
     }
+  }
+
+  static bool shouldNotify({
+    required ContextSnapshot old,
+    required ContextSnapshot candidate,
+    required DateTime lastNotifyTime,
+    required DateTime now,
+  }) {
+    if (now.difference(lastNotifyTime) < minUpdateInterval) return false;
+    if (!isSignificantChange(old, candidate, now: now)) return false;
+    return candidate.confidence >= thresholdForSource(candidate.signalSource);
   }
 }
 
@@ -104,9 +116,6 @@ class HomeContextService extends ChangeNotifier {
   ContextSnapshot get current => _current;
 
   // ── عتبات التغيير ───────────────────────────────────────────────────────
-
-  /// الحد الأدنى للفارق الزمني بين تحديثين متتاليين (تجنب spam)
-  static const Duration _minUpdateInterval = Duration(minutes: 3);
 
   DateTime _lastNotifyTime = DateTime(2000);
 
@@ -193,28 +202,16 @@ class HomeContextService extends ChangeNotifier {
 
   void _evaluateAndMaybeNotify(ContextSnapshot candidate) {
     final now = DateTime.now();
-
-    // 1. هل انقضى الحد الأدنى للفارق الزمني بين التحديثات؟
-    if (now.difference(_lastNotifyTime) < _minUpdateInterval) return;
-
-    // 2. هل هذا تغيّر ذو دلالة حقيقية؟
-    if (!_isSignificantChange(_current, candidate)) return;
-
-    // 3. هل الثقة كافية بناءً على المصدر؟
-    final threshold = _thresholdForSource(candidate.signalSource);
-    if (candidate.confidence < threshold) return;
+    if (!HomeContextPolicy.shouldNotify(
+      old: _current,
+      candidate: candidate,
+      lastNotifyTime: _lastNotifyTime,
+      now: now,
+    )) return;
 
     _current = candidate;
     _lastNotifyTime = now;
     notifyListeners();
-  }
-
-  bool _isSignificantChange(ContextSnapshot old, ContextSnapshot candidate) {
-    return HomeContextPolicy.isSignificantChange(old, candidate);
-  }
-
-  double _thresholdForSource(String source) {
-    return HomeContextPolicy.thresholdForSource(source);
   }
 
   /// وقت اليوم الحالي بالعربية

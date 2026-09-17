@@ -167,7 +167,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       hideContentInLockScreen: event.hideContentInLockScreen,
       enableBiometricAuth: event.enableBiometricAuth,
       autoLockEnabled: event.autoLockEnabled,
-      autoLockTimeoutMinutes: event.autoLockTimeoutMinutes?.toInt(),
+      autoLockTimeoutMinutes: event.autoLockTimeoutMinutes,
       clearHistoryOnExit: event.clearHistoryOnExit,
       shareAnalytics: event.shareAnalytics,
     );
