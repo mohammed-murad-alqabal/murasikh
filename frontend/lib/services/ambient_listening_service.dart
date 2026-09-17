@@ -68,15 +68,26 @@ void onStart(ServiceInstance service) async {
                     tafsir: rec.tafsir,
                   );
                 }
-              } catch (_) {
+              } catch (e, stackTrace) {
+                debugPrint(
+                  'AmbientListeningService - Error analyzing audio: $e\n$stackTrace',
+                );
               } finally {
                 try {
                   File(recordedPath).deleteSync();
-                } catch (_) {}
+                } catch (e, stackTrace) {
+                  debugPrint(
+                    'AmbientListeningService - Error deleting audio file: $e\n$stackTrace',
+                  );
+                }
               }
             }
           }
-        } catch (_) {}
+        } catch (e, stackTrace) {
+          debugPrint(
+            'AmbientListeningService - Error in background audio loop: $e\n$stackTrace',
+          );
+        }
       }
     }
   });
@@ -162,7 +173,8 @@ class AmbientListeningService extends ChangeNotifier {
       emotion: 'قلق أو توتر',
       confidence: 0.95,
       tier: 'moderate',
-      message: 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ. توقف لحظة واذكر ربك يهدأ قلبك.',
+      message:
+          'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ. توقف لحظة واذكر ربك يهدأ قلبك.',
       source: 'سورة الرعد: آية 28',
       tafsir: 'ذكر الله سبحانه هو أعظم حصن وملاذ للطمأنينة ودفع القلق.',
     );
