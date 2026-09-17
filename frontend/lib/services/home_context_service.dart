@@ -207,7 +207,9 @@ class HomeContextService extends ChangeNotifier {
       candidate: candidate,
       lastNotifyTime: _lastNotifyTime,
       now: now,
-    )) return;
+    )) {
+      return;
+    }
 
     _current = candidate;
     _lastNotifyTime = now;
