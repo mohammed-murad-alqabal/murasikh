@@ -56,7 +56,7 @@ class HistoryService {
   factory HistoryService() => _instance;
   HistoryService._internal();
 
-  static const String baseUrl = 'http://127.0.0.1:8000/api/v1/history';
+  static const String baseUrl = '${ApiService.baseUrl}/history';
   static const String _historyBoxName = 'murassikh_local_history';
   late Box<String> _box;
   bool _initialized = false;
@@ -170,15 +170,19 @@ class HistoryService {
     } catch (_) {}
   }
 
-  Future<void> clearHistory() async {
+  Future<bool> clearHistory() async {
     await init();
-    try {
-      await _box.clear();
-    } catch (_) {}
-
+    var remoteCleared = false;
     try {
       final headers = await ApiService.getHeaders();
-      await http.delete(Uri.parse(baseUrl), headers: headers).timeout(const Duration(seconds: 3));
+      final response = await http.delete(Uri.parse(baseUrl), headers: headers).timeout(const Duration(seconds: 3));
+      remoteCleared = response.statusCode == 200;
     } catch (_) {}
+    if (remoteCleared) {
+      try {
+        await _box.clear();
+      } catch (_) {}
+    }
+    return remoteCleared;
   }
 }

@@ -1,4 +1,5 @@
 from datetime import timedelta
+import uuid
 from app.core.auth import create_access_token
 import time
 
@@ -47,6 +48,32 @@ def test_jwt_expiration(client):
         headers={"Authorization": f"Bearer {expired_token}"}
     )
     assert response.status_code == 401
+
+
+def test_export_requires_authentication_and_excludes_password(client):
+    unauthenticated = client.get("/api/v1/auth/export")
+    assert unauthenticated.status_code == 401
+
+    suffix = uuid.uuid4().hex[:10]
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": f"export_{suffix}",
+            "password": "test-password",
+            "email": f"export_{suffix}@example.com",
+        },
+    )
+    assert registered.status_code == 200
+
+    response = client.get(
+        "/api/v1/auth/export",
+        headers={"Authorization": f"Bearer {registered.json()['access_token']}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["account"]["username"] == f"export_{suffix}"
+    assert "password_hash" not in data["account"]
+    assert isinstance(data["interactions"], list)
 
 def test_user_isolation(client):
     # Register user 2

@@ -10,7 +10,10 @@ import 'offline_service.dart';
 import 'settings_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://127.0.0.1:8000/api/v1',
+  );
 
   /// جلب التوصية مع دعم Offline-First
   Future<RecommendationModel> getRecommendation(
@@ -163,9 +166,16 @@ class ApiService {
     if (pending.isEmpty) return;
     try {
       for (final fb in pending) {
+        final pendingId = int.tryParse(fb['id'].toString());
+        final pendingFeedback = (fb['feedback'] as num?)?.toInt();
+        if (pendingId == null ||
+            pendingFeedback == null ||
+            !const [-1, 0, 1].contains(pendingFeedback)) {
+          continue;
+        }
         await _sendFeedbackToServer(
-          int.parse(fb['id'].toString()),
-          (fb['feedback'] as num).toInt(),
+          pendingId,
+          pendingFeedback,
         );
       }
       await offlineService.clearPendingFeedbacks();

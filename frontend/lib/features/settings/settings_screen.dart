@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../services/history_service.dart';
+import '../../services/privacy_data_service.dart';
 import 'screens/personal_info_screen.dart';
 import 'views/privacy_screen.dart';
 import 'views/notifications_screen.dart';
@@ -104,15 +104,15 @@ class SettingsScreen extends StatelessWidget {
             _buildTile(
               context,
               icon: Icons.delete_outline,
-              title: 'مسح جميع البيانات',
+              title: 'مسح بيانات السجل',
               isDestructive: true,
               onTap: () async {
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('مسح البيانات'),
+                    title: const Text('مسح بيانات السجل'),
                     content: const Text(
-                      'هل أنت متأكد من مسح جميع سجلات التوجيه نهائياً؟',
+                      'هل أنت متأكد من مسح سجل التوجيه والكاش والإشعارات نهائياً؟',
                     ),
                     actions: [
                       TextButton(
@@ -130,11 +130,15 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 );
                 if (confirm == true) {
-                  await HistoryService().clearHistory();
+                  final cleared = await PrivacyDataService().clearAllUserData();
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('تم مسح جميع البيانات بنجاح ✅'),
+                      SnackBar(
+                        content: Text(
+                          cleared
+                              ? 'تم مسح جميع البيانات بنجاح'
+                              : 'تعذر مسح البيانات من الخادم؛ لم يتم حذف النسخة المحلية',
+                        ),
                         duration: Duration(seconds: 2),
                       ),
                     );

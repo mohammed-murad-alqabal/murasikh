@@ -1,8 +1,11 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, HTTPException, Depends, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.services.user_manager import UserManager
+from app.services.history_manager import HistoryService
 from app.core.auth import create_access_token, verify_token
 from app.core.security import limiter
 from app.db.database import get_db
@@ -45,6 +48,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
     access_token = create_access_token(data={"sub": user["username"]})
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     payload = verify_token(token)
     if payload is None:
@@ -58,6 +62,27 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise HTTPException(status_code=401, detail="User not found")
     
     return user
+
+
+@router.get("/export")
+@limiter.limit("5/minute")
+async def export_user_data(
+    request: Request,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Export only the authenticated user's account and interaction data."""
+    history_service = HistoryService(db)
+    return {
+        "export_version": 1,
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "account": {
+            "id": user["id"],
+            "username": user["username"],
+            "email": user["email"],
+        },
+        "interactions": history_service.get_history(user["id"]),
+    }
 
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login", auto_error=False)
 

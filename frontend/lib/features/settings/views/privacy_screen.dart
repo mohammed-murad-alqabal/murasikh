@@ -3,12 +3,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../bloc/settings_bloc.dart';
 import '../models/user_settings.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../services/privacy_data_service.dart';
 
 class PrivacyScreen extends StatefulWidget {
   const PrivacyScreen({super.key});
@@ -20,12 +20,8 @@ class PrivacyScreen extends StatefulWidget {
 class _PrivacyScreenState extends State<PrivacyScreen> {
   Future<void> _exportData() async {
     try {
-      if (!Hive.isBoxOpen('murassikh_chat_box')) {
-        await Hive.openBox('murassikh_chat_box');
-      }
-      final box = Hive.box('murassikh_chat_box');
-      final data = box.values.toList();
-      final String jsonStr = jsonEncode(data);
+      final data = await PrivacyDataService().exportAllData();
+      final String jsonStr = const JsonEncoder.withIndent('  ').convert(data);
 
       final directory = await getApplicationDocumentsDirectory();
       final file = File(
@@ -145,8 +141,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   title: 'مسح السجل',
                   subtitle:
                       'حذف جميع سجلات التوجيه والتفاعلات (لا يمكن الاسترجاع)',
-                  onPressed: () =>
-                      _showClearHistoryDialog(context, settingsBloc),
+                  onPressed: () => _showClearHistoryDialog(context),
                 ),
               ]),
             ],
@@ -337,10 +332,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     );
   }
 
-  void _showClearHistoryDialog(
-    BuildContext context,
-    SettingsBloc settingsBloc,
-  ) {
+  void _showClearHistoryDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -354,11 +346,19 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             child: const Text('إلغاء'),
           ),
           TextButton(
-            onPressed: () {
-              settingsBloc.add(ClearHistory());
+            onPressed: () async {
               Navigator.pop(dialogContext);
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text('تم مسح السجل')));
+              final cleared = await PrivacyDataService().clearAllUserData();
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    cleared
+                        ? 'تم مسح بيانات السجل محلياً ومن الخادم'
+                        : 'تعذر مسح السجل من الخادم؛ لم يتم حذف النسخة المحلية',
+                  ),
+                ),
+              );
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('مسح'),

@@ -147,6 +147,26 @@ class OfflineService {
         .toList();
   }
 
+  Future<Map<String, dynamic>> exportData() async {
+    await init();
+    final cachedRecommendations = <dynamic>[];
+    for (final raw in _cacheBox.values) {
+      try {
+        cachedRecommendations.add(jsonDecode(raw));
+      } catch (_) {}
+    }
+    return {
+      'cached_recommendations': cachedRecommendations,
+      'pending_feedback': getPendingFeedbacks(),
+    };
+  }
+
+  Future<void> clearLocalData() async {
+    await init();
+    await _cacheBox.clear();
+    await _feedbackBox.clear();
+  }
+
   /// مسح التقييمات المؤجلة بعد إرسالها بنجاح
   Future<void> clearPendingFeedbacks() async {
     await _feedbackBox.clear();

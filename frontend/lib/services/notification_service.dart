@@ -239,6 +239,18 @@ class NotificationService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<List<String>> exportStoredData() async {
+    _box ??= await Hive.openBox<String>(_boxName);
+    return _box!.values.toList();
+  }
+
+  Future<void> clearStoredData() async {
+    _box ??= await Hive.openBox<String>(_boxName);
+    _notifications.clear();
+    await _box!.clear();
+    notifyListeners();
+  }
+
   // --- Scheduling ---
 
   Future<void> scheduleContextualDailyReminder() async {
