@@ -35,8 +35,9 @@ void main() {
   tearDownAll(() async {
     await offlineService.clearLocalData();
     await Hive.close();
-    if (await hiveDirectory.exists())
+    if (await hiveDirectory.exists()) {
       await hiveDirectory.delete(recursive: true);
+    }
   });
 
   test('fallbackRecommendation returns correct default message', () {
