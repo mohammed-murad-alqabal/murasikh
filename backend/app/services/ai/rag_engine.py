@@ -205,7 +205,8 @@ class RAGEngine:
                 response = await asyncio.to_thread(
                     self.model.generate_content,
                     prompt,
-                    generation_config=genai.GenerationConfig(temperature=0.1)
+                    generation_config=genai.GenerationConfig(temperature=0.1),
+                    request_options={"timeout": 5.0}
                 )
                 text = response.text.strip()
                 for i in range(len(verses), 0, -1):
@@ -216,7 +217,10 @@ class RAGEngine:
                             return candidate
                         break
             except Exception as e:
+                error_str = str(e).lower()
                 logging.error(f"Error selecting best verse via Gemini: {e}")
+                if "quota" in error_str or "429" in error_str or "resource_exhausted" in error_str:
+                    self._gemini_available = False
         
         # --- Fallback محلي ذكي: اختيار الآية الأعلى درجة ---
         scored = sorted(verses, key=score_verse, reverse=True)
@@ -259,6 +263,25 @@ class RAGEngine:
                 logging.error(f"Local LLM formatting failed: {e}")
 
         return self._format_with_template(emotion, retrieved_text, source)
+
+    async def _format_with_gemini(self, user_text: str, emotion: str, retrieved_text: str, source: str, tafsir: str) -> str:
+        prompt = f"""
+المستخدم يشعر بـ: {emotion}
+وقد قال: "{user_text}"
+
+الآية المختارة لمواساته: {retrieved_text}
+التفسير: {tafsir}
+
+اكتب رسالة مواساة وتعاطف دافئة وقصيرة جداً (سطر واحد)، ثم اذكر الآية. لا تقم بشرح التفسير، فقط استخدمه لفهم السياق.
+الرسالة يجب أن تنتهي بالآية مباشرة.
+"""
+        response = await asyncio.to_thread(
+            self.model.generate_content,
+            prompt,
+            generation_config=genai.GenerationConfig(temperature=0.7),
+            request_options={"timeout": 5.0}
+        )
+        return response.text.strip() + f"\n\n📖 {source}"
 
     def _format_with_template(
         self,

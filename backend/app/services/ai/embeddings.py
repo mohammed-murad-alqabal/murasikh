@@ -50,21 +50,20 @@ class EmbeddingService:
         # استرجاع عدد أكبر إذا كان هناك حالة، لإجراء الترتيب الهجين بناءً على البصمات
         fetch_count = (n_results * 5) if emotion and emotion != "طبيعي" else n_results
 
-        # إذا كانت هناك حالة عاطفية واضحة، ابحث أولاً في الآيات المُصنّفة يدوياً
+        # ابحث دائماً أولاً في الآيات المُصنّفة يدوياً
         curated_results = None
-        if emotion and emotion != "طبيعي":
-            try:
-                curated_filter = {"is_curated": True}
-                if filters:
-                    # دمج الفلترات مع is_curated
-                    curated_filter = {"$and": [{k: v} for k, v in {**filters, "is_curated": True}.items()]}
-                curated_results = self.collection.query(
-                    query_embeddings=[query_embedding],
-                    n_results=min(n_results, 5),
-                    where=curated_filter,
-                )
-            except Exception:
-                curated_results = None
+        try:
+            curated_filter = {"is_curated": True}
+            if filters:
+                # دمج الفلترات مع is_curated
+                curated_filter = {"$and": [{k: v} for k, v in {**filters, "is_curated": True}.items()]}
+            curated_results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=min(n_results, 5),
+                where=curated_filter,
+            )
+        except Exception:
+            curated_results = None
 
         results = self.collection.query(
             query_embeddings=[query_embedding],
@@ -72,6 +71,18 @@ class EmbeddingService:
             where=filters
         )
         
+        # دمج نتائج الآيات المُصنّفة مع النتائج العامة
+        if curated_results and curated_results.get("documents") and curated_results["documents"][0]:
+            # دمج الـ IDs لتجنب التكرار
+            seen_ids = set(results["ids"][0])
+            for i, cid in enumerate(curated_results["ids"][0]):
+                if cid not in seen_ids:
+                    seen_ids.add(cid)
+                    results["ids"][0].insert(0, cid)  # إضافة في البداية لتأخذ الأولوية
+                    results["distances"][0].insert(0, curated_results["distances"][0][i] * 0.7)
+                    results["documents"][0].insert(0, curated_results["documents"][0][i])
+                    results["metadatas"][0].insert(0, curated_results["metadatas"][0][i])
+
         if not emotion or emotion == "طبيعي" or not results.get('documents') or not results['documents'][0]:
             if results.get('documents') and len(results['documents'][0]) > n_results:
                 return {
@@ -81,18 +92,6 @@ class EmbeddingService:
                     "metadatas": [results["metadatas"][0][:n_results]]
                 }
             return results
-
-        # دمج نتائج الآيات المُصنّفة مع النتائج العامة قبل إعادة الترتيب
-        if curated_results and curated_results.get("documents") and curated_results["documents"][0]:
-            # دمج الـ IDs لتجنب التكرار
-            seen_ids = set(results["ids"][0])
-            for i, cid in enumerate(curated_results["ids"][0]):
-                if cid not in seen_ids:
-                    seen_ids.add(cid)
-                    results["ids"][0].append(cid)
-                    results["distances"][0].append(curated_results["distances"][0][i] * 0.7)  # مسافة أقل = أولوية أعلى
-                    results["documents"][0].append(curated_results["documents"][0][i])
-                    results["metadatas"][0].append(curated_results["metadatas"][0][i])
 
         return self._rerank_results(results, n_results=n_results, emotion=emotion)
 

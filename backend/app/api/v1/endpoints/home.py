@@ -148,57 +148,63 @@ async def get_home_verse(
         confidence = signals.confidence
         time_of_day = signals.time_of_day or _get_time_of_day()
 
-        # ── 1. تحديد ما إذا كنا سنستخدم حالة عاطفية أم آية الوقت ──
+        # ── 1. تحديد ما إذا كنا سنستخدم حالة عاطفية محددة ──
         use_emotion = (
             dominant_emotion is not None
             and dominant_emotion not in ("طبيعي", "")
             and confidence >= 0.55
         )
 
-        # ── 2. إذا لا توجد حالة واضحة: آية الوقت فوراً ──
-        if not use_emotion:
-            # محاولة استخدام سجل المستخدم لتحديد حالة ملائمة
-            if user:
-                try:
-                    history_service = HistoryService(db)
-                    recent = history_service.get_history(user["id"], limit=3)
-                    if recent:
-                        from datetime import datetime, timezone
+        # ── 2. محاولة استخدام سجل المستخدم إن لم تكن هناك حالة حالية ──
+        if not use_emotion and user:
+            try:
+                history_service = HistoryService(db)
+                recent = history_service.get_history(user["id"], limit=3)
+                if recent:
+                    from datetime import datetime, timezone
+                    import dateutil.parser
+                    now = datetime.now(timezone.utc)
+                    emotions = []
+                    for r in recent:
+                        emotion = r["recommendation"].get("emotion")
+                        if emotion in ("طبيعي", None, ""):
+                            continue
+                        try:
+                            dt = dateutil.parser.isoparse(r["timestamp"])
+                            if dt.tzinfo is None:
+                                dt = dt.replace(tzinfo=timezone.utc)
+                            if (now - dt).total_seconds() < 12 * 3600:
+                                emotions.append(emotion)
+                        except (ValueError, TypeError, dateutil.parser.ParserError) as e:
+                            logger.warning(f"Failed to parse timestamp in history: {e}")
 
-                        import dateutil.parser
-                        
-                        now = datetime.now(timezone.utc)
-                        emotions = []
-                        for r in recent:
-                            emotion = r["recommendation"].get("emotion")
-                            if emotion in ("طبيعي", None, ""):
-                                continue
-                            try:
-                                # created_at is isoformat
-                                dt = dateutil.parser.isoparse(r["timestamp"])
-                                if dt.tzinfo is None:
-                                    dt = dt.replace(tzinfo=timezone.utc)
-                                if (now - dt).total_seconds() < 12 * 3600:
-                                    emotions.append(emotion)
-                            except (ValueError, TypeError, dateutil.parser.ParserError) as e:
-                                logger.warning(f"Failed to parse timestamp in history: {e}")
+                    if emotions:
+                        from collections import Counter
+                        dominant_emotion = Counter(emotions).most_common(1)[0][0]
+                        confidence = 0.55
+                        use_emotion = True
+            except Exception as e:
+                logger.warning(f"Failed to extract emotion from history: {e}")
 
-                        if emotions:
-                            from collections import Counter
-                            dominant_emotion = Counter(emotions).most_common(1)[0][0]
-                            confidence = 0.55  # ثقة معتدلة من السجل
-                            use_emotion = True
-                except Exception as e:  # noqa: BLE001
-                    logger.warning(f"Failed to extract emotion from history: {e}")
-
-            if not use_emotion:
-                return _time_verse_response(time_of_day)
-
-        # ── 3. بناء الاستعلام الدلالي المحسّن ──
-        semantic_query = EMOTION_SEMANTIC_QUERIES.get(
-            dominant_emotion,
-            "الصبر والطمأنينة والتوكل على الله",
-        )
+        # ── 3. بناء الاستعلام الدلالي ──
+        if use_emotion:
+            semantic_query = EMOTION_SEMANTIC_QUERIES.get(
+                dominant_emotion,
+                "الصبر والطمأنينة والتوكل على الله",
+            )
+        else:
+            # حالة طبيعية: إظهار آيات متنوعة ومختلفة في كل مرة
+            import random
+            positive_themes = [
+                "رحمة الله ومغفرته", "الطمأنينة والسكينة", "شكر النعم", 
+                "التوكل على الله", "عظمة خلق الله", "تسبيح الله وحمده",
+                "الأمل بالله", "الصبر الجميل", "فضل ذكر الله"
+            ]
+            theme = random.choice(positive_themes)
+            semantic_query = theme
+            dominant_emotion = "طبيعي"  # للحفاظ على السياق كطبيعي
+            # نعطي ثقة منخفضة حتى يعرف العميل أنها آية عامة
+            confidence = 0.50
 
         # إضافة سياق المستخدم إن كان مسجّلاً
         if user:
