@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../services/ambient_listening_service.dart';
 import '../../../../services/face_emotion_service.dart';
+import '../../../../services/ambient_listening_service.dart';
 import '../../../../services/home_context_service.dart';
 import '../../../../services/daily_verse_service.dart';
 import '../../../../services/settings_service.dart';
-import '../../../../features/home/models/verse_card.dart';
-import '../../../face_emotion/face_emotion_screen.dart';
 import '../../../../services/notification_service.dart';
+
+import '../../../face_emotion/face_emotion_screen.dart';
 import '../../../notifications/presentation/screens/notification_center_screen.dart';
+import '../../models/verse_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,167 +20,133 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final AmbientListeningService _ambientService = AmbientListeningService();
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   final FaceEmotionService _faceService = FaceEmotionService();
+  final AmbientListeningService _ambientService = AmbientListeningService();
   final HomeContextService _contextService = HomeContextService();
   final DailyVerseService _verseService = DailyVerseService();
   final SettingsService _settingsService = SettingsService();
+  final NotificationService _notificationService = NotificationService();
 
-  bool _isCameraInitializing = false;
-  String _userName = 'مُرَسِّخ';
+  late AnimationController _breathingController;
 
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
     _ambientService.addListener(_onAmbientError);
-  }
+    _notificationService.addListener(_onNotificationsChanged);
+    _contextService.addListener(_onContextChanged);
+    _verseService.verseStream.listen((_) {
+      if (mounted) setState(() {});
+    });
 
-  Future<void> _loadInitialData() async {
-    final settings = _settingsService.getSettings();
-    if (mounted) {
-      setState(() => _userName = settings.name);
-    }
-    await _contextService.evaluateFromHistory();
-    await _verseService.fetchVerseForCurrentContext();
-  }
+    _breathingController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat(reverse: true);
 
-  void _onAmbientError() {
-    if (_ambientService.errorMessage.isNotEmpty && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_ambientService.errorMessage),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _contextService.evaluateFromHistory();
+      await _verseService.fetchVerseForCurrentContext();
+    });
   }
 
   @override
   void dispose() {
     _ambientService.removeListener(_onAmbientError);
+    _notificationService.removeListener(_onNotificationsChanged);
+    _contextService.removeListener(_onContextChanged);
+    _breathingController.dispose();
     super.dispose();
   }
 
-  Future<void> _onRefresh() async {
-    await _contextService.evaluateFromHistory();
-    await _verseService.fetchVerseForCurrentContext();
-  }
-
-  Future<void> _toggleGuardian(bool value) async {
-    if (value) {
-      await _ambientService.startListening();
-    } else {
-      await _ambientService.stopListening();
+  void _onAmbientError() {
+    if (_ambientService.errorMessage.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_ambientService.errorMessage),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
-  Future<void> _toggleFaceAnalysis(bool value) async {
-    if (!_faceService.isCameraReady && value) {
-      setState(() => _isCameraInitializing = true);
-      await _faceService.initialize();
-      if (mounted) {
-        setState(() => _isCameraInitializing = false);
-      }
-    }
-    _faceService.toggleAnalysis();
+  void _onNotificationsChanged() {
+    if (mounted) setState(() {});
   }
 
-  String _emotionToEmoji(String emotion) {
-    const map = {
-      'فرح': '😊',
-      'سكينة': '🙂',
-      'حزن': '😔',
-      'قلق': '😟',
-      'لم يتم اكتشاف وجه': '🔍',
-      'طبيعي': '🌿',
-    };
-    return map[emotion] ?? '😐';
-  }
-
-  String _buildGreeting() {
-    final time = HomeContextService.currentTimeOfDay();
-    final name = _userName;
-
-    switch (time) {
-      case 'فجر':
-        return 'طاب فجرك، $name 🌙';
-      case 'صباح':
-        return 'صباح النور، $name ☀️';
-      case 'ظهر':
-        return 'طاب نهارك، $name 🌤️';
-      case 'عصر':
-        return 'طاب عصرك، $name 🌅';
-      case 'مساء':
-        return 'مساء النور، $name 🌆';
-      case 'ليل':
-        return 'طاب ليلك، $name 🌃';
-      default:
-        return 'السلام عليكم، $name';
-    }
+  void _onContextChanged() {
+    if (mounted) setState(() {});
   }
 
   String _formatArabicDate() {
     final now = DateTime.now();
     const months = [
-      'يناير',
-      'فبراير',
-      'مارس',
-      'أبريل',
-      'مايو',
-      'يونيو',
-      'يوليو',
-      'أغسطس',
-      'سبتمبر',
-      'أكتوبر',
-      'نوفمبر',
-      'ديسمبر',
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
     ];
     const days = [
-      'الإثنين',
-      'الثلاثاء',
-      'الأربعاء',
-      'الخميس',
-      'الجمعة',
-      'السبت',
-      'الأحد',
+      'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس',
+      'الجمعة', 'السبت', 'الأحد',
     ];
     final dayName = days[now.weekday - 1];
     final monthName = months[now.month - 1];
     return '$dayName، ${now.day} $monthName';
   }
 
+  String _buildGreeting() {
+    final time = HomeContextService.currentTimeOfDay();
+    final name = _settingsService.getSettings().name;
+
+    switch (time) {
+      case 'فجر': return 'طاب فجرك، $name 🌙';
+      case 'صباح': return 'صباح النور، $name ☀️';
+      case 'ظهر': return 'طاب نهارك، $name 🌤️';
+      case 'عصر': return 'طاب عصرك، $name 🌅';
+      case 'مساء': return 'مساء النور، $name 🌆';
+      case 'ليل': return 'طاب ليلك، $name 🌃';
+      default: return 'السلام عليكم، $name';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F8F5),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: RefreshIndicator(
-          color: AppColors.primary,
-          onRefresh: _onRefresh,
-          child: SingleChildScrollView(
+          onRefresh: () async {
+            await _contextService.evaluateFromHistory(forceRefresh: true);
+            await _verseService.fetchVerseForCurrentContext();
+          },
+          child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 16.0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildIslamicHeader(context),
-                const SizedBox(height: 16),
-                _buildDailyInspirationCard(context),
-                const SizedBox(height: 16),
-                _buildAmbientGuardianCard(context),
-                const SizedBox(height: 16),
-                _buildFaceEmotionCard(context),
-                const SizedBox(height: 16),
-                _buildQuickMoodInsight(context),
-                const SizedBox(height: 24),
-              ],
-            ),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                  child: _buildIslamicHeader(context),
+                )
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 4),
+                      _buildHeroVerseHub(context),
+                      const SizedBox(height: 16),
+                      _buildMiniSensorsBar(context),
+                      const SizedBox(height: 16),
+                      _buildContextualActionCard(context),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -264,9 +230,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           AnimatedBuilder(
-            animation: NotificationService(),
+            animation: _notificationService,
             builder: (context, _) {
-              final unreadCount = NotificationService().unreadCount;
+              final unreadCount = _notificationService.unreadCount;
               return Stack(
                 alignment: Alignment.center,
                 children: [
@@ -280,10 +246,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const NotificationCenterScreen(),
+                          builder: (context) => const NotificationCenterScreen(),
                         ),
-                      );
+                      ).then((_) => setState((){}));
                     },
                   ),
                   if (unreadCount > 0)
@@ -315,82 +280,83 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDailyInspirationCard(BuildContext context) {
-    return StreamBuilder<VerseCard>(
-      stream: _verseService.verseStream,
-      initialData: _verseService.currentVerse,
-      builder: (context, snapshot) {
-        final card = snapshot.data;
-        final isLoading = !snapshot.hasData && !snapshot.hasError;
+  Color _getGradientStart(String emotion) {
+    switch (emotion) {
+      case 'حزن':
+      case 'اكتئاب':
+        return const Color(0xFF2C3E50);
+      case 'قلق':
+      case 'توتر':
+        return const Color(0xFF4A148C);
+      case 'غضب':
+        return const Color(0xFFC62828);
+      case 'سكينة':
+      case 'طبيعي':
+      default:
+        return const Color(0xFF0F3A3A);
+    }
+  }
 
-        return Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(
-              color: AppColors.secondary.withValues(alpha: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Container(
+  Color _getGradientEnd(String emotion) {
+    switch (emotion) {
+      case 'حزن':
+      case 'اكتئاب':
+        return const Color(0xFF3498DB);
+      case 'قلق':
+      case 'توتر':
+        return const Color(0xFF8E24AA);
+      case 'غضب':
+        return const Color(0xFFEF5350);
+      case 'سكينة':
+      case 'طبيعي':
+      default:
+        return const Color(0xFF115E59);
+    }
+  }
+
+  Widget _buildHeroVerseHub(BuildContext context) {
+    final currentEmotion = _contextService.current.dominantEmotion;
+    final colorStart = _getGradientStart(currentEmotion);
+    final colorEnd = _getGradientEnd(currentEmotion);
+
+    return AnimatedBuilder(
+      animation: _breathingController,
+      builder: (context, child) {
+        final double pulse = 1.0 + (_breathingController.value * 0.02);
+
+        return Transform.scale(
+          scale: pulse,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 1500),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              gradient: const LinearGradient(
-                colors: [Colors.white, Color(0xFFFAF7EE)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+              gradient: LinearGradient(
+                colors: [colorStart, colorEnd],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ),
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.bookmark_outline,
-                          color: AppColors.secondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          (!isLoading &&
-                                  card != null &&
-                                  card.signalUsed != 'time')
-                              ? card.signalLabel
-                              : 'آية اليوم وسكينة القلب',
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (isLoading)
-                      const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.secondary,
-                        ),
-                      )
-                    else if (card != null)
-                      _buildSourceBadge(card.source),
-                  ],
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: colorStart.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
-                const SizedBox(height: 24),
-                if (isLoading)
-                  _buildVerseShimmer()
-                else
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 700),
-                    child: _buildVerseContent(card ?? VerseCard.fallback),
-                  ),
               ],
+            ),
+            child: StreamBuilder<VerseCard>(
+              stream: _verseService.verseStream,
+              initialData: _verseService.currentVerse,
+              builder: (context, snapshot) {
+                final card = snapshot.data;
+                if (card == null) return _buildVerseShimmer();
+
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 800),
+                  child: _buildVerseContent(card),
+                );
+              },
             ),
           ),
         );
@@ -398,50 +364,73 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSourceBadge(String source) {
-    if (source.isEmpty) return const SizedBox.shrink();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.secondary.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        source,
-        style: const TextStyle(
-          color: Color(0xFF8C731E),
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-
   Widget _buildVerseContent(VerseCard card) {
+    String contextLabel = 'آية اليوم وسكينة القلب';
+    if (card.signalUsed == 'face' || card.signalUsed == 'audio') {
+      contextLabel = 'بناءً على ما تشعر به الآن...';
+    } else if (card.signalUsed == 'history') {
+      contextLabel = 'رفيقك الروحي يواسيك...';
+    }
+
     return Column(
       key: ValueKey('${card.verse}_${card.source}'),
       children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.auto_awesome, color: Colors.white70, size: 16),
+            const SizedBox(width: 8),
+            Text(
+              contextLabel,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
         Text(
           card.verse,
           style: AppTypography.quranText.copyWith(
-            fontSize: 22,
-            height: 1.8,
-            color: const Color(0xFF0F3A3A),
+            color: Colors.white,
+            fontSize: 24,
+            height: 1.6,
           ),
           textAlign: TextAlign.center,
+          textDirection: TextDirection.rtl,
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            card.source,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         if (card.tafsir != null && card.tafsir!.isNotEmpty) ...[
           const SizedBox(height: 16),
+          Divider(color: Colors.white.withValues(alpha: 0.2)),
+          const SizedBox(height: 8),
           Text(
             card.tafsir!,
-            style: const TextStyle(
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
               fontSize: 13,
-              color: AppColors.textSecondary,
               height: 1.5,
             ),
             textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ],
@@ -451,456 +440,154 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildVerseShimmer() {
     return Column(
       children: [
-        Container(
-          height: 16,
-          width: double.infinity,
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ),
-        Container(
-          height: 16,
-          width: 220,
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ),
+        const SizedBox(height: 20),
+        Container(height: 16, width: 100, color: Colors.white24),
+        const SizedBox(height: 30),
+        Container(height: 24, width: double.infinity, color: Colors.white24),
+        const SizedBox(height: 10),
+        Container(height: 24, width: 200, color: Colors.white24),
+        const SizedBox(height: 30),
       ],
     );
   }
 
-  Widget _buildAmbientGuardianCard(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ambientService,
-      builder: (context, _) {
-        final isGuardianActive = _ambientService.isListening;
-        final liveSpeech = _ambientService.liveSpeech;
-        final latestAlert = _ambientService.latestRecommendation;
-
-        return Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(
-              color: isGuardianActive
-                  ? AppColors.primary.withValues(alpha: 0.6)
-                  : Colors.black12,
-              width: 1.5,
-            ),
+  Widget _buildMiniSensorsBar(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildSensorStatus(
+            title: 'حارس السكينة',
+            isActive: _ambientService.isListening,
+            icon: Icons.mic_rounded,
+            onTap: () {
+              if (_ambientService.isListening) {
+                _ambientService.stopListening();
+              } else {
+                _ambientService.startListening();
+              }
+              setState(() {});
+            },
           ),
-          child: Column(
-            children: [
-              SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                value: isGuardianActive,
-                onChanged: _toggleGuardian,
-                activeThumbColor: AppColors.primary,
-                secondary: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isGuardianActive
-                        ? AppColors.primary.withValues(alpha: 0.12)
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    isGuardianActive ? Icons.hearing : Icons.hearing_disabled,
-                    color: isGuardianActive
-                        ? AppColors.primary
-                        : AppColors.textSecondary,
-                    size: 26,
-                  ),
-                ),
-                title: Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    const Text(
-                      'حارس السكينة',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    if (isGuardianActive) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.green.shade300),
-                        ),
-                        child: const Text(
-                          'مُفعّل 🌿',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    isGuardianActive
-                        ? 'يستمع بهدوء ويرسل تنبيهات قرآنية عند استشعار انفعال'
-                        : 'متوقف حالياً، فعّله لمراقبة سكينتك',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isGuardianActive
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-              if (isGuardianActive)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Column(
-                    children: [
-                      const Divider(height: 20),
-                      Row(
-                        children: [
-                          const SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              liveSpeech.isNotEmpty
-                                  ? liveSpeech
-                                  : 'النظام في وضع الاستماع المحيطي الهادئ...',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontStyle: FontStyle.italic,
-                                color: AppColors.textPrimary,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          TextButton.icon(
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              visualDensity: VisualDensity.compact,
-                            ),
-                            icon: const Icon(
-                              Icons.notifications_active_outlined,
-                              size: 14,
-                              color: AppColors.secondary,
-                            ),
-                            label: const Text(
-                              'اختبار',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            onPressed: () => _ambientService.testTriggerAlert(),
-                          ),
-                        ],
-                      ),
-                      if (latestAlert != null) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.2),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.lightbulb_rounded,
-                                    color: AppColors.primary,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      'تنبيه السكينة (${latestAlert.emotion}):',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                latestAlert.message,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  height: 1.4,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-            ],
+          Container(width: 1, height: 30, color: Colors.grey.shade300),
+          _buildSensorStatus(
+            title: 'تحليل الوجه',
+            isActive: _faceService.isAnalyzing,
+            icon: Icons.face_retouching_natural,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FaceEmotionScreen()),
+              ).then((_) => setState(() {}));
+            },
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  Widget _buildFaceEmotionCard(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _faceService,
-      builder: (context, _) {
-        final isReady = _faceService.isCameraReady;
-        final isAnalyzing = _faceService.isAnalyzing;
-        final emotion = _faceService.detectedEmotion;
-        final emoji = emotion.isNotEmpty ? _emotionToEmoji(emotion) : '📷';
-        final rec = _faceService.recommendation;
-
-        return Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(
-              color: isAnalyzing
-                  ? AppColors.primary.withValues(alpha: 0.5)
-                  : Colors.black12,
-              width: 1.5,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                value: isAnalyzing,
-                onChanged: _toggleFaceAnalysis,
-                activeThumbColor: AppColors.primary,
-                secondary: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isAnalyzing
-                        ? AppColors.primary.withValues(alpha: 0.12)
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: _isCameraInitializing
-                      ? const SizedBox(
-                          width: 26,
-                          height: 26,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primary,
-                          ),
-                        )
-                      : Icon(
-                          Icons.face_retouching_natural,
-                          color: isAnalyzing
-                              ? AppColors.primary
-                              : AppColors.textSecondary,
-                          size: 26,
-                        ),
-                ),
-                title: const Text(
-                  'تحليل تعابير الوجه',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    isAnalyzing
-                        ? 'يحلل تعابيرك محلياً لتقديم مواساة فورية'
-                        : 'مستشعر الوجه مغلق لتوفير الطاقة',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isAnalyzing
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
+  Widget _buildSensorStatus({
+    required String title,
+    required bool isActive,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.primary.withValues(alpha: 0.15) : Colors.grey.shade100,
+                shape: BoxShape.circle,
               ),
-              if (isAnalyzing) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    height: 180,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: isReady && _faceService.cameraController != null
-                        ? CameraPreview(_faceService.cameraController!)
-                        : const Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Text(emoji, style: const TextStyle(fontSize: 26)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'الشعور المكتشف: $emotion',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.open_in_full,
-                              size: 18,
-                              color: AppColors.primary,
-                            ),
-                            tooltip: 'الشاشة الكاملة',
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const FaceEmotionScreen(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (rec != null &&
-                          emotion != 'طبيعي' &&
-                          emotion != 'سكينة') ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            rec.message,
-                            style: const TextStyle(fontSize: 13, height: 1.4),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
+              child: Icon(
+                icon,
+                size: 16,
+                color: isActive ? AppColors.primary : Colors.grey.shade500,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isActive ? AppColors.textPrimary : Colors.grey.shade500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildQuickMoodInsight(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _contextService,
-      builder: (context, _) {
-        final currentEmotion = _contextService.current.dominantEmotion;
-        final displayEmotion =
-            (currentEmotion == 'طبيعي' || currentEmotion.isEmpty)
-            ? 'في سكينة واطمئنان 🌿'
-            : currentEmotion;
+  Widget _buildContextualActionCard(BuildContext context) {
+    final currentEmotion = _contextService.current.dominantEmotion;
+    if (currentEmotion == 'طبيعي' || currentEmotion.isEmpty || currentEmotion == 'سكينة') {
+      return const SizedBox.shrink();
+    }
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.auto_graph_rounded,
-                  color: AppColors.primary,
-                  size: 18,
-                ),
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: const Duration(milliseconds: 500),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'مؤشر السكينة اليومي',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'الحالة الحالية: $displayEmotion',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+              child: const Icon(Icons.chat_bubble_outline, color: AppColors.primary),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'هل ترغب بالفضفضة؟',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'لاحظت أنك تشعر بـ $currentEmotion. أنا هنا للاستماع إليك.',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ],
               ),
-              const Icon(
-                Icons.arrow_forward_ios,
-                size: 12,
-                color: AppColors.textSecondary,
-              ),
-            ],
-          ),
-        );
-      },
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.primary.withValues(alpha: 0.5)),
+          ],
+        ),
+      ),
     );
   }
 }

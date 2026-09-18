@@ -45,7 +45,7 @@ class _RateAppScreenState extends State<RateAppScreen> {
   Widget _buildHeader(BuildContext context) {
     return Column(
       children: [
-        Icon(Icons.star_rounded, size: 64, color: AppColors.secondary),
+        const Icon(Icons.star_rounded, size: 64, color: AppColors.secondary),
         const SizedBox(height: 16),
         Text(
           'نُقدّر تقييمك!',
@@ -271,7 +271,7 @@ class _RateAppScreenState extends State<RateAppScreen> {
   }
 
   Future<void> _rateInStore() async {
-    final url =
+    const url =
         'https://play.google.com/store/apps/details?id=com.murassikh.app';
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {

@@ -65,12 +65,12 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
 
   // ── حالة الانتظار / Loading ─────────────────────────────────────
   Widget _buildLoadingView() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 16),
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
           Text(
             'جارٍ البحث عن ما يواسيك...',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 14),

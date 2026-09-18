@@ -351,7 +351,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       title: Text(value),
       subtitle: Text(label),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       tileColor: AppColors.surface,
     );
   }

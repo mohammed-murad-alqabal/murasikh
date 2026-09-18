@@ -43,8 +43,8 @@ class HomeContextPolicy {
   static const double faceConfidenceThreshold = 0.65;
   static const double audioConfidenceThreshold = 0.60;
   static const double historyConfidence = 0.55;
-  static const Duration forceRefreshInterval = Duration(minutes: 60);
-  static const Duration minUpdateInterval = Duration(minutes: 3);
+  static const Duration forceRefreshInterval = Duration(minutes: 30);
+  static const Duration minUpdateInterval = Duration(minutes: 1);
 
   static bool isSignificantChange(
     ContextSnapshot old,
@@ -171,7 +171,7 @@ class HomeContextService extends ChangeNotifier {
   }
 
   /// يُستدعى يدوياً من الشاشة الرئيسية عند بدء التشغيل
-  Future<void> evaluateFromHistory() async {
+  Future<void> evaluateFromHistory({bool forceRefresh = false}) async {
     try {
       final history = await _historyService.getHistory();
       if (history.isEmpty) return;
@@ -194,14 +194,21 @@ class HomeContextService extends ChangeNotifier {
           .reduce((a, b) => a.value >= b.value ? a : b)
           .key;
 
-      _evaluateAndMaybeNotify(
-        ContextSnapshot(
-          dominantEmotion: dominant,
-          confidence: HomeContextPolicy.historyConfidence,
-          signalSource: 'history',
-          timestamp: DateTime.now(),
-        ),
+      final candidate = ContextSnapshot(
+        dominantEmotion: dominant,
+        confidence: HomeContextPolicy.historyConfidence,
+        signalSource: 'history',
+        timestamp: DateTime.now(),
       );
+
+      if (forceRefresh) {
+        // تجاوز التحقق من الوقت عند السحب اليدوي للتحديث
+        _current = candidate;
+        _lastNotifyTime = DateTime.now();
+        notifyListeners();
+      } else {
+        _evaluateAndMaybeNotify(candidate);
+      }
     } catch (e) {
       debugPrint('HomeContextService.evaluateFromHistory error: $e');
     }

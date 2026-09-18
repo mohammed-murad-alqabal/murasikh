@@ -12,7 +12,7 @@ import 'settings_service.dart';
 class ApiService {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:8000/api/v1',
+    defaultValue: 'http://192.168.1.106:8000/api/v1',
   );
 
   /// جلب التوصية مع دعم Offline-First

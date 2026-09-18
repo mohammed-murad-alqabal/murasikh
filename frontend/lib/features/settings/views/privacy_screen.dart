@@ -212,7 +212,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(Icons.settings, color: AppColors.primary, size: 22),
+      leading: const Icon(Icons.settings, color: AppColors.primary, size: 22),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
       trailing: trailing,
@@ -232,14 +232,14 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     required VoidCallback onPressed,
   }) {
     return ListTile(
-      leading: Icon(
+      leading: const Icon(
         Icons.warning_amber_outlined,
         color: AppColors.error,
         size: 22,
       ),
       title: Text(
         title,
-        style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w500),
+        style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w500),
       ),
       subtitle: Text(
         subtitle,

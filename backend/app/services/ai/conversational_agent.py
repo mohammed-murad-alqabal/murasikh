@@ -26,19 +26,21 @@ class ConversationalAgent:
 
 القواعد:
 1. لا تستجوب المستخدم بلا داعٍ، اسأل فقط إذا كانت الإجابة ستؤثر فعلياً في فهم الحالة.
-2. إذا كان كلام المستخدم الأخير يوضح حالته بشكل كافٍ (أو إذا تراكمت لديك معلومات كافية من السياق السابق)، اتخذ القرار 'guide'.
+2. إذا كان كلام المستخدم الأخير يوضح حالته بشكل كافٍ (أو تراكمت معلومات كافية من السياق)، اتخذ القرار 'guide'.
 3. إذا كانت رسالة المستخدم مبهمة جداً ولا تكفي لاختيار حالة دقيقة من القائمة، اتخذ القرار 'ask' واكتب سؤالاً لطيفاً لاستيضاح حالته.
-4. يجب أن يكون ردك بصيغة JSON حصراً، يحتوي على:
-   - "action": إما "ask" (لطلب توضيح) أو "guide" (لتقديم الإرشاد).
-   - "ai_message": رسالتك للمستخدم (سواء كانت سؤالاً توضيحياً أو رسالة مواساة وتوجيه نهائية تمهيداً لعرض الآية).
-   - "emotion": القيمة النصية للحالة من القائمة المعتمدة (إذا كان action=ask، ضع أقرب حالة محتملة).
-   - "confidence": رقم عشري من 0.0 إلى 1.0.
+4. يجب أن يكون ردك بصيغة JSON حصراً. لا تضف أي نص خارج كائن الـ JSON.
+
+هيكل الـ JSON المطلوب:
+{{
+   "action": "ask | guide",
+   "ai_message": "رسالتك للمستخدم (سواء سؤال أو رسالة مواساة تمهيداً للآية)",
+   "emotion": "قيمة من القائمة المعتمدة",
+   "confidence": 0.0 to 1.0
+}}
 
 أمثلة:
-- المستخدم: "أشعر بضيق" -> action: ask, ai_message: "أسأل الله أن يشرح صدرك. هل هذا الضيق بسبب موقف معين أم أنه شعور عام بالتعب والإرهاق؟", emotion: حزن, confidence: 0.4
-- المستخدم: "أنا مكتئب جداً لفقدان وظيفتي" -> action: guide, ai_message: "أشعر بما تمر به من ألم لفقدان مصدر رزقك، لكن تذكر دائماً أن خزائن الله لا تنفد.", emotion: حزن, confidence: 0.9
-
-لا تكتب أي نص آخر خارج الـ JSON.
+- المستخدم: "أشعر بضيق" -> {{"action": "ask", "ai_message": "أسأل الله أن يشرح صدرك. هل هذا الضيق بسبب موقف معين أم شعور عام؟", "emotion": "حزن", "confidence": 0.4}}
+- المستخدم: "أنا مكتئب جداً لفقدان وظيفتي" -> {{"action": "guide", "ai_message": "أشعر بما تمر به من ألم لفقدان مصدر رزقك، لكن تذكر دائماً أن خزائن الله لا تنفد.", "emotion": "حزن", "confidence": 0.9}}
 """
 
     async def analyze(self, text: str, chat_history: list[dict] = None, user_context: dict = None) -> dict:
@@ -63,16 +65,24 @@ class ConversationalAgent:
             else:
                 prompt += "(لا يوجد سجل سابق)\n"
                 
-            prompt += f"\nالرسالة الحالية للمستخدم:\n{text}\n\nأصدر JSON الآن:"
+            prompt += f"\nالرسالة الحالية للمستخدم:\n{text}"
             
             import asyncio
             response = await asyncio.to_thread(
                 self.model.generate_content,
                 prompt,
-                generation_config=genai.GenerationConfig(temperature=0.3)
+                generation_config=genai.GenerationConfig(
+                    temperature=0.3
+                )
             )
-            raw_text = response.text.strip().replace('```json', '').replace('```', '')
-            result = json.loads(raw_text)
+            raw_text = response.text.strip()
+            # fallback cleanup just in case
+            if raw_text.startswith("```json"):
+                raw_text = raw_text.replace("```json", "", 1)
+            if raw_text.endswith("```"):
+                raw_text = raw_text[:-3]
+            
+            result = json.loads(raw_text.strip(), strict=False)
             
             if result.get("emotion") not in EMOTION_TAXONOMY:
                 result["emotion"] = "طبيعي"

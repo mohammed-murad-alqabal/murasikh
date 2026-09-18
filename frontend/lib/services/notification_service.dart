@@ -218,7 +218,7 @@ class NotificationService extends ChangeNotifier {
           enableVibration: true,
           icon: '@mipmap/ic_launcher',
           color: const Color(0xFF115E59),
-          styleInformation: BigTextStyleInformation(''),
+          styleInformation: const BigTextStyleInformation(''),
         );
 
     await _notificationsPlugin.show(
@@ -379,7 +379,7 @@ class NotificationService extends ChangeNotifier {
       next.minute,
     );
 
-    final AndroidNotificationDetails androidDetails =
+    const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
           'murassikh_daily',
           'التذكير اليومي',
@@ -388,7 +388,7 @@ class NotificationService extends ChangeNotifier {
           priority: Priority.defaultPriority,
           styleInformation: BigTextStyleInformation(''),
           icon: '@mipmap/ic_launcher',
-          color: const Color(0xFF115E59),
+          color: Color(0xFF115E59),
         );
 
     // Cancel previous scheduled reminders
@@ -399,7 +399,7 @@ class NotificationService extends ChangeNotifier {
       title: title,
       body: body,
       scheduledDate: scheduledDate,
-      notificationDetails: NotificationDetails(android: androidDetails),
+      notificationDetails: const NotificationDetails(android: androidDetails),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
       payload: 'daily',

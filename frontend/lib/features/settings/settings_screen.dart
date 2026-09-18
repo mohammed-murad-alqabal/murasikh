@@ -137,7 +137,7 @@ class SettingsScreen extends StatelessWidget {
                         content: Text(
                           cleared ? 'تم مسح جميع البيانات بنجاح' : 'تعذر مسح البيانات من الخادم؛ لم يتم حذف النسخة المحلية',
                         ),
-                        duration: Duration(seconds: 2),
+                        duration: const Duration(seconds: 2),
                       ),
                     );
                   }
@@ -228,7 +228,7 @@ class SettingsScreen extends StatelessWidget {
               ),
             )
           : null,
-      trailing: Icon(
+      trailing: const Icon(
         Icons.chevron_right, // صحيح في RTL: السهم يشير لليمين (الأمام)
         color: AppColors.textSecondary,
         size: 20,

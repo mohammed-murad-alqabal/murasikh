@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
 import '../features/settings/models/user_settings.dart';
@@ -37,8 +38,8 @@ class AutoLockService {
         ),
       );
     } catch (e, stackTrace) {
-      print('AutoLockService error: $e');
-      print('AutoLockService stackTrace: $stackTrace');
+      debugPrint('AutoLockService error: $e');
+      debugPrint('AutoLockService stackTrace: $stackTrace');
       return false;
     }
   }

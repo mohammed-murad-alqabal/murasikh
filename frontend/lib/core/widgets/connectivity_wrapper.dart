@@ -63,16 +63,16 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
                     vertical: 4,
                     horizontal: 16,
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.wifi_off_rounded,
                         color: Colors.white,
                         size: 14,
                       ),
-                      const SizedBox(width: 8),
-                      const Text(
+                      SizedBox(width: 8),
+                      Text(
                         'أنت في وضع عدم الاتصال. يتم توليد المواساة محلياً 🤍',
                         style: TextStyle(color: Colors.white, fontSize: 12),
                       ),

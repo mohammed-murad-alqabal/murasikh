@@ -49,7 +49,23 @@ class EmbeddingService:
         
         # استرجاع عدد أكبر إذا كان هناك حالة، لإجراء الترتيب الهجين بناءً على البصمات
         fetch_count = (n_results * 5) if emotion and emotion != "طبيعي" else n_results
-        
+
+        # إذا كانت هناك حالة عاطفية واضحة، ابحث أولاً في الآيات المُصنّفة يدوياً
+        curated_results = None
+        if emotion and emotion != "طبيعي":
+            try:
+                curated_filter = {"is_curated": True}
+                if filters:
+                    # دمج الفلترات مع is_curated
+                    curated_filter = {"$and": [{k: v} for k, v in {**filters, "is_curated": True}.items()]}
+                curated_results = self.collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=min(n_results, 5),
+                    where=curated_filter,
+                )
+            except Exception:
+                curated_results = None
+
         results = self.collection.query(
             query_embeddings=[query_embedding],
             n_results=fetch_count,
@@ -65,6 +81,18 @@ class EmbeddingService:
                     "metadatas": [results["metadatas"][0][:n_results]]
                 }
             return results
+
+        # دمج نتائج الآيات المُصنّفة مع النتائج العامة قبل إعادة الترتيب
+        if curated_results and curated_results.get("documents") and curated_results["documents"][0]:
+            # دمج الـ IDs لتجنب التكرار
+            seen_ids = set(results["ids"][0])
+            for i, cid in enumerate(curated_results["ids"][0]):
+                if cid not in seen_ids:
+                    seen_ids.add(cid)
+                    results["ids"][0].append(cid)
+                    results["distances"][0].append(curated_results["distances"][0][i] * 0.7)  # مسافة أقل = أولوية أعلى
+                    results["documents"][0].append(curated_results["documents"][0][i])
+                    results["metadatas"][0].append(curated_results["metadatas"][0][i])
 
         return self._rerank_results(results, n_results=n_results, emotion=emotion)
 
@@ -102,6 +130,14 @@ class EmbeddingService:
                 "metadata": meta,
                 "combined_score": combined_score
             })
+
+            # مكافأة الآيات المُصنّفة يدوياً ذات التفسير (تُعطى أولوية أعلى)
+            is_curated = meta.get("is_curated", False)
+            emotion_tag = meta.get("emotion_tag", "")
+            if is_curated and emotion_tag == emotion:
+                scored_results[-1]["combined_score"] += 0.35
+            elif is_curated and meta.get("tafsir"):
+                scored_results[-1]["combined_score"] += 0.15
             
         # ترتيب تنازلي
         scored_results.sort(key=lambda x: x["combined_score"], reverse=True)

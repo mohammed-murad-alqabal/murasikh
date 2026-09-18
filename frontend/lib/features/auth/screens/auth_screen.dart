@@ -73,7 +73,7 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.cloud_sync, size: 80, color: AppColors.primary),
+                const Icon(Icons.cloud_sync, size: 80, color: AppColors.primary),
                 const SizedBox(height: 16),
                 Text(
                   'المزامنة السحابية (اختياري)',

@@ -283,8 +283,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _scrollToBottom();
         } else if (state is RecommendationError) {
           final errMsg = ChatMessage(
-            text:
-                'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ\n(تعذّر الاتصال بالخادم، تذكر دائماً أن الله قريب مجيب).',
+            text: 'عذراً، تعذّر الاتصال بالخادم. تأكد من اتصالك بالإنترنت وحاول مجدداً. 🔄',
             isUser: false,
           );
           setState(() {

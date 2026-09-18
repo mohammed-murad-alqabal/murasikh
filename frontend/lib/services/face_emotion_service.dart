@@ -128,7 +128,7 @@ class FaceEmotionService extends ChangeNotifier with WidgetsBindingObserver {
         image.width.toDouble(),
         image.height.toDouble(),
       );
-      final InputImageRotation imageRotation =
+      const InputImageRotation imageRotation =
           InputImageRotation.rotation270deg; // Front camera on portrait
       final InputImageFormat inputImageFormat =
           InputImageFormatValue.fromRawValue(image.format.raw) ??
