@@ -15,8 +15,13 @@ import 'notification_service.dart';
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
-  DartPluginRegistrant.ensureInitialized();
-  await Hive.initFlutter();
+  try {
+    DartPluginRegistrant.ensureInitialized();
+    WidgetsFlutterBinding.ensureInitialized();
+    await Hive.initFlutter();
+  } catch (e) {
+    debugPrint("Background isolate init error: $e");
+  }
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {

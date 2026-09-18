@@ -113,8 +113,17 @@ class NotificationService extends ChangeNotifier {
             importance: Importance.defaultImportance,
           );
 
+      const AndroidNotificationChannel ambientChannel =
+          AndroidNotificationChannel(
+            'murassikh_ambient_alerts',
+            'حارس السكينة',
+            description: 'تنبيهات خدمة الاستماع والمراقبة الخلفية',
+            importance: Importance.low,
+          );
+
       await androidImplementation.createNotificationChannel(channel);
       await androidImplementation.createNotificationChannel(dailyChannel);
+      await androidImplementation.createNotificationChannel(ambientChannel);
 
       if (!isBackground) {
         await androidImplementation.requestNotificationsPermission();
