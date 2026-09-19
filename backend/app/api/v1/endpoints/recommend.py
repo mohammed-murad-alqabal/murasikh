@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -155,7 +156,8 @@ async def get_recommendation(
                 semantic_query += f" الجنس: {ctx['gender']}"
 
         # 4. البحث في القرآن الكريم
-        verse_results = embedder.search_similar(
+        verse_results = await asyncio.to_thread(
+            embedder.search_similar,
             query=semantic_query,
             n_results=3,
             filters={"type": "verse"},
