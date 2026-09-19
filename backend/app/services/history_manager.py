@@ -75,7 +75,7 @@ class HistoryService:
         )
         if limit:
             query = query.limit(limit)
-        interactions = query.all()
+        interactions = query.yield_per(100)
         history = []
         for row in interactions:
             history.append(
@@ -102,7 +102,7 @@ class HistoryService:
                 self.db.query(Interaction)
                 .filter(Interaction.user_id == user_id, Interaction.user_feedback != 0)
                 .order_by(desc(Interaction.created_at))
-                .all()
+                .yield_per(100)
             )
 
             liked = set()
@@ -113,6 +113,9 @@ class HistoryService:
                     liked.add(row.detected_emotion)
                 elif row.user_feedback == -1 and len(disliked) < 3:
                     disliked.add(row.detected_emotion)
+
+                if len(liked) == 3 and len(disliked) == 3:
+                    break
 
             if not liked and not disliked:
                 return ""
