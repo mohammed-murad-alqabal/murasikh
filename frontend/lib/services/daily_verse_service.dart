@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:http/http.dart' as http;
 
 import '../features/home/models/verse_card.dart';
@@ -114,6 +115,7 @@ class DailyVerseService extends ChangeNotifier {
           _lastCard = card;
           _lastFetchTime = DateTime.now();
           _saveToCache(card);
+          _updateHomeWidget(card);
           _controller.add(card);
         }
       } else {
@@ -127,15 +129,31 @@ class DailyVerseService extends ChangeNotifier {
     }
   }
 
+  /// تحديث التطبيق المصغر على الشاشة الرئيسية (Android Widget)
+  Future<void> _updateHomeWidget(VerseCard card) async {
+    try {
+      await HomeWidget.saveWidgetData<String>('verse_text', card.verse);
+      await HomeWidget.saveWidgetData<String>('source_text', card.source);
+      await HomeWidget.updateWidget(
+        name: 'MurassikhWidgetProvider',
+        iOSName: 'MurassikhWidget',
+      );
+    } catch (e) {
+      debugPrint('Error updating home widget: $e');
+    }
+  }
+
   /// إصدار نسخة احتياطية (كاش محلي أو fallback ثابت)
   void _emitFallback() {
     final cached = _loadFromCache();
     if (cached != null && _lastCard?.verse != cached.verse) {
       _lastCard = cached;
+      _updateHomeWidget(cached);
       _controller.add(cached);
     } else if (_lastCard == null) {
       final fb = VerseCard.fallback;
       _lastCard = fb;
+      _updateHomeWidget(fb);
       _controller.add(fb);
     }
   }

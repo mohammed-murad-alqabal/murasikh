@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:home_widget/home_widget.dart';
+import 'package:http/http.dart' as http;
 
 import 'core/theme/app_theme.dart';
 import 'core/navigation/main_shell.dart';
@@ -16,13 +19,61 @@ import 'services/home_context_service.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:workmanager/workmanager.dart';
 
 import 'core/widgets/connectivity_wrapper.dart';
 import 'widgets/auto_lock_gate.dart';
 
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    try {
+      if (task == 'update_widget') {
+        
+        final response = await http.post(
+          Uri.parse('http://192.168.1.106:8000/api/v1/home/verse'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'dominant_emotion': null,
+            'confidence': 0.0,
+            'signal_source': 'widget',
+            'time_of_day': null,
+          }),
+        ).timeout(const Duration(seconds: 15));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+          final verseText = data['verse'] ?? '';
+          final sourceText = data['source'] ?? '';
+          
+          await HomeWidget.saveWidgetData<String>('verse_text', verseText);
+          await HomeWidget.saveWidgetData<String>('source_text', sourceText);
+          await HomeWidget.updateWidget(
+            name: 'MurassikhWidgetProvider',
+            iOSName: 'MurassikhWidget',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Workmanager task failed: $e');
+    }
+    return Future.value(true);
+  });
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
+    Workmanager().initialize(
+      callbackDispatcher,
+    );
+    // Register periodic task every hour to update the widget
+    Workmanager().registerPeriodicTask(
+      'widget-update-task',
+      'update_widget',
+      frequency: const Duration(hours: 1),
+    );
+
     await Hive.initFlutter();
     timeago.setLocaleMessages('ar', timeago.ArMessages());
     await Future.wait([
