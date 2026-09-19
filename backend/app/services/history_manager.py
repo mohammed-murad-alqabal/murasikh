@@ -96,14 +96,16 @@ class HistoryService:
             )
         return history
 
-    def get_user_context(self, user_id: int) -> str:
+    def get_user_context(self, user_id: int, limit: int = 100) -> str:
         try:
-            interactions = (
+            query = (
                 self.db.query(Interaction)
                 .filter(Interaction.user_id == user_id, Interaction.user_feedback != 0)
                 .order_by(desc(Interaction.created_at))
-                .all()
             )
+            if limit:
+                query = query.limit(limit)
+            interactions = query.all()
 
             liked = set()
             disliked = set()
