@@ -27,15 +27,33 @@ MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 # A small curated set of context hints. The Quran remains the only stored
 # content; these fields are optional metadata used by the hybrid reranker.
 EMOTION_MAPPING: dict[str, dict[str, str]] = {
-    "3:134": {"emotion": "غضب", "tafsir": "الذين يمسكون ما في أنفسهم من الغضب، ويعفون عمن أساء إليهم."},
-    "2:155": {"emotion": "حزن", "tafsir": "بشارة عظيمة لمن يصبر على الحزن والمصيبة محتسباً الأجر من الله."},
-    "2:156": {"emotion": "حزن", "tafsir": "بشارة عظيمة لمن يصبر على الحزن والمصيبة محتسباً الأجر من الله."},
-    "13:28": {"emotion": "قلق", "tafsir": "القلوب تسكن وتستريح بذكر الله والتوكل عليه في أوقات التوتر والقلق."},
-    "9:40": {"emotion": "يأس", "tafsir": "لا تيأس ولا تحزن، فإن الله يحفظنا ويرعانا في أشد الأوقات ضيقاً."},
+    "3:134": {
+        "emotion": "غضب",
+        "tafsir": "الذين يمسكون ما في أنفسهم من الغضب، ويعفون عمن أساء إليهم.",
+    },
+    "2:155": {
+        "emotion": "حزن",
+        "tafsir": "بشارة عظيمة لمن يصبر على الحزن والمصيبة محتسباً الأجر من الله.",
+    },
+    "2:156": {
+        "emotion": "حزن",
+        "tafsir": "بشارة عظيمة لمن يصبر على الحزن والمصيبة محتسباً الأجر من الله.",
+    },
+    "13:28": {
+        "emotion": "قلق",
+        "tafsir": "القلوب تسكن وتستريح بذكر الله والتوكل عليه في أوقات التوتر والقلق.",
+    },
+    "9:40": {
+        "emotion": "يأس",
+        "tafsir": "لا تيأس ولا تحزن، فإن الله يحفظنا ويرعانا في أشد الأوقات ضيقاً.",
+    },
     "94:5": {"emotion": "توتر", "tafsir": "فإن مع الشدة والضيق يسرًا وفرجًا."},
     "94:6": {"emotion": "توتر", "tafsir": "إن مع الشدة والضيق يسرًا وفرجًا."},
     "2:286": {"emotion": "إرهاق", "tafsir": "لا يكلف الله نفساً إلا وسعها."},
-    "39:53": {"emotion": "ذنب", "tafsir": "لا تقنطوا من رحمة الله إن الله يغفر الذنوب جميعاً."},
+    "39:53": {
+        "emotion": "ذنب",
+        "tafsir": "لا تقنطوا من رحمة الله إن الله يغفر الذنوب جميعاً.",
+    },
     "14:7": {"emotion": "شكر", "tafsir": "لئن شكرتم لأزيدنكم."},
     "20:46": {"emotion": "خوف", "tafsir": "لا تخافا إنني معكما أسمع وأرى."},
     "65:3": {"emotion": "حيرة", "tafsir": "ومن يتوكل على الله فهو حسبه."},
@@ -50,7 +68,7 @@ def load_verses() -> list[dict[str, Any]]:
     seen_ids: set[str] = set()
     for chapter_key, chapter_verses in data.items():
         if not isinstance(chapter_verses, list):
-            raise ValueError(f"Chapter {chapter_key} is not a list")
+            raise TypeError(f"Chapter {chapter_key} is not a list")
         for verse in chapter_verses:
             chapter = int(verse["chapter"])
             number = int(verse["verse"])
@@ -102,7 +120,9 @@ def verify_collection(collection, verses: list[dict[str, Any]]) -> None:
 
     for metadata in result.get("metadatas", []):
         if not metadata or metadata.get("type") != "verse":
-            raise RuntimeError("Chroma contains a non-verse record in the Quran collection")
+            raise RuntimeError(
+                "Chroma contains a non-verse record in the Quran collection"
+            )
 
 
 def seed_quran(*, reset: bool = False, batch_size: int = 128) -> None:
@@ -152,9 +172,19 @@ def seed_quran(*, reset: bool = False, batch_size: int = 128) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Seed or verify the Quran-only Chroma collection")
-    parser.add_argument("--verify", action="store_true", help="verify without loading the embedding model")
-    parser.add_argument("--reset", action="store_true", help="replace the target collection before seeding")
+    parser = argparse.ArgumentParser(
+        description="Seed or verify the Quran-only Chroma collection"
+    )
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="verify without loading the embedding model",
+    )
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="replace the target collection before seeding",
+    )
     parser.add_argument("--batch-size", type=int, default=128)
     args = parser.parse_args()
 

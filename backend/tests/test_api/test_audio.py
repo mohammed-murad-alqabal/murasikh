@@ -1,9 +1,10 @@
-import pytest
 from app.api.v1.endpoints import audio
+
 
 class FailingAudioAnalyzer:
     async def analyze_tone(self, file_bytes):
-        raise Exception("Mocked internal error")
+        raise RuntimeError("Mocked internal error")
+
 
 def test_audio_upload_handles_general_exceptions(client, monkeypatch):
     monkeypatch.setattr(audio, "audio_analyzer", FailingAudioAnalyzer())

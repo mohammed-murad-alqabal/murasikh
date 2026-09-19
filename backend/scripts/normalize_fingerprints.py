@@ -52,7 +52,9 @@ def validate(data: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--check", action="store_true", help="validate without changing the file")
+    parser.add_argument(
+        "--check", action="store_true", help="validate without changing the file"
+    )
     args = parser.parse_args()
 
     with FINGERPRINTS_FILE.open("r", encoding="utf-8") as handle:

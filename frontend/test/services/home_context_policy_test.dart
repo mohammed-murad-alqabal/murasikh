@@ -124,12 +124,12 @@ void main() {
       timestamp: baseTime,
     );
 
-    test('rejects a candidate during the debounce interval', () {
+    test('rejects a candidate during the debounce interval exactly at the boundary', () {
       final candidate = snapshot(
         emotion: 'حزن',
         confidence: 0.9,
         source: 'face',
-        timestamp: baseTime.add(const Duration(minutes: 1)),
+        timestamp: baseTime.add(const Duration(seconds: 60)),
       );
 
       expect(
@@ -137,7 +137,7 @@ void main() {
           old: old,
           candidate: candidate,
           lastNotifyTime: baseTime,
-          now: baseTime.add(const Duration(minutes: 1)),
+          now: baseTime.add(const Duration(seconds: 60)),
         ),
         isFalse,
       );

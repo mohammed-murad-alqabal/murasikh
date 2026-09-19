@@ -46,7 +46,9 @@ def purge() -> int:
         if ids:
             collection.delete(ids=ids)
             removed += len(ids)
-            print(f"Removed {len(ids)} hadith records from {collection_name(collection)}")
+            print(
+                f"Removed {len(ids)} hadith records from {collection_name(collection)}"
+            )
 
     remaining = scan_hadiths(client)
     if remaining:
@@ -58,7 +60,9 @@ def purge() -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Purge hadith records from local Chroma")
+    parser = argparse.ArgumentParser(
+        description="Purge hadith records from local Chroma"
+    )
     parser.add_argument(
         "--check",
         action="store_true",

@@ -2,7 +2,6 @@ import uuid
 
 import jwt
 import pytest
-
 from app.core.auth import SECRET_KEY
 from app.core.config import Settings
 from app.db.models import User
@@ -65,7 +64,9 @@ def test_audio_upload_rejects_files_over_10_mb(client):
 
 
 @pytest.mark.parametrize("is_active,is_deleted", [(False, False), (True, True)])
-def test_inactive_or_deleted_accounts_cannot_login(client, db_session, is_active, is_deleted):
+def test_inactive_or_deleted_accounts_cannot_login(
+    client, db_session, is_active, is_deleted
+):
     suffix = uuid.uuid4().hex[:10]
     username = f"blocked_{suffix}"
     db_session.add(
@@ -114,11 +115,12 @@ def test_cors_origins_are_parsed_from_configuration():
         "https://admin.example",
     ]
 
+
 def test_audio_upload_rejects_malformed_user_context(client):
     response = client.post(
         "/api/v1/audio/analyze-audio",
         files={"file": ("test.wav", b"12345678", "audio/wav")},
-        data={"user_context": "{malformed_json: true"}
+        data={"user_context": "{malformed_json: true"},
     )
 
     assert response.status_code == 400

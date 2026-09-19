@@ -25,21 +25,23 @@ logger = logging.getLogger(__name__)
 # ────────────────────────────────────────────────────────────────────────────
 
 
-
 class AppRatingRequest(BaseModel):
     rating: int
     feedback: str | None = None
 
+
 class ContextSignalsRequest(BaseModel):
     """إشارات السياق الواردة من العميل (الجهاز)."""
-    dominant_emotion: str | None = None          # «قلق» / «حزن» / «فرح» …
-    confidence: float = 0.0                       # ثقة المستشعر: 0.0 – 1.0
-    signal_source: str = "history"               # «face» | «audio» | «history» | «time»
-    time_of_day: str | None = None               # «فجر» | «صباح» | «ظهر» | «عصر» | «مساء» | «ليل»
+
+    dominant_emotion: str | None = None  # «قلق» / «حزن» / «فرح» …
+    confidence: float = 0.0  # ثقة المستشعر: 0.0 – 1.0
+    signal_source: str = "history"  # «face» | «audio» | «history» | «time»
+    time_of_day: str | None = None  # «فجر» | «صباح» | «ظهر» | «عصر» | «مساء» | «ليل»
 
 
 class VerseResponse(BaseModel):
     """ردّ الآية الديناميكية."""
+
     verse: str
     source: str
     tafsir: str | None = None
@@ -127,6 +129,7 @@ def _time_verse_response(
 # Endpoint الرئيسي
 # ────────────────────────────────────────────────────────────────────────────
 
+
 @router.post("/verse", response_model=VerseResponse)
 @limiter.limit("20/minute")
 async def get_home_verse(
@@ -162,7 +165,9 @@ async def get_home_verse(
                 recent = history_service.get_history(user["id"], limit=3)
                 if recent:
                     from datetime import datetime, timezone
+
                     import dateutil.parser
+
                     now = datetime.now(timezone.utc)
                     emotions = []
                     for r in recent:
@@ -175,11 +180,16 @@ async def get_home_verse(
                                 dt = dt.replace(tzinfo=timezone.utc)
                             if (now - dt).total_seconds() < 12 * 3600:
                                 emotions.append(emotion)
-                        except (ValueError, TypeError, dateutil.parser.ParserError) as e:
+                        except (
+                            ValueError,
+                            TypeError,
+                            dateutil.parser.ParserError,
+                        ) as e:
                             logger.warning(f"Failed to parse timestamp in history: {e}")
 
                     if emotions:
                         from collections import Counter
+
                         dominant_emotion = Counter(emotions).most_common(1)[0][0]
                         confidence = 0.55
                         use_emotion = True
@@ -195,10 +205,17 @@ async def get_home_verse(
         else:
             # حالة طبيعية: إظهار آيات متنوعة ومختلفة في كل مرة
             import random
+
             positive_themes = [
-                "رحمة الله ومغفرته", "الطمأنينة والسكينة", "شكر النعم", 
-                "التوكل على الله", "عظمة خلق الله", "تسبيح الله وحمده",
-                "الأمل بالله", "الصبر الجميل", "فضل ذكر الله"
+                "رحمة الله ومغفرته",
+                "الطمأنينة والسكينة",
+                "شكر النعم",
+                "التوكل على الله",
+                "عظمة خلق الله",
+                "تسبيح الله وحمده",
+                "الأمل بالله",
+                "الصبر الجميل",
+                "فضل ذكر الله",
             ]
             theme = random.choice(positive_themes)
             semantic_query = theme
@@ -284,9 +301,7 @@ async def submit_app_rating(
     try:
         user_id = user["id"] if user else None
         new_rating = AppRating(
-            user_id=user_id,
-            rating=payload.rating,
-            feedback=payload.feedback
+            user_id=user_id, rating=payload.rating, feedback=payload.feedback
         )
         db.add(new_rating)
         db.commit()
@@ -295,4 +310,5 @@ async def submit_app_rating(
         logger.error(f"Error saving app rating: {e}", exc_info=True)
         db.rollback()
         from fastapi import HTTPException
+
         raise HTTPException(status_code=500, detail="Internal Server Error")

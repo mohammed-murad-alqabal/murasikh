@@ -22,12 +22,15 @@ class User(Base):
     username = Column(String(100), unique=True, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
-    preferences = Column(JSONB, default={
-        "notification_style": "minimal",
-        "language": "ar",
-        "theme": "light",
-        "font_size": "medium"
-    })
+    preferences = Column(
+        JSONB,
+        default={
+            "notification_style": "minimal",
+            "language": "ar",
+            "theme": "light",
+            "font_size": "medium",
+        },
+    )
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -35,6 +38,7 @@ class User(Base):
 
     interactions = relationship("Interaction", back_populates="user")
     delayed_responses = relationship("DelayedResponse", back_populates="user")
+
 
 class Verse(Base):
     __tablename__ = "verses"
@@ -54,6 +58,7 @@ class Verse(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_deleted = Column(Boolean, default=False)
 
+
 class Hadith(Base):
     __tablename__ = "hadiths"
     id = Column(Integer, primary_key=True, index=True)
@@ -72,6 +77,7 @@ class Hadith(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_deleted = Column(Boolean, default=False)
 
+
 class Interaction(Base):
     __tablename__ = "interactions"
     id = Column(Integer, primary_key=True, index=True)
@@ -85,14 +91,15 @@ class Interaction(Base):
     message = Column(Text)
     source = Column(String(255))
     tafsir = Column(Text)
-    
-    user_feedback = Column(Integer, default=0) # Changed to Integer (-1, 0, 1)
+
+    user_feedback = Column(Integer, default=0)  # Changed to Integer (-1, 0, 1)
     response_tier = Column(String(20))
     response_delayed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
     user = relationship("User", back_populates="interactions")
     delayed_response = relationship("DelayedResponse", back_populates="interaction")
+
 
 class DelayedResponse(Base):
     __tablename__ = "delayed_responses"
@@ -110,7 +117,6 @@ class DelayedResponse(Base):
 
     user = relationship("User", back_populates="delayed_responses")
     interaction = relationship("Interaction", back_populates="delayed_response")
-
 
 
 class AppRating(Base):

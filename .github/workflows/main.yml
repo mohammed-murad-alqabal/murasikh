@@ -39,6 +39,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
           pip install pip-audit pytest httpx pytest-asyncio
+      - name: Run Ruff checks
+        run: |
+          ruff check backend/app backend/tests backend/scripts
+      - name: Run Ruff format check
+        run: |
+          ruff format --check backend/app backend/tests backend/scripts
       - name: Audit Python dependencies
         run: |
           pip-audit -r backend/requirements.txt --strict
@@ -67,6 +73,7 @@ jobs:
           POSTGRES_PORT: 5433
           ENVIRONMENT: testing
           SECRET_KEY: test-secret-key-for-ci-32-bytes-long
+          TEST_DATABASE_URL: postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db
         run: |
           cd backend
           python -m pytest -m "not performance"
@@ -79,6 +86,7 @@ jobs:
           POSTGRES_PORT: 5433
           ENVIRONMENT: testing
           SECRET_KEY: test-secret-key-for-ci-32-bytes-long
+          TEST_DATABASE_URL: postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db
         run: |
           cd backend
           python -m pytest tests/performance -m performance -q

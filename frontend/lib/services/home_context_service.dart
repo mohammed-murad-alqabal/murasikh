@@ -76,7 +76,7 @@ class HomeContextPolicy {
     required DateTime lastNotifyTime,
     required DateTime now,
   }) {
-    if (now.difference(lastNotifyTime) < minUpdateInterval) return false;
+    if (now.difference(lastNotifyTime) <= minUpdateInterval) return false;
     if (!isSignificantChange(old, candidate, now: now)) return false;
     return candidate.confidence >= thresholdForSource(candidate.signalSource);
   }
