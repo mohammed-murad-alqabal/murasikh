@@ -148,5 +148,51 @@ void main() {
       // We expect the auth screen to have popped, removing its text elements.
       expect(find.text('حساب جديد'), findsNothing);
     });
+
+    testWidgets('Failed registration should show error Snackbar', (
+      WidgetTester tester,
+    ) async {
+      when(() => mockAuthService.register(any(), any()))
+          .thenAnswer((_) async => 'Registration failed');
+
+      await tester.pumpWidget(createWidgetUnderTest());
+
+      // Toggle to register mode
+      await tester.tap(find.text('لا تملك حساباً؟ سجل الآن'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextFormField).first, 'newuser');
+      await tester.enterText(find.byType(TextFormField).last, 'newpassword');
+
+      await tester.tap(find.text('تسجيل حساب جديد'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockAuthService.register('newuser', 'newpassword')).called(1);
+
+      expect(find.text('Registration failed'), findsOneWidget);
+    });
+
+    testWidgets('Loading indicator is shown during submission', (
+      WidgetTester tester,
+    ) async {
+      when(() => mockAuthService.login(any(), any()))
+          .thenAnswer((_) async {
+            await Future.delayed(const Duration(milliseconds: 100));
+            return null;
+          });
+
+      await tester.pumpWidget(createWidgetUnderTest());
+
+      await tester.enterText(find.byType(TextFormField).first, 'testuser');
+      await tester.enterText(find.byType(TextFormField).last, 'password');
+
+      await tester.tap(find.text('دخول'));
+      await tester.pump(); // Start the animation
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await tester.pumpAndSettle(); // Finish the animation
+    });
+
   });
 }
