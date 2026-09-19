@@ -44,6 +44,14 @@ class Settings(BaseSettings):
             if self.POSTGRES_PASSWORD == "postgres":
                 raise ValueError("POSTGRES_PASSWORD must be changed in production")
 
+            # P3: Mandatory production CORS without localhost
+            if not self.CORS_ORIGINS:
+                raise ValueError("CORS_ORIGINS must be explicitly set in production")
+            cors_list = [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+            for origin in cors_list:
+                if "localhost" in origin or "127.0.0.1" in origin:
+                    raise ValueError(f"CORS_ORIGINS cannot contain localhost in production: {origin}")
+
     @property
     def cors_origins(self) -> list[str]:
         return [
