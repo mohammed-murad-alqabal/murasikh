@@ -79,9 +79,7 @@ async def analyze_audio(
             try:
                 raw_context = json.loads(user_context)
             except json.JSONDecodeError as exc:
-                raise HTTPException(
-                    status_code=400, detail="Invalid JSON in user_context"
-                ) from exc
+                raise HTTPException(status_code=400, detail="Invalid JSON in user_context") from exc
             try:
                 context_dict = UserContextSchema.model_validate(raw_context).model_dump(
                     exclude_none=True
