@@ -1,1 +1,5 @@
-The current task is to submit the work.
+🔒 Fix JWT signature algorithm and expiration vulnerability
+
+🎯 What: Replaced hardcoded weak JWT algorithm (HS256) and excessively long expiration time (1 week) in `auth.py`.
+⚠️ Risk: Weak signature algorithms like HS256 can be vulnerable if keys are not managed properly, and 1-week long expirations significantly increase the blast radius if an access token is leaked.
+🛡️ Solution: Configured `create_access_token` and `create_refresh_token` to use the secure defaults from `settings.ALGORITHM` (HS512) and `settings.ACCESS_TOKEN_EXPIRE_MINUTES` (15 minutes). The test suite was also updated to reflect the stronger algorithm requirement.

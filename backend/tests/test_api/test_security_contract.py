@@ -90,7 +90,7 @@ def test_inactive_or_deleted_accounts_cannot_login(
 
 def test_jwt_signed_with_wrong_secret_cannot_access_private_route(client):
     wrong_secret = "wrong-secret-for-test-0123456789abcdef-0123456789abcdef-xyz"
-    token = jwt.encode({"sub": "testuser"}, wrong_secret, algorithm="HS256")
+    token = jwt.encode({"sub": "testuser"}, wrong_secret, algorithm="HS512")
     response = client.get(
         "/api/v1/history",
         headers={"Authorization": f"Bearer {token}"},
