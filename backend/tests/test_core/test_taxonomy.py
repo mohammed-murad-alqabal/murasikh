@@ -1,4 +1,9 @@
-from app.core.taxonomy import EMOTION_TAXONOMY, build_semantic_query, get_taxonomy_keys
+from app.core.taxonomy import (
+    EMOTION_TAXONOMY,
+    EXTREME_EMOTIONS,
+    build_semantic_query,
+    get_taxonomy_keys,
+)
 
 
 def test_get_taxonomy_keys():
@@ -9,6 +14,20 @@ def test_get_taxonomy_keys():
     assert set(keys) == set(EMOTION_TAXONOMY.keys())
     assert "توحيد" in keys
     assert "قنوط" in keys
+
+
+def test_extreme_emotions():
+    """Test that EXTREME_EMOTIONS is a set of strings and all elements are in EMOTION_TAXONOMY."""
+    assert isinstance(EXTREME_EMOTIONS, set)
+    assert len(EXTREME_EMOTIONS) > 0
+
+    for emotion in EXTREME_EMOTIONS:
+        assert isinstance(emotion, str)
+        assert emotion in EMOTION_TAXONOMY
+
+    # Check specific critical emotions
+    assert "قنوط" in EXTREME_EMOTIONS
+    assert "يأس" in EXTREME_EMOTIONS
 
 
 def test_build_semantic_query_with_antidote():
