@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.v1.endpoints.auth import get_current_user_optional
 from app.db.database import get_db
 from pydantic import BaseModel, Field
+from app.schemas.common import UserContextSchema
 
 from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
 from app.services.ai.embeddings import EmbeddingService
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class RecommendationRequest(BaseModel):
     text: str = Field(..., min_length=2, max_length=1000, description="نص المستخدم المراد تحليله")
-    user_context: dict | None = Field(None, description="السياق الإضافي للمستخدم")
+    user_context: UserContextSchema | None = Field(None, description="السياق الإضافي للمستخدم")
 
 class RecommendationResponse(BaseModel):
     emotion: str
@@ -52,7 +53,7 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
                     chat_history.append({"role": "ai", "content": interaction["recommendation"]["message"]})
 
         # 2. تحليل الحالة العاطفية والموقف (الوكيل الاستقصائي)
-        analysis = await agent.analyze(payload.text, chat_history=chat_history, user_context=payload.user_context)
+        analysis = await agent.analyze(payload.text, chat_history=chat_history, user_context=payload.user_context.model_dump(exclude_none=True) if payload.user_context else None)
         
         action = analysis.get("action", "guide")
         emotion = analysis.get("emotion", "طبيعي")
@@ -110,8 +111,8 @@ async def get_recommendation(request: Request, payload: RecommendationRequest, u
 
         if payload.user_context:
             ctx = payload.user_context
-            if ctx.get('age'): semantic_query += f" العمر: {ctx['age']}"
-            if ctx.get('gender'): semantic_query += f" الجنس: {ctx['gender']}"
+            if ctx.age: semantic_query += f" العمر: {ctx.age}"
+            if ctx.gender: semantic_query += f" الجنس: {ctx.gender}"
 
         # 4. البحث في القرآن الكريم
         verse_results = embedder.search_similar(

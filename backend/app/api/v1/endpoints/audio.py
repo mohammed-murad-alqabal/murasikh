@@ -8,6 +8,8 @@ from app.services.history_manager import HistoryService
 from app.services.delayed_response_service import DelayedResponseService
 import json
 
+from app.schemas.common import UserContextSchema
+from pydantic import ValidationError
 from app.api.v1.endpoints.recommend import (
     RecommendationResponse,
     embedder,
@@ -20,6 +22,22 @@ from app.services.ai.audio_analyzer import AudioAnalyzer
 router = APIRouter()
 audio_analyzer = AudioAnalyzer()
 logger = logging.getLogger(__name__)
+
+def check_magic_bytes(header_bytes: bytes) -> bool:
+    # WAV: RIFF...WAVE
+    if header_bytes.startswith(b"RIFF") and b"WAVE" in header_bytes[:12]:
+        return True
+    # OGG/WebM: OggS (OGG) or \x1A\x45\xdf\xa3 (WebM / MKV)
+    if header_bytes.startswith(b"OggS") or header_bytes.startswith(b"\x1A\x45\xdf\xa3"):
+        return True
+    # MP3: ID3 or FFFB/FFF3
+    if header_bytes.startswith(b"ID3") or header_bytes.startswith(b"\xff\xfb") or header_bytes.startswith(b"\xff\xf3"):
+        return True
+    # M4A/MP4: ftypM4A or ftypmp4
+    if b"ftyp" in header_bytes[:12]:
+        return True
+    return False
+
 MAX_AUDIO_BYTES = 10 * 1024 * 1024
 ALLOWED_AUDIO_TYPES = {
     "audio/mpeg",
@@ -51,11 +69,18 @@ async def analyze_audio(
         if len(audio_bytes) > MAX_AUDIO_BYTES:
             raise HTTPException(status_code=413, detail="Audio file exceeds the 10 MB limit")
 
+        if not check_magic_bytes(audio_bytes[:12]):
+            raise HTTPException(status_code=415, detail="Invalid audio file format")
+
         context_dict = None
         if user_context:
             try:
-                context_dict = json.loads(user_context)
-            except json.JSONDecodeError:
+                # Parse and validate the user context using the common schema
+                context_obj = UserContextSchema.model_validate_json(user_context)
+                context_dict = context_obj.model_dump(exclude_none=True)
+            except ValidationError as e:
+                raise HTTPException(status_code=422, detail=e.errors())
+            except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid JSON in user_context")
                 
         analysis = await audio_analyzer.analyze_tone(audio_bytes)

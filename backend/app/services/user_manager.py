@@ -107,6 +107,14 @@ class UserManager:
                 "id": user.id,
                 "username": user.username,
                 "email": user.email,
-                "password_hash": user.password_hash
+                "password_hash": user.password_hash,
+                "refresh_jti": getattr(user, 'refresh_jti', None)
             }
         return None
+
+
+    def set_refresh_jti(self, db: Session, username: str, jti: str | None):
+        user_record = db.query(User).filter(User.username == username).first()
+        if user_record:
+            user_record.refresh_jti = jti
+            db.commit()

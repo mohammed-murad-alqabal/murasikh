@@ -29,6 +29,7 @@ class User(Base):
         "font_size": "medium"
     })
     is_active = Column(Boolean, default=True)
+    refresh_jti = Column(String(36), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_deleted = Column(Boolean, default=False)
