@@ -1,7 +1,7 @@
 import json
 import logging
 
-import google.generativeai as genai
+from google import genai
 
 from app.core.config import settings
 from app.core.taxonomy import EMOTION_TAXONOMY
@@ -14,8 +14,8 @@ class ConversationalAgent:
         self._gemini_available = False
         if settings.GEMINI_API_KEY:
             try:
-                genai.configure(api_key=settings.GEMINI_API_KEY)
-                self.model = genai.GenerativeModel("gemini-3.6-flash")
+                self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+                self.model_name = "gemini-3.6-flash"
                 self._gemini_available = True
             except Exception as e:
                 logger.error(f"Failed to configure Gemini for ConversationalAgent: {e}")
@@ -82,8 +82,9 @@ class ConversationalAgent:
             import asyncio
 
             response = await asyncio.to_thread(
-                self.model.generate_content,
-                prompt,
+                self.client.models.generate_content,
+                model=self.model_name,
+                contents=prompt,
                 generation_config=genai.GenerationConfig(temperature=0.3),
             )
             raw_text = response.text.strip()

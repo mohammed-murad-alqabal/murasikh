@@ -52,7 +52,8 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     command: >-
-      sh -c "alembic upgrade head &&
+      sh -c "python scripts/seed_quran.py --verify &&
+      alembic upgrade head &&
       uvicorn app.main:app --host 0.0.0.0 --port 8000
       --proxy-headers --forwarded-allow-ips='*'"
     volumes:

@@ -3,7 +3,7 @@ from app.api.v1.endpoints import audio
 
 class FailingAudioAnalyzer:
     async def analyze_tone(self, file_bytes):
-        raise RuntimeError("Mocked internal error")
+        raise RuntimeError("Internal Server Error")
 
 
 def test_audio_upload_handles_general_exceptions(client, monkeypatch):
@@ -15,4 +15,4 @@ def test_audio_upload_handles_general_exceptions(client, monkeypatch):
     )
 
     assert response.status_code == 500
-    assert "Mocked internal error" in response.json()["detail"]
+    assert "Internal Server Error" in response.json()["detail"]

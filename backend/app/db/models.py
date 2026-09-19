@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Boolean,
@@ -10,7 +10,8 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy import JSON as JSONB
+from sqlalchemy import JSON as ARRAY
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -32,8 +33,8 @@ class User(Base):
         },
     )
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     is_deleted = Column(Boolean, default=False)
 
     interactions = relationship("Interaction", back_populates="user")
@@ -51,11 +52,11 @@ class Verse(Base):
     translation = Column(Text)
     tafsir = Column(Text)
     tafsir_source = Column(String(100))
-    tags = Column(ARRAY(String))
+    tags = Column(ARRAY)
     emotional_state = Column(String(50), index=True)
-    keywords = Column(ARRAY(String))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    keywords = Column(ARRAY)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     is_deleted = Column(Boolean, default=False)
 
 
@@ -69,12 +70,12 @@ class Hadith(Base):
     explanation = Column(Text)
     narrator = Column(String(255))
     grade = Column(String(50))
-    tags = Column(ARRAY(String))
+    tags = Column(ARRAY)
     emotional_state = Column(String(50), index=True)
-    keywords = Column(ARRAY(String))
+    keywords = Column(ARRAY)
     is_authentic = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     is_deleted = Column(Boolean, default=False)
 
 
@@ -95,7 +96,7 @@ class Interaction(Base):
     user_feedback = Column(Integer, default=0)  # Changed to Integer (-1, 0, 1)
     response_tier = Column(String(20))
     response_delayed = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
     user = relationship("User", back_populates="interactions")
     delayed_response = relationship("DelayedResponse", back_populates="interaction")
@@ -113,7 +114,7 @@ class DelayedResponse(Base):
     scheduled_for = Column(DateTime)
     delivered_at = Column(DateTime)
     payload = Column(JSONB, nullable=False, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="delayed_responses")
     interaction = relationship("Interaction", back_populates="delayed_response")
@@ -125,6 +126,6 @@ class AppRating(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     rating = Column(Integer, nullable=False)
     feedback = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", backref="app_ratings")

@@ -3,12 +3,11 @@ import logging
 import random
 from typing import ClassVar
 
-import google.generativeai as genai
+from google import genai
 
 from app.core.config import settings
 
 try:
-    import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     LOCAL_LLM_AVAILABLE = True
@@ -121,8 +120,8 @@ class RAGEngine:
         self._local_tokenizer = None
         if settings.GEMINI_API_KEY:
             try:
-                genai.configure(api_key=settings.GEMINI_API_KEY)
-                self.model = genai.GenerativeModel("gemini-3.6-flash")
+                self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+                self.model_name = "gemini-3.6-flash"
                 self._gemini_available = True
             except Exception as e:
                 logging.error(f"Failed to initialize Gemini: {e}")
@@ -217,8 +216,9 @@ class RAGEngine:
 """
             try:
                 response = await asyncio.to_thread(
-                    self.model.generate_content,
-                    prompt,
+                    self.client.models.generate_content,
+                    model=self.model_name,
+                    contents=prompt,
                     generation_config=genai.GenerationConfig(temperature=0.1),
                     request_options={"timeout": 5.0},
                 )
@@ -319,8 +319,9 @@ class RAGEngine:
 الرسالة يجب أن تنتهي بالآية مباشرة.
 """
         response = await asyncio.to_thread(
-            self.model.generate_content,
-            prompt,
+            self.client.models.generate_content,
+            model=self.model_name,
+            contents=prompt,
             generation_config=genai.GenerationConfig(temperature=0.7),
             request_options={"timeout": 5.0},
         )
