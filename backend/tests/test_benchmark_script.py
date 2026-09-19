@@ -1,5 +1,4 @@
 import pytest
-
 from scripts.benchmark_semantic_rag import percentile_ms, summarize
 
 

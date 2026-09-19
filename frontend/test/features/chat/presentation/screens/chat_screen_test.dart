@@ -71,7 +71,8 @@ void main() {
       await tester.pumpWidget(buildTestableWidget());
 
       // Wait for async operations (Hive init)
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Check input field exists
       expect(find.byType(TextField), findsOneWidget);
@@ -85,7 +86,8 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(buildTestableWidget());
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Enter text
       await tester.enterText(find.byType(TextField), 'أشعر بالحزن والضيق');
@@ -102,7 +104,7 @@ void main() {
       ).called(1);
 
       // Allow animation to complete
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
     });
 
     testWidgets('Displays recommendation when bloc yields RecommendationLoaded', (
@@ -129,14 +131,16 @@ void main() {
       );
 
       await tester.pumpWidget(buildTestableWidget());
-      await tester.pumpAndSettle(); // Hive init
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Type and send
       await tester.enterText(find.byType(TextField), 'رسالة');
       await tester.tap(find.byIcon(Icons.send));
 
       // Let the stream events process
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Should display the recommendation message
       expect(find.text('لا تحزن إن الله معنا'), findsOneWidget);
@@ -161,17 +165,31 @@ void main() {
       );
 
       await tester.pumpWidget(buildTestableWidget());
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Type and send
       await tester.enterText(find.byType(TextField), 'رسالة');
       await tester.tap(find.byIcon(Icons.send));
 
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Error messages should be shown as SnackBar
       expect(find.byType(SnackBar), findsOneWidget);
       expect(find.text('حدث خطأ في الشبكة'), findsOneWidget);
     });
+
+    testWidgets('ChatScreen dispose cancels timer properly', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(buildTestableWidget());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // The widget will be disposed when the test finishes.
+      // If the timer is not canceled, the test environment will complain about pending timers.
+    });
+
   });
 }

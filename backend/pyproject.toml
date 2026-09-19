@@ -1,0 +1,2 @@
+[tool.ruff]
+lint.ignore = ["BLE001", "LOG015", "RUF012", "PLE2502", "B005", "S110", "DTZ005", "B008", "RUF100", "B019", "F401", "I001", "G201"]

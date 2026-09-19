@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from app.db.models import DelayedResponse, Interaction, User
 from app.services.delayed_response_service import DelayedResponseService
@@ -46,7 +46,7 @@ def test_delayed_response_is_delivered_once(db_session):
         )
         assert scheduled.is_delivered is False
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         delivered = service.deliver_due(user.id, now=now)
         assert len(delivered) == 1
         assert delivered[0]["message"] == "رسالة مؤجلة للاختبار"

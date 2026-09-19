@@ -1,10 +1,13 @@
 import json
 import logging
+
 import google.generativeai as genai
+
 from app.core.config import settings
 from app.core.taxonomy import EMOTION_TAXONOMY
 
 logger = logging.getLogger(__name__)
+
 
 class ConversationalAgent:
     def __init__(self):
@@ -12,13 +15,13 @@ class ConversationalAgent:
         if settings.GEMINI_API_KEY:
             try:
                 genai.configure(api_key=settings.GEMINI_API_KEY)
-                self.model = genai.GenerativeModel('gemini-3.6-flash')
+                self.model = genai.GenerativeModel("gemini-3.6-flash")
                 self._gemini_available = True
             except Exception as e:
                 logger.error(f"Failed to configure Gemini for ConversationalAgent: {e}")
-        
+
         emotion_list = "، ".join(EMOTION_TAXONOMY.keys())
-        
+
         self.system_prompt = f"""أنت رفيق روحي إسلامي (Investigative Spiritual Assistant). هدفك فهم الحالة النفسية والإيمانية للمستخدم بعمق قبل تقديم التوجيه القرآني النهائي.
 لديك وصول لسجل المحادثة الحالي.
 
@@ -43,50 +46,57 @@ class ConversationalAgent:
 - المستخدم: "أنا مكتئب جداً لفقدان وظيفتي" -> {{"action": "guide", "ai_message": "أشعر بما تمر به من ألم لفقدان مصدر رزقك، لكن تذكر دائماً أن خزائن الله لا تنفد.", "emotion": "حزن", "confidence": 0.9}}
 """
 
-    async def analyze(self, text: str, chat_history: list[dict] = None, user_context: dict = None) -> dict:
+    async def analyze(
+        self,
+        text: str,
+        chat_history: list[dict] | None = None,
+        user_context: dict | None = None,
+    ) -> dict:
         try:
             if not self._gemini_available:
                 raise ValueError("No API_KEY provided")
-            
+
             prompt = self.system_prompt
-            
+
             if user_context:
                 prompt += "\n\n[سياق إضافي عن المستخدم]:\n"
-                if user_context.get("age"): prompt += f"- العمر: {user_context['age']} سنة\n"
-                if user_context.get("gender"): prompt += f"- الجنس: {'ذكر' if user_context['gender'] == 'male' else 'أنثى'}\n"
-                if user_context.get("biometric_stress"): prompt += f"- مؤشرات حيوية: توتر جسدي أو نبض مرتفع\n"
-                if user_context.get("facial_emotion"): prompt += f"- ملامح الوجه: {user_context['facial_emotion']}\n"
-            
+                if user_context.get("age"):
+                    prompt += f"- العمر: {user_context['age']} سنة\n"
+                if user_context.get("gender"):
+                    prompt += f"- الجنس: {'ذكر' if user_context['gender'] == 'male' else 'أنثى'}\n"
+                if user_context.get("biometric_stress"):
+                    prompt += "- مؤشرات حيوية: توتر جسدي أو نبض مرتفع\n"
+                if user_context.get("facial_emotion"):
+                    prompt += f"- ملامح الوجه: {user_context['facial_emotion']}\n"
+
             prompt += "\n[سجل المحادثة الأخير]:\n"
             if chat_history:
                 for msg in chat_history:
-                    role = "المستخدم" if msg['role'] == 'user' else "المساعد"
+                    role = "المستخدم" if msg["role"] == "user" else "المساعد"
                     prompt += f"{role}: {msg['content']}\n"
             else:
                 prompt += "(لا يوجد سجل سابق)\n"
-                
+
             prompt += f"\nالرسالة الحالية للمستخدم:\n{text}"
-            
+
             import asyncio
+
             response = await asyncio.to_thread(
                 self.model.generate_content,
                 prompt,
-                generation_config=genai.GenerationConfig(
-                    temperature=0.3
-                )
+                generation_config=genai.GenerationConfig(temperature=0.3),
             )
             raw_text = response.text.strip()
             # fallback cleanup just in case
             if raw_text.startswith("```json"):
                 raw_text = raw_text.replace("```json", "", 1)
-            if raw_text.endswith("```"):
-                raw_text = raw_text[:-3]
-            
+            raw_text = raw_text.removesuffix("```")
+
             result = json.loads(raw_text.strip(), strict=False)
-            
+
             if result.get("emotion") not in EMOTION_TAXONOMY:
                 result["emotion"] = "طبيعي"
-                
+
             return result
         except Exception as e:
             logger.error(f"ConversationalAgent Fallback due to: {e}")
@@ -94,12 +104,23 @@ class ConversationalAgent:
 
     def _local_fallback_analyze(self, text: str) -> dict:
         text_lower = text.lower()
-        
+
         # كلمات غامضة تستدعي سؤالاً استقصائياً
         ambiguous_keywords = [
-            "متعب", "تعب", "مش كويس", "مو كيفي", "مو زين",
-            "ضيق", "مش تمام", "مو ماشي", "مو عارف", "ما أعرف",
-            "تعبت", "خايس", "مو مرتاح", "محتاج مساعدة"
+            "متعب",
+            "تعب",
+            "مش كويس",
+            "مو كيفي",
+            "مو زين",
+            "ضيق",
+            "مش تمام",
+            "مو ماشي",
+            "مو عارف",
+            "ما أعرف",
+            "تعبت",
+            "خايس",
+            "مو مرتاح",
+            "محتاج مساعدة",
         ]
         for kw in ambiguous_keywords:
             if kw in text_lower:
@@ -107,14 +128,25 @@ class ConversationalAgent:
                     "action": "ask",
                     "emotion": "إرهاق",
                     "confidence": 0.4,
-                    "ai_message": "أسمعك.. هل هذا التعب جسدي من كثرة العمل، أم أنه إرهاق نفسي وضيق في القلب؟ تحدث معي أكثر لأتمكن من مساعدتك."
+                    "ai_message": "أسمعك.. هل هذا التعب جسدي من كثرة العمل، أم أنه إرهاق نفسي وضيق في القلب؟ تحدث معي أكثر لأتمكن من مساعدتك.",
                 }
-        
+
         keyword_map = [
             (["غاضب", "غضب", "مستفز", "معصب", "ثائر", "زعلان جداً"], "غضب"),
             (["حزين", "ابكي", "بكى", "اكتئاب", "زعلان", "حزن", "كآبة"], "حزن"),
             (["قلق", "خايف", "متوتر", "خوف", "مرعوب", "توتر"], "قلق"),
-            (["يائس", "يأس", "مستحيل", "استسلم", "فقدت الأمل", "لا فائدة", "ما في أمل"], "يأس"),
+            (
+                [
+                    "يائس",
+                    "يأس",
+                    "مستحيل",
+                    "استسلم",
+                    "فقدت الأمل",
+                    "لا فائدة",
+                    "ما في أمل",
+                ],
+                "يأس",
+            ),
             (["تعبان", "مرهق", "ارهاق", "مجهد", "منهك"], "إرهاق"),
             (["فرحان", "سعيد", "مبسوط", "بهجة", "مسرور"], "فرح"),
             (["شاكر", "الحمد لله", "ممتن", "شكر"], "شكر"),
@@ -131,13 +163,12 @@ class ConversationalAgent:
                     "action": "guide",
                     "emotion": emotion,
                     "confidence": 0.75,
-                    "ai_message": f"أسمعك، وأشعر بـ {emotion} الذي تمر به. وتذكر دائماً كلام الله في هذا الموقف:"
+                    "ai_message": f"أسمعك، وأشعر بـ {emotion} الذي تمر به. وتذكر دائماً كلام الله في هذا الموقف:",
                 }
         # لا توجد كلمات مفتاحية واضحة → اسأل
         return {
             "action": "ask",
             "emotion": "طبيعي",
             "confidence": 0.3,
-            "ai_message": "يسعدني أن أكون بجانبك. هل تودّ مشاركتي ما يدور في خاطرك أو يشغل تفكيرك؟"
+            "ai_message": "يسعدني أن أكون بجانبك. هل تودّ مشاركتي ما يدور في خاطرك أو يشغل تفكيرك؟",
         }
-

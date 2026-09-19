@@ -52,7 +52,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--iterations", type=int, default=30)
     parser.add_argument("--warmup", type=int, default=3)
-    parser.add_argument("--results", type=Path, default=Path("perf-results/semantic-rag-real.json"))
+    parser.add_argument(
+        "--results", type=Path, default=Path("perf-results/semantic-rag-real.json")
+    )
     parser.add_argument("--n-results", type=int, default=5)
     parser.add_argument("--min-count", type=int, default=6236)
     return parser
@@ -60,7 +62,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 async def run_benchmark(args: argparse.Namespace) -> dict:
     if args.iterations <= 0 or args.warmup < 0 or args.n_results <= 0:
-        raise ValueError("iterations, n-results and warmup must be positive/non-negative")
+        raise ValueError(
+            "iterations, n-results and warmup must be positive/non-negative"
+        )
 
     service = EmbeddingService()
     collection_count = service.collection.count()
@@ -124,7 +128,9 @@ def main() -> int:
     args = build_parser().parse_args()
     results = asyncio.run(run_benchmark(args))
     args.results.parent.mkdir(parents=True, exist_ok=True)
-    args.results.write_text(json.dumps(results, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    args.results.write_text(
+        json.dumps(results, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     print(json.dumps(results, ensure_ascii=False, indent=2))
     print(f"Saved benchmark results to {args.results}")
     return 0

@@ -5,13 +5,15 @@ class FakeEmbedder:
     def search_similar(self, **kwargs):
         return {
             "documents": [["أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ"]],
-            "metadatas": [[
-                {
-                    "type": "verse",
-                    "source": "سورة الرعد: ٢٨",
-                    "tafsir": "ذكر الله يورث الطمأنينة.",
-                }
-            ]],
+            "metadatas": [
+                [
+                    {
+                        "type": "verse",
+                        "source": "سورة الرعد: ٢٨",
+                        "tafsir": "ذكر الله يورث الطمأنينة.",
+                    }
+                ]
+            ],
             "ids": [["verse_13_28"]],
             "distances": [[0.1]],
         }
@@ -38,9 +40,14 @@ def test_home_verse_contract(client, monkeypatch):
 
     assert response.status_code == 200, response.text
     data = response.json()
-    assert set(
-        ("verse", "source", "emotion_context", "signal_used", "confidence", "cached")
-    ).issubset(data)
+    assert {
+        "verse",
+        "source",
+        "emotion_context",
+        "signal_used",
+        "confidence",
+        "cached",
+    }.issubset(data)
     assert data["source"] == "سورة الرعد: ٢٨"
     assert data["emotion_context"] == "قلق"
     assert data["signal_used"] == "face"
@@ -51,7 +58,9 @@ def test_home_verse_contract(client, monkeypatch):
 def test_home_verse_openapi_contract(client):
     schema = client.get("/openapi.json").json()
     operation = schema["paths"]["/api/v1/home/verse"]["post"]
-    response_schema = operation["responses"]["200"]["content"]["application/json"]["schema"]
+    response_schema = operation["responses"]["200"]["content"]["application/json"][
+        "schema"
+    ]
     assert response_schema["$ref"].endswith("/VerseResponse")
 
 

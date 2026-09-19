@@ -76,7 +76,9 @@ def test_seed_quran_rebuilds_incomplete_collection_and_is_idempotent(monkeypatch
     fake_client.collection.records["stale_record"] = {
         "metadata": {"type": "verse"},
     }
-    monkeypatch.setattr(seed_quran.chromadb, "PersistentClient", lambda path: fake_client)
+    monkeypatch.setattr(
+        seed_quran.chromadb, "PersistentClient", lambda path: fake_client
+    )
     monkeypatch.setitem(
         sys.modules,
         "sentence_transformers",

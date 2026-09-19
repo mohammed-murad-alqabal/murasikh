@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -33,7 +33,7 @@ class DelayedResponseService:
             recommendation_type="guidance",
             reason=reason,
             is_delivered=False,
-            scheduled_for=datetime.utcnow() + (delay or self.DEFAULT_DELAY),
+            scheduled_for=datetime.now(timezone.utc) + (delay or self.DEFAULT_DELAY),
             payload=payload,
         )
         self.db.add(response)
@@ -42,7 +42,7 @@ class DelayedResponseService:
         return response
 
     def deliver_due(self, user_id: int, *, now: datetime | None = None) -> list[dict]:
-        current_time = now or datetime.utcnow()
+        current_time = now or datetime.now(timezone.utc)
         responses = (
             self.db.query(DelayedResponse)
             .filter(

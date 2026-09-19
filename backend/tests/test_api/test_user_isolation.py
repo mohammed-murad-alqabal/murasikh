@@ -17,13 +17,15 @@ class FakeEmbedder:
     def search_similar(self, **kwargs):
         return {
             "documents": [["وَبَشِّرِ الصَّابِرِينَ"]],
-            "metadatas": [[
-                {
-                    "type": "verse",
-                    "source": "سورة البقرة: ١٥٥",
-                    "tafsir": "اختبار عزل السجل.",
-                }
-            ]],
+            "metadatas": [
+                [
+                    {
+                        "type": "verse",
+                        "source": "سورة البقرة: ١٥٥",
+                        "tafsir": "اختبار عزل السجل.",
+                    }
+                ]
+            ],
             "ids": [["test_isolation_verse"]],
             "distances": [[0.1]],
         }

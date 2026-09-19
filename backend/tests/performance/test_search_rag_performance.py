@@ -1,7 +1,6 @@
 import time
 
 import pytest
-
 from app.services.ai import rag_engine as rag_module
 from app.services.ai.embeddings import EmbeddingService
 from app.services.ai.rag_engine import RAGEngine
@@ -29,7 +28,12 @@ class FakeCollection:
             "ids": [ids],
             "distances": [distances],
             "documents": [[f"آية اختبارية رقم {index}" for index in range(count)]],
-            "metadatas": [[{"type": "verse", "source": f"اختبار:{index}"} for index in range(count)]],
+            "metadatas": [
+                [
+                    {"type": "verse", "source": f"اختبار:{index}"}
+                    for index in range(count)
+                ]
+            ],
         }
 
 

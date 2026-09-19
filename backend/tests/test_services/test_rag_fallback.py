@@ -1,5 +1,4 @@
 import pytest
-
 from app.services.ai import rag_engine as rag_module
 from app.services.ai.rag_engine import RAGEngine
 

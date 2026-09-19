@@ -20,7 +20,9 @@ def test_quran_dataset_has_expected_verse_count():
 
 
 def test_fingerprints_match_quran_and_taxonomy_schema():
-    with (BACKEND_DIR / "scripts/verse_fingerprints.json").open(encoding="utf-8") as handle:
+    with (BACKEND_DIR / "scripts/verse_fingerprints.json").open(
+        encoding="utf-8"
+    ) as handle:
         fingerprints = json.load(handle)
     with (BACKEND_DIR / "quran.json").open(encoding="utf-8") as handle:
         quran = json.load(handle)

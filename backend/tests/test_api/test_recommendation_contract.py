@@ -18,9 +18,15 @@ class FakeEmbedder:
     def search_similar(self, **kwargs):
         return {
             "documents": [["آية اختبارية"]],
-            "metadatas": [[
-                {"type": "verse", "source": "سورة اختبارية: 1", "tafsir": "تفسير اختباري"}
-            ]],
+            "metadatas": [
+                [
+                    {
+                        "type": "verse",
+                        "source": "سورة اختبارية: 1",
+                        "tafsir": "تفسير اختباري",
+                    }
+                ]
+            ],
             "ids": [["verse_test:1"]],
             "distances": [[0.1]],
         }
@@ -38,12 +44,14 @@ def test_guest_ask_response_skips_retrieval(client, monkeypatch):
     monkeypatch.setattr(
         recommend,
         "agent",
-        FakeAgent({
-            "action": "ask",
-            "emotion": "غير محدد",
-            "confidence": 0.2,
-            "ai_message": "ما أكثر ما يزعجك الآن؟",
-        }),
+        FakeAgent(
+            {
+                "action": "ask",
+                "emotion": "غير محدد",
+                "confidence": 0.2,
+                "ai_message": "ما أكثر ما يزعجك الآن؟",
+            }
+        ),
     )
     monkeypatch.setattr(recommend, "embedder", FailingEmbedder())
 
@@ -66,12 +74,14 @@ def test_guest_guide_response_has_stable_contract(client, monkeypatch):
     monkeypatch.setattr(
         recommend,
         "agent",
-        FakeAgent({
-            "action": "guide",
-            "emotion": "حزن",
-            "confidence": 0.85,
-            "ai_message": "أنت لست وحدك.",
-        }),
+        FakeAgent(
+            {
+                "action": "guide",
+                "emotion": "حزن",
+                "confidence": 0.85,
+                "ai_message": "أنت لست وحدك.",
+            }
+        ),
     )
     monkeypatch.setattr(recommend, "embedder", FakeEmbedder())
     monkeypatch.setattr(recommend, "rag_engine", FakeRagEngine())
