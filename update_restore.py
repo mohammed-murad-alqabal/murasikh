@@ -1,0 +1,28 @@
+content = """#!/bin/bash
+set -e
+
+BACKUP_FILE=$1
+
+if [ -z "$BACKUP_FILE" ]; then
+    echo "Usage: ./restore.sh <backup_file.sql.gz>"
+    return 1
+fi
+
+if [ ! -f "$BACKUP_FILE" ]; then
+    echo "Error: Backup file $BACKUP_FILE not found."
+    return 1
+fi
+
+if [ -z "$POSTGRES_PASSWORD" ]; then
+    echo "Error: POSTGRES_PASSWORD is not set."
+    return 1
+fi
+
+echo "Restoring database from $BACKUP_FILE..."
+gunzip -c "$BACKUP_FILE" | PGPASSWORD=$POSTGRES_PASSWORD psql -h "${POSTGRES_SERVER:-db}" -U "${POSTGRES_USER:-murassikh}" -d "${POSTGRES_DB:-murassikh_db}"
+
+echo "Restore completed successfully."
+"""
+
+with open("deploy/restore.sh", "w") as f:
+    f.write(content)
