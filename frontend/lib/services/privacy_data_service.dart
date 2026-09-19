@@ -42,7 +42,9 @@ class PrivacyDataService {
         return jsonDecode(utf8.decode(response.bodyBytes))
             as Map<String, dynamic>;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error exporting remote data: $e');
+    }
     return {
       'account': null,
       'interactions': await HistoryService().getHistory(),
@@ -60,7 +62,8 @@ class PrivacyDataService {
       await _clearBox(_chatBoxName);
       await _clearBox(_dailyVerseBoxName);
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error clearing all user data: $e');
       return false;
     }
   }
@@ -71,7 +74,8 @@ class PrivacyDataService {
     for (final raw in box.values) {
       try {
         values.add(jsonDecode(raw));
-      } catch (_) {
+      } catch (e) {
+        debugPrint('Error decoding JSON for box value: $e');
         values.add(raw);
       }
     }

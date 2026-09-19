@@ -29,23 +29,26 @@ void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
       if (task == 'update_widget') {
-        
-        final response = await http.post(
-          Uri.parse('http://192.168.1.106:8000/api/v1/home/verse'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'dominant_emotion': null,
-            'confidence': 0.0,
-            'signal_source': 'widget',
-            'time_of_day': null,
-          }),
-        ).timeout(const Duration(seconds: 15));
+        final response = await http
+            .post(
+              Uri.parse('http://192.168.1.106:8000/api/v1/home/verse'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'dominant_emotion': null,
+                'confidence': 0.0,
+                'signal_source': 'widget',
+                'time_of_day': null,
+              }),
+            )
+            .timeout(const Duration(seconds: 15));
 
         if (response.statusCode == 200) {
-          final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+          final data =
+              jsonDecode(utf8.decode(response.bodyBytes))
+                  as Map<String, dynamic>;
           final verseText = data['verse'] ?? '';
           final sourceText = data['source'] ?? '';
-          
+
           await HomeWidget.saveWidgetData<String>('verse_text', verseText);
           await HomeWidget.saveWidgetData<String>('source_text', sourceText);
           await HomeWidget.updateWidget(
@@ -64,9 +67,7 @@ void callbackDispatcher() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    Workmanager().initialize(
-      callbackDispatcher,
-    );
+    Workmanager().initialize(callbackDispatcher);
     // Register periodic task every hour to update the widget
     Workmanager().registerPeriodicTask(
       'widget-update-task',

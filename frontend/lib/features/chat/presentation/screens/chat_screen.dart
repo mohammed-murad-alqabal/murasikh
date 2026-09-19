@@ -141,7 +141,9 @@ class _ChatScreenState extends State<ChatScreen> {
       try {
         final data = jsonDecode(raw);
         loaded.add(ChatMessage.fromMap(data));
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Error decoding JSON for chat message: $e');
+      }
     }
 
     if (loaded.isEmpty) {
@@ -236,7 +238,9 @@ class _ChatScreenState extends State<ChatScreen> {
       if (hr != null && hr > 90) {
         ctx['biometric_stress'] = true;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error determining biometric stress context: $e');
+    }
 
     return ctx;
   }
@@ -287,7 +291,8 @@ class _ChatScreenState extends State<ChatScreen> {
           _scrollToBottom();
         } else if (state is RecommendationError) {
           final errMsg = ChatMessage(
-            text: 'عذراً، تعذّر الاتصال بالخادم. تأكد من اتصالك بالإنترنت وحاول مجدداً. 🔄',
+            text:
+                'عذراً، تعذّر الاتصال بالخادم. تأكد من اتصالك بالإنترنت وحاول مجدداً. 🔄',
             isUser: false,
           );
           setState(() {

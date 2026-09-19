@@ -177,7 +177,9 @@ void main() {
 
       // The screen deliberately shows a sanitized inline error message.
       expect(
-        find.text('عذراً، تعذّر الاتصال بالخادم. تأكد من اتصالك بالإنترنت وحاول مجدداً. 🔄'),
+        find.text(
+          'عذراً، تعذّر الاتصال بالخادم. تأكد من اتصالك بالإنترنت وحاول مجدداً. 🔄',
+        ),
         findsOneWidget,
       );
     });
@@ -192,6 +194,5 @@ void main() {
       // The widget will be disposed when the test finishes.
       // If the timer is not canceled, the test environment will complain about pending timers.
     });
-
   });
 }

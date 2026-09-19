@@ -135,7 +135,9 @@ class SettingsScreen extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          cleared ? 'تم مسح جميع البيانات بنجاح' : 'تعذر مسح البيانات من الخادم؛ لم يتم حذف النسخة المحلية',
+                          cleared
+                              ? 'تم مسح جميع البيانات بنجاح'
+                              : 'تعذر مسح البيانات من الخادم؛ لم يتم حذف النسخة المحلية',
                         ),
                         duration: const Duration(seconds: 2),
                       ),
