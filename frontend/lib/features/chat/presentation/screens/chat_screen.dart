@@ -56,7 +56,9 @@ class ChatMessage {
 }
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final bool enableImplicitContext;
+
+  const ChatScreen({super.key, this.enableImplicitContext = true});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -254,7 +256,9 @@ class _ChatScreenState extends State<ChatScreen> {
     FocusScope.of(context).unfocus();
     _scrollToBottom();
 
-    final implicitCtx = await _buildImplicitContext();
+    final implicitCtx = widget.enableImplicitContext
+        ? await _buildImplicitContext()
+        : <String, dynamic>{};
     if (mounted) {
       context.read<RecommendationBloc>().add(
         GetRecommendationEvent(

@@ -89,14 +89,15 @@ def test_inactive_or_deleted_accounts_cannot_login(
 
 
 def test_jwt_signed_with_wrong_secret_cannot_access_private_route(client):
-    token = jwt.encode({"sub": "testuser"}, "wrong-secret", algorithm="HS256")
+    wrong_secret = "wrong-secret-for-test-0123456789abcdef-0123456789abcdef-xyz"
+    token = jwt.encode({"sub": "testuser"}, wrong_secret, algorithm="HS256")
     response = client.get(
         "/api/v1/history",
         headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 401
-    assert SECRET_KEY != "wrong-secret"
+    assert SECRET_KEY != wrong_secret
 
 
 def test_production_settings_reject_default_secret():
@@ -119,7 +120,7 @@ def test_cors_origins_are_parsed_from_configuration():
 def test_audio_upload_rejects_malformed_user_context(client):
     response = client.post(
         "/api/v1/audio/analyze-audio",
-        files={"file": ("test.wav", b"12345678", "audio/wav")},
+        files={"file": ("test.wav", b"RIFF\x24\x00\x00\x00WAVEfmt ", "audio/wav")},
         data={"user_context": "{malformed_json: true"},
     )
 

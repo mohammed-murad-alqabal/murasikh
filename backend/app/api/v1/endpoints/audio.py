@@ -26,13 +26,13 @@ logger = logging.getLogger(__name__)
 
 def check_magic_bytes(header_bytes: bytes) -> bool:
     """Validate the file signature instead of trusting the client MIME type."""
-    return (
-        (header_bytes.startswith(b"RIFF") and b"WAVE" in header_bytes[:12])
-        or header_bytes.startswith(b"OggS")
-        or header_bytes.startswith(b"\x1a\x45\xdf\xa3")
-        or header_bytes.startswith((b"ID3", b"\xff\xfb", b"\xff\xf3"))
-        or b"ftyp" in header_bytes[:12]
-    )
+    if header_bytes.startswith(b"RIFF"):
+        return b"WAVE" in header_bytes[:12]
+    if header_bytes.startswith((b"OggS", b"\x1a\x45\xdf\xa3")):
+        return True
+    if header_bytes.startswith((b"ID3", b"\xff\xfb", b"\xff\xf3")):
+        return True
+    return b"ftyp" in header_bytes[:12]
 
 
 MAX_AUDIO_BYTES = 10 * 1024 * 1024
@@ -77,15 +77,17 @@ async def analyze_audio(
         context_dict = None
         if user_context:
             try:
-                context_dict = UserContextSchema.model_validate_json(
-                    user_context
-                ).model_dump(exclude_none=True)
-            except ValidationError as exc:
-                raise HTTPException(status_code=422, detail=exc.errors()) from exc
-            except (json.JSONDecodeError, ValueError) as exc:
+                raw_context = json.loads(user_context)
+            except json.JSONDecodeError as exc:
                 raise HTTPException(
                     status_code=400, detail="Invalid JSON in user_context"
                 ) from exc
+            try:
+                context_dict = UserContextSchema.model_validate(raw_context).model_dump(
+                    exclude_none=True
+                )
+            except ValidationError as exc:
+                raise HTTPException(status_code=422, detail=exc.errors()) from exc
 
         analysis = await audio_analyzer.analyze_tone(audio_bytes)
 

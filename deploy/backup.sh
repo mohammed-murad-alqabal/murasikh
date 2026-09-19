@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 BACKUP_DIR=${BACKUP_DIR:-"/backups"}
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
@@ -14,7 +14,12 @@ if [ -z "$POSTGRES_PASSWORD" ]; then
     exit 1
 fi
 
-PGPASSWORD=$POSTGRES_PASSWORD pg_dump -h "${POSTGRES_SERVER:-db}" -U "${POSTGRES_USER:-murassikh}" -d "${POSTGRES_DB:-murassikh_db}" | gzip > "$BACKUP_FILE"
+PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
+    -h "${POSTGRES_SERVER:-db}" \
+    -p "${POSTGRES_PORT:-5432}" \
+    -U "${POSTGRES_USER:-murassikh}" \
+    -d "${POSTGRES_DB:-murassikh_db}" \
+    | gzip > "$BACKUP_FILE"
 echo "Backup completed: $BACKUP_FILE"
 
 echo "Cleaning up backups older than $RETENTION_DAYS days..."

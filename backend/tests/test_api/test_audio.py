@@ -11,7 +11,7 @@ def test_audio_upload_handles_general_exceptions(client, monkeypatch):
 
     response = client.post(
         "/api/v1/audio/analyze-audio",
-        files={"file": ("test.wav", b"dummy audio data", "audio/wav")},
+        files={"file": ("test.wav", b"RIFF\x24\x00\x00\x00WAVEfmt ", "audio/wav")},
     )
 
     assert response.status_code == 500

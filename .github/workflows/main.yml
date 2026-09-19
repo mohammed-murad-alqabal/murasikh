@@ -56,7 +56,7 @@ jobs:
           POSTGRES_DB: murassikh_db
           POSTGRES_PORT: 5433
           ENVIRONMENT: testing
-          SECRET_KEY: test-secret-key-for-ci-32-bytes-long
+          SECRET_KEY: test-secret-key-for-ci-64-bytes-long-0123456789abcdef-gha-9876543210
         run: |
           cd backend
           alembic upgrade head
@@ -72,7 +72,7 @@ jobs:
           POSTGRES_DB: murassikh_db
           POSTGRES_PORT: 5433
           ENVIRONMENT: testing
-          SECRET_KEY: test-secret-key-for-ci-32-bytes-long
+          SECRET_KEY: test-secret-key-for-ci-64-bytes-long-0123456789abcdef-gha-9876543210
           TEST_DATABASE_URL: postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db
         run: |
           cd backend
@@ -85,7 +85,7 @@ jobs:
           POSTGRES_DB: murassikh_db
           POSTGRES_PORT: 5433
           ENVIRONMENT: testing
-          SECRET_KEY: test-secret-key-for-ci-32-bytes-long
+          SECRET_KEY: test-secret-key-for-ci-64-bytes-long-0123456789abcdef-gha-9876543210
           TEST_DATABASE_URL: postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db
         run: |
           cd backend

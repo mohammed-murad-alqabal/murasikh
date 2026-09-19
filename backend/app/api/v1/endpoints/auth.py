@@ -100,9 +100,7 @@ async def refresh_token(
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
     new_access_token = create_access_token(data={"sub": user["username"]})
-    new_refresh_token, new_jti = create_refresh_token(
-        data={"sub": user["username"]}
-    )
+    new_refresh_token, new_jti = create_refresh_token(data={"sub": user["username"]})
     user_manager.set_refresh_jti(db, user["username"], new_jti)
 
     return {

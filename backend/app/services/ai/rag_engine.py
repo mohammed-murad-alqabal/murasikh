@@ -119,7 +119,10 @@ class RAGEngine:
         self._local_tokenizer = None
         if settings.GEMINI_API_KEY:
             try:
-                self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+                self.client = genai.Client(
+                    api_key=settings.GEMINI_API_KEY,
+                    http_options=genai.types.HttpOptions(timeout=5000),
+                )
                 self.model_name = "gemini-3.6-flash"
                 self._gemini_available = True
             except Exception as e:
@@ -218,8 +221,7 @@ class RAGEngine:
                     self.client.models.generate_content,
                     model=self.model_name,
                     contents=prompt,
-                    generation_config=genai.GenerationConfig(temperature=0.1),
-                    request_options={"timeout": 5.0},
+                    config=genai.types.GenerateContentConfig(temperature=0.1),
                 )
                 text = response.text.strip()
                 for i in range(len(verses), 0, -1):
@@ -321,8 +323,7 @@ class RAGEngine:
             self.client.models.generate_content,
             model=self.model_name,
             contents=prompt,
-            generation_config=genai.GenerationConfig(temperature=0.7),
-            request_options={"timeout": 5.0},
+            config=genai.types.GenerateContentConfig(temperature=0.7),
         )
         return response.text.strip() + f"\n\n📖 {source}"
 

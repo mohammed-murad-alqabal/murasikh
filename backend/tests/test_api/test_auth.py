@@ -81,6 +81,30 @@ def test_refresh_token(client):
     assert "refresh_token" in refresh_res.json()
 
 
+def test_refresh_token_reuse_is_rejected(client):
+    suffix = uuid.uuid4().hex[:10]
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": f"rotation_{suffix}",
+            "password": "test-password",
+            "email": f"rotation_{suffix}@example.com",
+        },
+    )
+    assert registered.status_code == 200
+    old_refresh_token = registered.json()["refresh_token"]
+
+    rotated = client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": old_refresh_token}
+    )
+    assert rotated.status_code == 200
+
+    reused = client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": old_refresh_token}
+    )
+    assert reused.status_code == 401
+
+
 def test_export_requires_authentication_and_excludes_password(client):
     unauthenticated = client.get("/api/v1/auth/export")
     assert unauthenticated.status_code == 401

@@ -58,7 +58,7 @@ void main() {
       home: Scaffold(
         body: BlocProvider<RecommendationBloc>.value(
           value: mockRecommendationBloc,
-          child: const ChatScreen(),
+          child: const ChatScreen(enableImplicitContext: false),
         ),
       ),
     );
@@ -175,9 +175,11 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Error messages should be shown as SnackBar
-      expect(find.byType(SnackBar), findsOneWidget);
-      expect(find.text('حدث خطأ في الشبكة'), findsOneWidget);
+      // The screen deliberately shows a sanitized inline error message.
+      expect(
+        find.text('عذراً، تعذّر الاتصال بالخادم. تأكد من اتصالك بالإنترنت وحاول مجدداً. 🔄'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('ChatScreen dispose cancels timer properly', (

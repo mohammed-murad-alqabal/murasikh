@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Boolean,
@@ -14,6 +14,10 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import relationship
 
 from .database import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class User(Base):
@@ -33,8 +37,8 @@ class User(Base):
     )
     is_active = Column(Boolean, default=True)
     refresh_jti = Column(String(36), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     is_deleted = Column(Boolean, default=False)
 
     interactions = relationship("Interaction", back_populates="user")
@@ -55,8 +59,8 @@ class Verse(Base):
     tags = Column(ARRAY(String))
     emotional_state = Column(String(50), index=True)
     keywords = Column(ARRAY(String))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     is_deleted = Column(Boolean, default=False)
 
 
@@ -74,8 +78,8 @@ class Hadith(Base):
     emotional_state = Column(String(50), index=True)
     keywords = Column(ARRAY(String))
     is_authentic = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     is_deleted = Column(Boolean, default=False)
 
 
@@ -96,7 +100,7 @@ class Interaction(Base):
     user_feedback = Column(Integer, default=0)  # Changed to Integer (-1, 0, 1)
     response_tier = Column(String(20))
     response_delayed = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     user = relationship("User", back_populates="interactions")
     delayed_response = relationship("DelayedResponse", back_populates="interaction")
@@ -114,7 +118,7 @@ class DelayedResponse(Base):
     scheduled_for = Column(DateTime)
     delivered_at = Column(DateTime)
     payload = Column(JSONB, nullable=False, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     user = relationship("User", back_populates="delayed_responses")
     interaction = relationship("Interaction", back_populates="delayed_response")
@@ -126,6 +130,6 @@ class AppRating(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     rating = Column(Integer, nullable=False)
     feedback = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     user = relationship("User", backref="app_ratings")

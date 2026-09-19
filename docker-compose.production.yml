@@ -49,6 +49,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-murassikh_db}
       POSTGRES_PORT: 5432
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     command: >-

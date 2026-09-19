@@ -14,7 +14,10 @@ class ConversationalAgent:
         self._gemini_available = False
         if settings.GEMINI_API_KEY:
             try:
-                self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+                self.client = genai.Client(
+                    api_key=settings.GEMINI_API_KEY,
+                    http_options=genai.types.HttpOptions(timeout=5000),
+                )
                 self.model_name = "gemini-3.6-flash"
                 self._gemini_available = True
             except Exception as e:
@@ -85,7 +88,7 @@ class ConversationalAgent:
                 self.client.models.generate_content,
                 model=self.model_name,
                 contents=prompt,
-                generation_config=genai.GenerationConfig(temperature=0.3),
+                config=genai.types.GenerateContentConfig(temperature=0.3),
             )
             raw_text = response.text.strip()
             # fallback cleanup just in case

@@ -50,7 +50,9 @@ class Settings(BaseSettings):
             cors_list = [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
             for origin in cors_list:
                 if "localhost" in origin or "127.0.0.1" in origin:
-                    raise ValueError(f"CORS_ORIGINS cannot contain localhost in production: {origin}")
+                    raise ValueError(
+                        f"CORS_ORIGINS cannot contain localhost in production: {origin}"
+                    )
 
     @property
     def cors_origins(self) -> list[str]:

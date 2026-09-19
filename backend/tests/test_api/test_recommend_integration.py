@@ -198,7 +198,7 @@ def test_recommendation_injects_user_context(client, monkeypatch, db_session):
     # Second interaction should now utilize the context string successfully
     payload2 = {
         "text": "أشعر بالضيق مرة أخرى",
-        "user_context": {"age": "25", "gender": "ذكر"},
+        "user_context": {"age": 25, "gender": "male"},
     }
     response2 = client.post("/api/v1/analyze", json=payload2, headers=_headers(token))
 
