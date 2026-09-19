@@ -70,7 +70,7 @@ with warnings.catch_warnings():
 
 
 # Register our custom bcrypt implementation and keep pbkdf2_sha256 for backwards compatibility.
-pwd_context = CryptContext(schemes=[ModernBcrypt, "pbkdf2_sha256"], deprecated="auto")
+pwd_context = CryptContext(schemes=[ModernBcrypt, "pbkdf2_sha256"], deprecated=["pbkdf2_sha256"])
 
 
 class UserManager:
