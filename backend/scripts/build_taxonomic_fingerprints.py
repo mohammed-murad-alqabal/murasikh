@@ -24,7 +24,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 FINGERPRINTS_FILE = SCRIPT_DIR / "verse_fingerprints.json"
 
-from app.core.taxonomy import EMOTION_TAXONOMY
+from app.core.taxonomy import EMOTION_TAXONOMY  # noqa: E402
 
 ALL_DIMENSIONS = list(EMOTION_TAXONOMY.keys())
 

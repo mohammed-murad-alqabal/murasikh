@@ -26,7 +26,7 @@ PROGRESS_FILE = SCRIPT_DIR / "verse_weights_progress.json"
 OUTPUT_FILE = SCRIPT_DIR / "verse_weights_final.json"
 
 # ── الحالات الـ 50+ ─────────────────────────────────────────
-from app.core.taxonomy import EMOTION_TAXONOMY
+from app.core.taxonomy import EMOTION_TAXONOMY  # noqa: E402
 
 ALL_EMOTIONS = list(EMOTION_TAXONOMY.keys())
 

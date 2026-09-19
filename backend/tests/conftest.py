@@ -8,11 +8,17 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Test Database setup (Use actual PostgreSQL to support JSONB/ARRAY)
+# Test Database setup (Use actual PostgreSQL to support JSONB/ARRAY).
 SQLALCHEMY_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
-    raise ValueError(
-        "TEST_DATABASE_URL environment variable must be set for tests to use PostgreSQL."
+    SQLALCHEMY_DATABASE_URL = (
+        "postgresql://{user}:{password}@{server}:{port}/{database}".format(
+            user=os.environ.get("POSTGRES_USER", "postgres"),
+            password=os.environ.get("POSTGRES_PASSWORD", "postgres"),
+            server=os.environ.get("POSTGRES_SERVER", "localhost"),
+            port=os.environ.get("POSTGRES_PORT", "5432"),
+            database=os.environ.get("POSTGRES_DB", "murassikh_db"),
+        )
     )
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
