@@ -40,6 +40,14 @@ class FakeCollection:
 def fake_embedding_service():
     service = object.__new__(EmbeddingService)
     service.model = FakeEmbeddingModel()
+
+    # Setup dummy cache for testing
+    import functools
+    @functools.lru_cache(maxsize=1)
+    def _cached_encode(t):
+        return service.model.encode(t).tolist()
+    service._cached_encode = _cached_encode
+
     service.collection = FakeCollection()
     service.fingerprints = {
         "verse:49": {"dimensions": {"حزن": 1.0}},

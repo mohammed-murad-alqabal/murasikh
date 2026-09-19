@@ -33,11 +33,16 @@ class EmbeddingService:
             except Exception as e:
                 print(f"Warning: Could not load fingerprints: {e}")
 
-    @functools.lru_cache(maxsize=128)
+        # Instance-level cache to prevent memory leaks from strong references to 'self'
+        @functools.lru_cache(maxsize=512)
+        def _cached_encode(text_to_encode: str) -> list:
+            return self.model.encode(text_to_encode).tolist()
+
+        self._cached_encode = _cached_encode
+
     def create_embedding(self, text: str) -> list:
         # Generate the embedding and convert to list of floats for ChromaDB
-        embedding = self.model.encode(text)
-        return embedding.tolist()
+        return self._cached_encode(text)
 
     def store_document(self, doc_id: str, text: str, metadata: dict):
         embedding = self.create_embedding(text)
