@@ -86,8 +86,9 @@ void main() {
     testWidgets('Successful login should show Snackbar and pop', (
       WidgetTester tester,
     ) async {
-      when(() => mockAuthService.login(any(), any()))
-          .thenAnswer((_) async => null);
+      when(
+        () => mockAuthService.login(any(), any()),
+      ).thenAnswer((_) async => null);
 
       await tester.pumpWidget(createWidgetUnderTest());
 
@@ -108,8 +109,9 @@ void main() {
     testWidgets('Failed login should show error Snackbar', (
       WidgetTester tester,
     ) async {
-      when(() => mockAuthService.login(any(), any()))
-          .thenAnswer((_) async => 'Invalid credentials');
+      when(
+        () => mockAuthService.login(any(), any()),
+      ).thenAnswer((_) async => 'Invalid credentials');
 
       await tester.pumpWidget(createWidgetUnderTest());
 
@@ -127,8 +129,9 @@ void main() {
     testWidgets('Successful registration should show Snackbar and pop', (
       WidgetTester tester,
     ) async {
-      when(() => mockAuthService.register(any(), any()))
-          .thenAnswer((_) async => null);
+      when(
+        () => mockAuthService.register(any(), any()),
+      ).thenAnswer((_) async => null);
 
       await tester.pumpWidget(createWidgetUnderTest());
 
@@ -142,8 +145,9 @@ void main() {
       await tester.tap(find.text('تسجيل حساب جديد'));
       await tester.pumpAndSettle();
 
-      verify(() => mockAuthService.register('newuser', 'newpassword'))
-          .called(1);
+      verify(
+        () => mockAuthService.register('newuser', 'newpassword'),
+      ).called(1);
 
       // We expect the auth screen to have popped, removing its text elements.
       expect(find.text('حساب جديد'), findsNothing);

@@ -124,24 +124,27 @@ void main() {
       timestamp: baseTime,
     );
 
-    test('rejects a candidate during the debounce interval exactly at the boundary', () {
-      final candidate = snapshot(
-        emotion: 'حزن',
-        confidence: 0.9,
-        source: 'face',
-        timestamp: baseTime.add(const Duration(seconds: 60)),
-      );
+    test(
+      'rejects a candidate during the debounce interval exactly at the boundary',
+      () {
+        final candidate = snapshot(
+          emotion: 'حزن',
+          confidence: 0.9,
+          source: 'face',
+          timestamp: baseTime.add(const Duration(seconds: 60)),
+        );
 
-      expect(
-        HomeContextPolicy.shouldNotify(
-          old: old,
-          candidate: candidate,
-          lastNotifyTime: baseTime,
-          now: baseTime.add(const Duration(seconds: 60)),
-        ),
-        isFalse,
-      );
-    });
+        expect(
+          HomeContextPolicy.shouldNotify(
+            old: old,
+            candidate: candidate,
+            lastNotifyTime: baseTime,
+            now: baseTime.add(const Duration(seconds: 60)),
+          ),
+          isFalse,
+        );
+      },
+    );
 
     test('rejects a face signal below its confidence threshold', () {
       final candidate = snapshot(

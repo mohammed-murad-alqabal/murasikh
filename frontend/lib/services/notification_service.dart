@@ -296,7 +296,9 @@ class NotificationService extends ChangeNotifier {
     _notifications.removeWhere((n) => n.id == id);
     try {
       await _box?.delete(id);
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('NotificationService.deleteNotification error: $e\n$st');
+    }
     notifyListeners();
   }
 
@@ -304,7 +306,9 @@ class NotificationService extends ChangeNotifier {
     _notifications.clear();
     try {
       await _box?.clear();
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('NotificationService.clearAll error: $e\n$st');
+    }
     notifyListeners();
   }
 
@@ -371,7 +375,9 @@ class NotificationService extends ChangeNotifier {
         title = 'رسالة اليوم 🌿';
       }
       body = rec.message;
-    } catch (_) {} // Fallback to default if offline
+    } catch (e, st) {
+      debugPrint('NotificationService schedule error: $e\n$st');
+    } // Fallback to default if offline
 
     // We schedule it for the next occurrence of the requested time
     final next = NotificationSchedulePolicy.nextInstanceOfTime(

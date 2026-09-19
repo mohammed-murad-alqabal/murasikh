@@ -128,7 +128,9 @@ class HistoryService {
         try {
           final data = jsonDecode(raw);
           localItems.add(HistoryItem.fromMap(data));
-        } catch (_) {}
+        } catch (e, st) {
+          debugPrint('HistoryService local items decode error: $e\n$st');
+        }
       }
     } catch (e) {
       debugPrint("Error reading local history: $e");
@@ -162,7 +164,8 @@ class HistoryService {
         result.sort((a, b) => b.timestamp.compareTo(a.timestamp));
         return result;
       }
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('HistoryService remote sync error: $e\n$st');
       // عند تعذر الاتصال بالخادم، نعتمد كلياً على التخزين المحلي
     }
 
@@ -184,7 +187,9 @@ class HistoryService {
         data['feedback'] = feedbackValue;
         await _box.put(id, jsonEncode(data));
       }
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('HistoryService update local feedback error: $e\n$st');
+    }
 
     // تحديث في الخادم
     try {
@@ -196,7 +201,9 @@ class HistoryService {
             body: jsonEncode({'id': numericId, 'feedback': feedbackValue}),
           )
           .timeout(const Duration(seconds: 3));
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('HistoryService update remote feedback error: $e\n$st');
+    }
   }
 
   Future<bool> clearHistory() async {
@@ -208,11 +215,15 @@ class HistoryService {
           .delete(Uri.parse(baseUrl), headers: headers)
           .timeout(const Duration(seconds: 3));
       remoteCleared = response.statusCode == 200;
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('HistoryService clear remote history error: $e\n$st');
+    }
     if (remoteCleared) {
       try {
         await _box.clear();
-      } catch (_) {}
+      } catch (e, st) {
+        debugPrint('HistoryService clear local history error: $e\n$st');
+      }
     }
     return remoteCleared;
   }
@@ -231,7 +242,8 @@ class HistoryService {
           .whereType<Map<String, dynamic>>()
           .map(DelayedResponseItem.fromMap)
           .toList();
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('HistoryService get due delayed responses error: $e\n$st');
       return [];
     }
   }

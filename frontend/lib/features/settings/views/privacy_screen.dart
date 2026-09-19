@@ -239,7 +239,10 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       ),
       title: Text(
         title,
-        style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w500),
+        style: const TextStyle(
+          color: AppColors.error,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       subtitle: Text(
         subtitle,
