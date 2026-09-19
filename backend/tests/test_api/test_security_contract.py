@@ -101,10 +101,17 @@ def test_jwt_signed_with_wrong_secret_cannot_access_private_route(client):
 
 
 def test_production_settings_reject_default_secret():
+    # It should fail when SECRET_KEY is not explicitly provided in production
     with pytest.raises(ValueError, match="SECRET_KEY"):
         Settings(
             ENVIRONMENT="production",
-            SECRET_KEY="super-secret-key-change-in-production",
+        )
+
+    # It should fail when SECRET_KEY is too short
+    with pytest.raises(ValueError, match="SECRET_KEY"):
+        Settings(
+            ENVIRONMENT="production",
+            SECRET_KEY="short",
         )
 
 

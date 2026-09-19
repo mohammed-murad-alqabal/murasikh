@@ -1,1 +1,10 @@
-The current task is to submit the work.
+🔒 [Security Fix] Generate random default SECRET_KEY in non-prod environments
+
+🎯 **What:**
+The application was using a hardcoded `SECRET_KEY` ("super-secret-key-change-in-production") in development and non-production environments.
+
+⚠️ **Risk:**
+If an attacker gained access to a non-production environment containing real data, they could exploit the known hardcoded secret key to forge JWT tokens and bypass authentication, potentially exposing sensitive data.
+
+🛡️ **Solution:**
+Updated `app/core/config.py` to use `secrets.token_urlsafe(32)` as a default factory for `SECRET_KEY`. This ensures that a secure, unique, and random string is used by default if the `SECRET_KEY` is not provided through environment variables. Additionally, updated the production check to verify `SECRET_KEY` is explicitly set via kwargs or environment variables to prevent accidental exposure, as the default random value is reset upon server restarts causing tokens to expire prematurely in production. Updated the security contract tests to reflect this logic.
