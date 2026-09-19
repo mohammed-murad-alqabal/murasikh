@@ -13,7 +13,7 @@ class TieredResponse:
             "description": "تنبيه رمزي مهدئ وغير مزعج",
             "examples": ["🌸", "🌿", "🕊️", "نفس عميق... 🤍"],
         },
-        "moderate": {"description": "نص قرآني قصير أو حديث"},
+        "moderate": {"description": "نص قرآني قصير"},
         "full": {"description": "النص كاملاً مع التفسير"},
     }
 

@@ -37,7 +37,8 @@ async def register(request: Request, user: UserCreate, db: Session = Depends(get
         raise HTTPException(status_code=400, detail="Username or email already exists")
 
     access_token = create_access_token(data={"sub": new_user["username"]})
-    refresh_token = create_refresh_token(data={"sub": new_user["username"]})
+    refresh_token, jti = create_refresh_token(data={"sub": new_user["username"]})
+    user_manager.set_refresh_jti(db, new_user["username"], jti)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -63,7 +64,8 @@ async def login(
         )
 
     access_token = create_access_token(data={"sub": user["username"]})
-    refresh_token = create_refresh_token(data={"sub": user["username"]})
+    refresh_token, jti = create_refresh_token(data={"sub": user["username"]})
+    user_manager.set_refresh_jti(db, user["username"], jti)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -92,8 +94,16 @@ async def refresh_token(
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
 
+    jti = payload.get("jti")
+    if not jti or user.get("refresh_jti") != jti:
+        user_manager.set_refresh_jti(db, username, None)
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
     new_access_token = create_access_token(data={"sub": user["username"]})
-    new_refresh_token = create_refresh_token(data={"sub": user["username"]})
+    new_refresh_token, new_jti = create_refresh_token(
+        data={"sub": user["username"]}
+    )
+    user_manager.set_refresh_jti(db, user["username"], new_jti)
 
     return {
         "access_token": new_access_token,
@@ -157,3 +167,14 @@ async def get_current_user_optional(
     if username is None:
         return None
     return user_manager.get_user_by_username(db, username)
+
+
+@router.post("/logout")
+@limiter.limit("5/minute")
+async def logout(
+    request: Request,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user_manager.set_refresh_jti(db, user["username"], None)
+    return {"message": "Logged out successfully"}

@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.v1.endpoints.auth import get_current_user_optional
+from app.schemas.common import UserContextSchema
 from app.core.security import limiter
 from app.core.taxonomy import EMOTION_SEMANTIC_QUERIES, EXTREME_EMOTIONS
 from app.db.database import get_db
@@ -25,7 +26,9 @@ class RecommendationRequest(BaseModel):
     text: str = Field(
         ..., min_length=2, max_length=1000, description="نص المستخدم المراد تحليله"
     )
-    user_context: dict | None = Field(None, description="السياق الإضافي للمستخدم")
+    user_context: UserContextSchema | None = Field(
+        None, description="السياق الإضافي للمستخدم"
+    )
 
 
 class RecommendationResponse(BaseModel):
@@ -71,8 +74,13 @@ async def get_recommendation(
                     )
 
         # 2. تحليل الحالة العاطفية والموقف (الوكيل الاستقصائي)
+        context_dict = (
+            payload.user_context.model_dump(exclude_none=True)
+            if payload.user_context
+            else None
+        )
         analysis = await agent.analyze(
-            payload.text, chat_history=chat_history, user_context=payload.user_context
+            payload.text, chat_history=chat_history, user_context=context_dict
         )
 
         action = analysis.get("action", "guide")
@@ -140,7 +148,7 @@ async def get_recommendation(
             semantic_query = f"{semantic_query} {backend_context}"
 
         if payload.user_context:
-            ctx = payload.user_context
+            ctx = context_dict or {}
             if ctx.get("age"):
                 semantic_query += f" العمر: {ctx['age']}"
             if ctx.get("gender"):

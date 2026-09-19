@@ -2,9 +2,11 @@ import json
 import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.api.v1.endpoints.auth import get_current_user_optional
+from app.schemas.common import UserContextSchema
 from app.api.v1.endpoints.recommend import (
     RecommendationResponse,
     embedder,
@@ -20,6 +22,19 @@ from app.services.history_manager import HistoryService
 router = APIRouter()
 audio_analyzer = AudioAnalyzer()
 logger = logging.getLogger(__name__)
+
+
+def check_magic_bytes(header_bytes: bytes) -> bool:
+    """Validate the file signature instead of trusting the client MIME type."""
+    return (
+        (header_bytes.startswith(b"RIFF") and b"WAVE" in header_bytes[:12])
+        or header_bytes.startswith(b"OggS")
+        or header_bytes.startswith(b"\x1a\x45\xdf\xa3")
+        or header_bytes.startswith((b"ID3", b"\xff\xfb", b"\xff\xf3"))
+        or b"ftyp" in header_bytes[:12]
+    )
+
+
 MAX_AUDIO_BYTES = 10 * 1024 * 1024
 ALLOWED_AUDIO_TYPES = {
     "audio/mpeg",
@@ -56,14 +71,21 @@ async def analyze_audio(
                 status_code=413, detail="Audio file exceeds the 10 MB limit"
             )
 
+        if not check_magic_bytes(audio_bytes[:12]):
+            raise HTTPException(status_code=415, detail="Invalid audio file format")
+
         context_dict = None
         if user_context:
             try:
-                context_dict = json.loads(user_context)
-            except json.JSONDecodeError:
+                context_dict = UserContextSchema.model_validate_json(
+                    user_context
+                ).model_dump(exclude_none=True)
+            except ValidationError as exc:
+                raise HTTPException(status_code=422, detail=exc.errors()) from exc
+            except (json.JSONDecodeError, ValueError) as exc:
                 raise HTTPException(
                     status_code=400, detail="Invalid JSON in user_context"
-                )
+                ) from exc
 
         analysis = await audio_analyzer.analyze_tone(audio_bytes)
 

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import uuid
 
 import jwt
 
@@ -23,7 +24,11 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
+def create_refresh_token(
+    data: dict,
+    jti: str | None = None,
+    expires_delta: timedelta | None = None,
+) -> tuple[str, str]:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -31,9 +36,17 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
         expire = datetime.now(timezone.utc) + timedelta(
             minutes=REFRESH_TOKEN_EXPIRE_MINUTES
         )
-    to_encode.update({"exp": expire, "type": "refresh"})
+    jti = jti or str(uuid.uuid4())
+    to_encode.update(
+        {
+            "exp": expire,
+            "type": "refresh",
+            "jti": jti,
+            "iat": datetime.now(timezone.utc),
+        }
+    )
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return encoded_jwt, jti
 
 
 def verify_token(token: str, token_type: str = "access"):
