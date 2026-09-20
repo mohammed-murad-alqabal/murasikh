@@ -1,5 +1,0 @@
-🔒 Fix Sensitive Data Exposure in Audio Endpoint
-
-🎯 **What:** Prevented sensitive data exposure when handling exceptions.
-⚠️ **Risk:** Generic exceptions can leak internal stack traces or error details to the client.
-🛡️ **Solution:** Modified the exception handler to return a generic 'Internal Server Error' message and added a security comment to prevent regressions.
