@@ -33,6 +33,19 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  chroma-init:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      PYTHONUNBUFFERED: "1"
+      CHROMA_PATH: /app/chroma_db
+    command: python scripts/seed_quran.py
+    volumes:
+      - ./backend/chroma_db:/app/chroma_db
+    networks:
+      - data
+
   backend:
     build:
       context: ./backend
@@ -61,6 +74,8 @@ services:
       - ./backend/data:/app/data
       - ./backend/chroma_db:/app/chroma_db
     depends_on:
+      chroma-init:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
       redis:

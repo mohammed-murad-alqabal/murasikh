@@ -1,9 +1,10 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+import 'package:mutex/mutex.dart';
 
 import '../features/recommendation/models/recommendation_model.dart';
+import '../features/home/models/verse_card.dart';
 import 'auth_service.dart';
 import 'history_service.dart';
 import 'offline_service.dart';
@@ -12,10 +13,74 @@ import 'settings_service.dart';
 class ApiService {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.106:8000/api/v1',
+    defaultValue: const bool.fromEnvironment("dart.vm.product")
+        ? "https://api.murassikh.com/api/v1"
+        : "http://10.0.2.2:8000/api/v1",
   );
 
-  /// جلب التوصية مع دعم Offline-First
+  static final Mutex _refreshMutex = Mutex();
+
+  static Future<Map<String, String>> getHeaders({
+    bool isMultipart = false,
+  }) async {
+    final token = await AuthService().getToken();
+    final headers = <String, String>{};
+    if (!isMultipart) {
+      headers['Content-Type'] = 'application/json; charset=UTF-8';
+    }
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
+  static Future<http.Response> _requestWithRetry(
+    Future<http.Response> Function(Map<String, String> headers) requestFunc,
+  ) async {
+    Map<String, String> headers = await getHeaders();
+    http.Response response = await requestFunc(headers);
+
+    if (response.statusCode == 401) {
+      bool refreshed = false;
+      await _refreshMutex.protect(() async {
+        final currentToken = await AuthService().getToken();
+        if (currentToken != null &&
+            currentToken !=
+                headers['Authorization']?.replaceAll('Bearer ', '')) {
+          refreshed = true;
+          return;
+        }
+
+        final refreshToken = await AuthService().getRefreshToken();
+        if (refreshToken != null) {
+          final refreshResponse = await http
+              .post(
+                Uri.parse('$baseUrl/auth/refresh'),
+                headers: {'Authorization': 'Bearer $refreshToken'},
+              )
+              .timeout(const Duration(seconds: 5));
+
+          if (refreshResponse.statusCode == 200) {
+            final data = jsonDecode(refreshResponse.body);
+            await AuthService().login_with_tokens(
+              data['access_token'],
+              data['refresh_token'] ?? refreshToken,
+            );
+            refreshed = true;
+          } else {
+            await AuthService().logout();
+          }
+        }
+      });
+
+      if (refreshed) {
+        headers = await getHeaders();
+        response = await requestFunc(headers);
+      }
+    }
+    return response;
+  }
+
   Future<RecommendationModel> getRecommendation(
     String text, {
     bool forceOffline = false,
@@ -31,14 +96,11 @@ class ApiService {
     if (isConnected) {
       try {
         final rec = await _fetchFromServer(text, userContext: userContext);
-        // خزّن النتيجة محلياً لاستخدامها عند انقطاع الإنترنت
         await offlineService.cacheRecommendation(text, rec);
         await HistoryService().saveInteraction(text, rec);
-        // أرسل أي تقييمات مؤجلة كانت متراكمة
         _syncPendingFeedbacks(offlineService);
         return rec;
       } catch (e) {
-        // إذا فشل الخادم، استخدم النسخة المحلية
         final rec = _getOfflineRecommendation(offlineService, text);
         await HistoryService().saveInteraction(text, rec);
         return rec;
@@ -50,7 +112,6 @@ class ApiService {
     }
   }
 
-  /// إرسال تقييم مع دعم Offline (تأجيل عند انقطاع الإنترنت)
   Future<void> submitFeedback(String id, int feedbackValue) async {
     final numericId = int.tryParse(id);
     if (numericId == null || !const [-1, 0, 1].contains(feedbackValue)) {
@@ -63,10 +124,8 @@ class ApiService {
     if (isConnected) {
       try {
         await _sendFeedbackToServer(numericId, feedbackValue);
-        // مزامنة التقييمات المؤجلة القديمة
         _syncPendingFeedbacks(offlineService);
       } catch (_) {
-        // في حالة فشل الإرسال، احفظه مؤجلاً
         await offlineService.savePendingFeedback(id, feedbackValue);
       }
     } else {
@@ -74,45 +133,25 @@ class ApiService {
     }
   }
 
-  /// إرسال تقييم التطبيق
   Future<void> submitRating(int rating, String? feedback) async {
-    final headers = await getHeaders();
     final body = <String, dynamic>{'rating': rating};
     if (feedback != null && feedback.isNotEmpty) {
       body['feedback'] = feedback;
     }
 
-    final response = await http
-        .post(
-          Uri.parse('$baseUrl/home/rating'),
-          headers: headers,
-          body: jsonEncode(body),
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await _requestWithRetry(
+      (headers) => http
+          .post(
+            Uri.parse('$baseUrl/home/rating'),
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 10)),
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to submit rating: ${response.statusCode}');
     }
-  }
-
-  // ============================================================
-  //  الدوال الداخلية
-  // ============================================================
-
-  static Future<Map<String, String>> getHeaders({
-    bool isMultipart = false,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
-
-    final headers = <String, String>{};
-    if (!isMultipart) {
-      headers['Content-Type'] = 'application/json; charset=UTF-8';
-    }
-    if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
-    }
-    return headers;
   }
 
   Future<RecommendationModel> _fetchFromServer(
@@ -130,18 +169,18 @@ class ApiService {
       mergedContext.addAll(userContext);
     }
 
-    final headers = await getHeaders();
-
-    final response = await http
-        .post(
-          Uri.parse('$baseUrl/analyze'),
-          headers: headers,
-          body: jsonEncode({
-            'text': text,
-            'user_context': mergedContext.isEmpty ? null : mergedContext,
-          }),
-        )
-        .timeout(const Duration(seconds: 15));
+    final response = await _requestWithRetry(
+      (headers) => http
+          .post(
+            Uri.parse('$baseUrl/analyze/recommend'),
+            headers: headers,
+            body: jsonEncode({
+              'text': text,
+              'user_context': mergedContext.isEmpty ? null : mergedContext,
+            }),
+          )
+          .timeout(const Duration(seconds: 15)),
+    );
 
     if (response.statusCode == 200) {
       final decodedData = jsonDecode(utf8.decode(response.bodyBytes));
@@ -159,8 +198,6 @@ class ApiService {
     OfflineService offlineService,
     String text,
   ) {
-    // 1. ابحث عن نفس الحالة العاطفية في الكاش
-    // (نجرب الكلمات الشائعة في النص)
     final emotions = ['غضب', 'حزن', 'قلق', 'فرح', 'يأس', 'توتر'];
     for (final emotion in emotions) {
       if (text.contains(emotion)) {
@@ -168,25 +205,23 @@ class ApiService {
         if (cached != null) return cached;
       }
     }
-    // 2. إرجاع أحدث توصية مخزنة
     final latest = offlineService.getLatestCachedRecommendation();
     if (latest != null) return latest;
-    // 3. الاحتياط الأخير: آية ثابتة
     return offlineService.fallbackRecommendation;
   }
 
   Future<void> _sendFeedbackToServer(int id, int feedbackValue) async {
-    final headers = await getHeaders();
-    await http
-        .post(
-          Uri.parse('$baseUrl/history/feedback'),
-          headers: headers,
-          body: jsonEncode({'id': id, 'feedback': feedbackValue}),
-        )
-        .timeout(const Duration(seconds: 5));
+    await _requestWithRetry(
+      (headers) => http
+          .post(
+            Uri.parse('$baseUrl/history/feedback'),
+            headers: headers,
+            body: jsonEncode({'id': id, 'feedback': feedbackValue}),
+          )
+          .timeout(const Duration(seconds: 5)),
+    );
   }
 
-  /// مزامنة التقييمات المؤجلة في الخلفية
   void _syncPendingFeedbacks(OfflineService offlineService) async {
     final pending = offlineService.getPendingFeedbacks();
     if (pending.isEmpty) return;
@@ -202,12 +237,9 @@ class ApiService {
         await _sendFeedbackToServer(pendingId, pendingFeedback);
       }
       await offlineService.clearPendingFeedbacks();
-    } catch (_) {
-      // تُترك المزامنة للمحاولة القادمة
-    }
+    } catch (_) {}
   }
 
-  /// إرسال مقطع صوتي لتحليله
   Future<RecommendationModel> analyzeAudio(
     String filePath, {
     Map<String, dynamic>? userContext,
@@ -248,5 +280,30 @@ class ApiService {
     } else {
       throw Exception('Server error: ${response.statusCode}');
     }
+  }
+
+  Future<VerseCardModel?> getDailyVerse() async {
+    final isConnected = await OfflineService().isConnected();
+    if (isConnected) {
+      try {
+        final response = await _requestWithRetry(
+          (headers) => http
+              .get(Uri.parse('$baseUrl/home/daily-verse'), headers: headers)
+              .timeout(const Duration(seconds: 5)),
+        );
+
+        if (response.statusCode == 200) {
+          final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+          return VerseCardModel(
+            surah: decoded['surah_name'] ?? 'سورة',
+            ayah: decoded['verse_number'] ?? 0,
+            text: decoded['text'] ?? '',
+          );
+        }
+      } catch (e, st) {
+        debugPrint('Failed to get daily verse from API: $e, $st');
+      }
+    }
+    return null;
   }
 }

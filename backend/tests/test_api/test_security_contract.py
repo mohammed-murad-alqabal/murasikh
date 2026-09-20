@@ -104,6 +104,7 @@ def test_jwt_signed_with_wrong_secret_cannot_access_private_route(client):
 
 def test_production_settings_reject_default_secret(monkeypatch):
     monkeypatch.delenv("SECRET_KEY", raising=False)
+    monkeypatch.setenv("POSTGRES_PASSWORD", "newpassword")
     monkeypatch.setenv("CORS_ORIGINS", "https://app.example")
 
     with pytest.raises(ValueError, match="SECRET_KEY"):

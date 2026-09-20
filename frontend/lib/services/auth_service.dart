@@ -1,9 +1,8 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'api_service.dart'; // To get baseUrl
+import 'api_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -11,6 +10,7 @@ class AuthService {
   AuthService._internal();
 
   final String _authUrl = '${ApiService.baseUrl}/auth';
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   Future<String?> login(String username, String password) async {
     try {
@@ -25,15 +25,21 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final token = data['access_token'];
+        final refreshToken = data['refresh_token']; // Read refresh_token
+
+        await _secureStorage.write(key: 'jwt_token', value: token);
+        if (refreshToken != null) {
+          await _secureStorage.write(key: 'refresh_token', value: refreshToken);
+        }
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('jwt_token', token);
         await prefs.setString('username', username);
-        return null; // Success
-      } else {
-        final data = jsonDecode(response.body);
-        return data['detail'] ?? 'فشل تسجيل الدخول';
+        await prefs.remove('jwt_token');
+
+        return null;
       }
+      final data = jsonDecode(response.body);
+      return data['detail'] ?? 'فشل تسجيل الدخول';
     } catch (e) {
       return 'تعذر الاتصال بالخادم';
     }
@@ -60,29 +66,73 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final token = data['access_token'];
+        final refreshToken = data['refresh_token'];
+
+        await _secureStorage.write(key: 'jwt_token', value: token);
+        if (refreshToken != null) {
+          await _secureStorage.write(key: 'refresh_token', value: refreshToken);
+        }
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('jwt_token', token);
         await prefs.setString('username', username);
+        await prefs.remove('jwt_token');
         return null; // Success
-      } else {
-        final data = jsonDecode(response.body);
-        return data['detail'] ?? 'فشل التسجيل';
       }
+      final data = jsonDecode(response.body);
+      return data['detail'] ?? 'فشل التسجيل';
     } catch (e) {
       return 'تعذر الاتصال بالخادم';
     }
   }
 
+  Future<void> login_with_tokens(String token, String refreshToken) async {
+    await _secureStorage.write(key: 'jwt_token', value: token);
+    await _secureStorage.write(key: 'refresh_token', value: refreshToken);
+  }
+
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('jwt_token');
-    await prefs.remove('username');
+    try {
+      final token = await getToken();
+      if (token != null) {
+        try {
+          await http
+              .post(
+                Uri.parse('$_authUrl/logout'),
+                headers: {'Authorization': 'Bearer $token'},
+              )
+              .timeout(const Duration(seconds: 5));
+        } catch (_) {}
+      }
+    } finally {
+      await _secureStorage.delete(key: 'jwt_token');
+      await _secureStorage.delete(key: 'refresh_token');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('username');
+      await prefs.remove('jwt_token');
+    }
+  }
+
+  Future<String?> getToken() async {
+    String? token = await _secureStorage.read(key: 'jwt_token');
+
+    if (token == null) {
+      final prefs = await SharedPreferences.getInstance();
+      token = prefs.getString('jwt_token');
+      if (token != null) {
+        await _secureStorage.write(key: 'jwt_token', value: token);
+        await prefs.remove('jwt_token');
+      }
+    }
+    return token;
+  }
+
+  Future<String?> getRefreshToken() async {
+    return await _secureStorage.read(key: 'refresh_token');
   }
 
   Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey('jwt_token');
+    final token = await getToken();
+    return token != null;
   }
 
   Future<String?> getUsername() async {
