@@ -174,8 +174,7 @@ class DailyVerseService extends ChangeNotifier {
       if (raw == null) return null;
       final data = jsonDecode(raw) as Map<String, dynamic>;
       return VerseCard.fromJson(data, cached: true);
-    } catch (e, st) {
-      debugPrint('DailyVerseService._loadFromCache error: $e\n$st');
+    } catch (_) {
       return null;
     }
   }

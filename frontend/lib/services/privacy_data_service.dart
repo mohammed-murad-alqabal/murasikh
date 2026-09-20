@@ -42,9 +42,7 @@ class PrivacyDataService {
         return jsonDecode(utf8.decode(response.bodyBytes))
             as Map<String, dynamic>;
       }
-    } catch (e, st) {
-      debugPrint('PrivacyDataService.fetchData error: $e\n$st');
-    }
+    } catch (_) {}
     return {
       'account': null,
       'interactions': await HistoryService().getHistory(),
@@ -62,8 +60,7 @@ class PrivacyDataService {
       await _clearBox(_chatBoxName);
       await _clearBox(_dailyVerseBoxName);
       return true;
-    } catch (e, st) {
-      debugPrint('PrivacyDataService.deleteAccount error: $e\n$st');
+    } catch (_) {
       return false;
     }
   }
@@ -74,8 +71,7 @@ class PrivacyDataService {
     for (final raw in box.values) {
       try {
         values.add(jsonDecode(raw));
-      } catch (e, st) {
-        debugPrint('PrivacyDataService._readStringBox parse error: $e\n$st');
+      } catch (_) {
         values.add(raw);
       }
     }

@@ -267,11 +267,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     required Widget trailing,
   }) {
     return ListTile(
-      leading: const Icon(
-        Icons.access_time,
-        color: AppColors.primary,
-        size: 22,
-      ),
+      leading: const Icon(Icons.access_time, color: AppColors.primary, size: 22),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
       trailing: trailing,

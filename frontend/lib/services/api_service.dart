@@ -65,8 +65,7 @@ class ApiService {
         await _sendFeedbackToServer(numericId, feedbackValue);
         // مزامنة التقييمات المؤجلة القديمة
         _syncPendingFeedbacks(offlineService);
-      } catch (e, st) {
-        debugPrint('ApiService.submitFeedback network error: $e\n$st');
+      } catch (_) {
         // في حالة فشل الإرسال، احفظه مؤجلاً
         await offlineService.savePendingFeedback(id, feedbackValue);
       }
@@ -203,8 +202,7 @@ class ApiService {
         await _sendFeedbackToServer(pendingId, pendingFeedback);
       }
       await offlineService.clearPendingFeedbacks();
-    } catch (e, st) {
-      debugPrint('ApiService._syncPendingFeedbacks error: $e\n$st');
+    } catch (_) {
       // تُترك المزامنة للمحاولة القادمة
     }
   }

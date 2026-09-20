@@ -83,27 +83,12 @@ class _HomeScreenState extends State<HomeScreen>
   String _formatArabicDate() {
     final now = DateTime.now();
     const months = [
-      'يناير',
-      'فبراير',
-      'مارس',
-      'أبريل',
-      'مايو',
-      'يونيو',
-      'يوليو',
-      'أغسطس',
-      'سبتمبر',
-      'أكتوبر',
-      'نوفمبر',
-      'ديسمبر',
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
     ];
     const days = [
-      'الإثنين',
-      'الثلاثاء',
-      'الأربعاء',
-      'الخميس',
-      'الجمعة',
-      'السبت',
-      'الأحد',
+      'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس',
+      'الجمعة', 'السبت', 'الأحد',
     ];
     final dayName = days[now.weekday - 1];
     final monthName = months[now.month - 1];
@@ -115,20 +100,13 @@ class _HomeScreenState extends State<HomeScreen>
     final name = _settingsService.getSettings().name;
 
     switch (time) {
-      case 'فجر':
-        return 'طاب فجرك، $name 🌙';
-      case 'صباح':
-        return 'صباح النور، $name ☀️';
-      case 'ظهر':
-        return 'طاب نهارك، $name 🌤️';
-      case 'عصر':
-        return 'طاب عصرك، $name 🌅';
-      case 'مساء':
-        return 'مساء النور، $name 🌆';
-      case 'ليل':
-        return 'طاب ليلك، $name 🌃';
-      default:
-        return 'السلام عليكم، $name';
+      case 'فجر': return 'طاب فجرك، $name 🌙';
+      case 'صباح': return 'صباح النور، $name ☀️';
+      case 'ظهر': return 'طاب نهارك، $name 🌤️';
+      case 'عصر': return 'طاب عصرك، $name 🌅';
+      case 'مساء': return 'مساء النور، $name 🌆';
+      case 'ليل': return 'طاب ليلك، $name 🌃';
+      default: return 'السلام عليكم، $name';
     }
   }
 
@@ -147,12 +125,9 @@ class _HomeScreenState extends State<HomeScreen>
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 16.0,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
                   child: _buildIslamicHeader(context),
-                ),
+                )
               ),
               SliverToBoxAdapter(
                 child: Padding(
@@ -271,10 +246,9 @@ class _HomeScreenState extends State<HomeScreen>
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const NotificationCenterScreen(),
+                          builder: (context) => const NotificationCenterScreen(),
                         ),
-                      ).then((_) => setState(() {}));
+                      ).then((_) => setState((){}));
                     },
                   ),
                   if (unreadCount > 0)
@@ -488,7 +462,7 @@ class _HomeScreenState extends State<HomeScreen>
             color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          ),
+          )
         ],
       ),
       child: Row(
@@ -542,9 +516,7 @@ class _HomeScreenState extends State<HomeScreen>
               duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: isActive
-                    ? AppColors.primary.withValues(alpha: 0.15)
-                    : Colors.grey.shade100,
+                color: isActive ? AppColors.primary.withValues(alpha: 0.15) : Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -570,9 +542,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildContextualActionCard(BuildContext context) {
     final currentEmotion = _contextService.current.dominantEmotion;
-    if (currentEmotion == 'طبيعي' ||
-        currentEmotion.isEmpty ||
-        currentEmotion == 'سكينة') {
+    if (currentEmotion == 'طبيعي' || currentEmotion.isEmpty || currentEmotion == 'سكينة') {
       return const SizedBox.shrink();
     }
 
@@ -594,10 +564,7 @@ class _HomeScreenState extends State<HomeScreen>
                 color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.chat_bubble_outline,
-                color: AppColors.primary,
-              ),
+              child: const Icon(Icons.chat_bubble_outline, color: AppColors.primary),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -611,20 +578,13 @@ class _HomeScreenState extends State<HomeScreen>
                   const SizedBox(height: 4),
                   Text(
                     'لاحظت أنك تشعر بـ $currentEmotion. أنا هنا للاستماع إليك.',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
-              color: AppColors.primary.withValues(alpha: 0.5),
-            ),
+            Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.primary.withValues(alpha: 0.5)),
           ],
         ),
       ),
