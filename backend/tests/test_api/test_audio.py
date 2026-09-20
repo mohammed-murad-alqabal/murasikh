@@ -30,4 +30,4 @@ def test_audio_upload_handles_other_exceptions(client, monkeypatch):
     )
 
     assert response.status_code == 500
-    assert "Some other database or external service error" in response.json()["detail"]
+    assert "Internal Server Error" in response.json()["detail"]
