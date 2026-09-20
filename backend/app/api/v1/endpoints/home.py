@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -309,6 +309,4 @@ async def submit_app_rating(
     except Exception as e:
         logger.error(f"Error saving app rating: {e}", exc_info=True)
         db.rollback()
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=500, detail="Internal Server Error")
