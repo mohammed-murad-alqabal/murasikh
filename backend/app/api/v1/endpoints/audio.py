@@ -248,5 +248,6 @@ async def analyze_audio(
     except HTTPException:
         raise
     except Exception as e:
+        # Security: Do not expose raw exception details to the client to prevent sensitive data exposure
         logger.error(f"Error processing audio: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server Error")
