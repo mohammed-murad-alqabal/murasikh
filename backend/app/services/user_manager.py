@@ -5,6 +5,7 @@ import warnings
 import bcrypt
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+import passlib.exc
 
 from app.db.models import User
 
@@ -69,8 +70,8 @@ with warnings.catch_warnings():
                 return False
 
 
-# Register our custom bcrypt implementation and keep pbkdf2_sha256 for backwards compatibility.
-pwd_context = CryptContext(schemes=[ModernBcrypt, "pbkdf2_sha256"], deprecated="auto")
+# Register our custom bcrypt implementation. Weak pbkdf2_sha256 is removed for security.
+pwd_context = CryptContext(schemes=[ModernBcrypt], deprecated="auto")
 
 
 class UserManager:
@@ -78,7 +79,10 @@ class UserManager:
         return pwd_context.hash(password)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
+        try:
+            return pwd_context.verify(plain_password, hashed_password)
+        except (ValueError, passlib.exc.UnknownHashError):
+            return False
 
     def create_user(
         self, db: Session, username: str, password: str, email: str | None = None
