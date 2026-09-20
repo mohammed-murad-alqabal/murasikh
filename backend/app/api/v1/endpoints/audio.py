@@ -1,5 +1,6 @@
 import json
 import logging
+import asyncio
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from pydantic import ValidationError
@@ -136,7 +137,8 @@ async def analyze_audio(
                 semantic_query += f" وملامح وجهه تظهر {context_dict['facial_emotion']}"
 
         # بحث في القرآن حصراً مع البحث الهجين
-        verse_results = embedder.search_similar(
+        verse_results = await asyncio.to_thread(
+            embedder.search_similar,
             query=semantic_query,
             n_results=3,
             filters={"type": "verse"},
