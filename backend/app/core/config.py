@@ -1,4 +1,5 @@
-from pydantic import computed_field
+import secrets
+from pydantic import computed_field, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,7 +27,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost,http://127.0.0.1,http://10.0.2.2"
 
     # JWT Settings
-    SECRET_KEY: str = "super-secret-key-change-in-production"
+    SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     ALGORITHM: str = "HS512"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # 15 minutes
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
@@ -34,10 +35,7 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.ENVIRONMENT == "production":
-            if (
-                self.SECRET_KEY == "super-secret-key-change-in-production"
-                or len(self.SECRET_KEY) < 32
-            ):
+            if "SECRET_KEY" not in self.model_fields_set or len(self.SECRET_KEY) < 32:
                 raise ValueError(
                     "SECRET_KEY must be set to at least 32 characters in production"
                 )

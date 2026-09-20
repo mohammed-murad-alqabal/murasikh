@@ -100,11 +100,19 @@ def test_jwt_signed_with_wrong_secret_cannot_access_private_route(client):
     assert SECRET_KEY != wrong_secret
 
 
-def test_production_settings_reject_default_secret():
+def test_production_settings_reject_default_secret(monkeypatch):
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    monkeypatch.setenv("CORS_ORIGINS", "https://app.example")
+
     with pytest.raises(ValueError, match="SECRET_KEY"):
         Settings(
             ENVIRONMENT="production",
-            SECRET_KEY="super-secret-key-change-in-production",
+        )
+
+    with pytest.raises(ValueError, match="SECRET_KEY"):
+        Settings(
+            ENVIRONMENT="production",
+            SECRET_KEY="short",
         )
 
 
