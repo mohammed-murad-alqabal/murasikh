@@ -9,15 +9,13 @@ class AudioAnalyzer:
     def __init__(self):
         pass
 
-    async def analyze_tone(self, file_bytes: bytes) -> dict:
+    def _analyze_tone_sync(self, file_bytes: bytes) -> dict:
         """
-        تحليل نبرة الصوت واستخراج الحالة العاطفية باستخدام الميزات الصوتية
+        Synchronous internal method for audio analysis.
         """
         try:
             # تحميل الملف الصوتي في الذاكرة
-            y, sr = await asyncio.to_thread(
-                librosa.load, io.BytesIO(file_bytes), sr=22050
-            )
+            y, sr = librosa.load(io.BytesIO(file_bytes), sr=22050)
 
             # استخراج الميزات الأساسية
             # 1. الطاقة/الشدة (Volume/Energy)
@@ -67,3 +65,9 @@ class AudioAnalyzer:
             print(f"Audio analysis error: {e}")
             # Fallback
             return {"emotion": "طبيعي", "confidence": 0.5, "features": {}}
+
+    async def analyze_tone(self, file_bytes: bytes) -> dict:
+        """
+        تحليل نبرة الصوت واستخراج الحالة العاطفية باستخدام الميزات الصوتية
+        """
+        return await asyncio.to_thread(self._analyze_tone_sync, file_bytes)
