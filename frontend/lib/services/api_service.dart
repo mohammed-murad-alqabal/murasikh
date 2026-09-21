@@ -194,7 +194,7 @@ class ApiService {
     final response = await _requestWithRetry(
       (headers) => http
           .post(
-            Uri.parse('$baseUrl/analyze/recommend'),
+            Uri.parse('$baseUrl/analyze'),
             headers: headers,
             body: jsonEncode({
               'text': text,
@@ -316,7 +316,11 @@ class ApiService {
       try {
         final response = await _requestWithRetry(
           (headers) => http
-              .get(Uri.parse('$baseUrl/home/daily-verse'), headers: headers)
+              .post(
+                Uri.parse('$baseUrl/home/verse'),
+                headers: headers,
+                body: jsonEncode({"signal_source": "time"}),
+              )
               .timeout(const Duration(seconds: 5)),
         );
 

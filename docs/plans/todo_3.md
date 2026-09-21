@@ -1,7 +1,7 @@
 # خطة ما بعد الإطلاق الأولي (Post-MVP Roadmap)
 
 ## نظرة عامة
-تطبيق "مُرسِّخ" وصل الآن إلى مرحلة اكتمال النسخة الأولية (MVP) بنسبة 100%. تم إنجاز كافة الميزات الأساسية بنجاح، بما في ذلك الذكاء الاصطناعي المحلي بالكامل (Offline Local LLM)، الاسترجاع الدلالي للقرآن الكريم (RAG)، تصميم الواجهات، ونظام التقييم. هذه الخطة تستعرض المهام المستقبلية لتوسيع المشروع، تحسين تجربة المستخدم، والاستعداد للإطلاق التجاري.
+وصل تطبيق "مُرسِّخ" إلى MVP تجريبي يضم نواة التوصية القرآنية وواجهة Flutter والمصادقة والسجل. بعض الميزات المتقدمة، مثل التحليل المحلي الكامل والعمل دون اتصال بكامل القدرات والإطلاق التجاري، لم تُثبت بعد. تستعرض هذه الخطة المهام المؤجلة والتوسعات المستقبلية.
 
 ---
 
@@ -35,4 +35,4 @@
 ---
 
 ## 📌 Status Update (Post-MVP Deferral)
-**Decision**: The above items (iOS TestFlight, App Stores, VPS setup, Apple Watch / Wear OS) are explicitly marked as **DEFERRED** until the actual post-MVP deployment scale-up phase. The current MVP roadmap is officially considered **100% Complete** without them.
+**Decision**: The above items (iOS TestFlight, App Stores, VPS setup, Apple Watch / Wear OS) are explicitly **DEFERRED**. The current status is **MVP experimental / staging candidate**, not production or commercial release. The items remain outside the current MVP scope until their operational evidence is completed.
