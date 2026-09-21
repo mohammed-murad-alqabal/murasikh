@@ -55,10 +55,19 @@ class ChatMessage {
   }
 }
 
+import 'chat_dependencies.dart';
+
 class ChatScreen extends StatefulWidget {
   final bool enableImplicitContext;
+  final ChatStorage? storage;
+  final DelayedResponseProvider? delayedResponseProvider;
 
-  const ChatScreen({super.key, this.enableImplicitContext = true});
+  const ChatScreen({
+    super.key, 
+    this.enableImplicitContext = true,
+    this.storage, 
+    this.delayedResponseProvider,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -67,8 +76,10 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  static const String _chatBoxName = 'murassikh_chat_box';
-  late Box<String> _chatBox;
+  
+  late ChatStorage _storage;
+  late DelayedResponseProvider _responseProvider;
+  
   List<ChatMessage> _messages = [];
   bool _isLoading = false;
   bool _isBoxReady = false;
@@ -101,16 +112,21 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _storage = widget.storage ?? HiveChatStorage();
+    _responseProvider = widget.delayedResponseProvider ?? DefaultDelayedResponseProvider();
+    
     _initChatStorage();
-    _delayedResponseTimer = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) => _pollDelayedResponses(),
-    );
+    if (_responseProvider.shouldPoll) {
+      _delayedResponseTimer = Timer.periodic(
+        const Duration(minutes: 1),
+        (_) => _pollDelayedResponses(),
+      );
+    }
   }
 
   Future<void> _pollDelayedResponses() async {
     if (!_isBoxReady) return;
-    final responses = await HistoryService().getDueDelayedResponses();
+    final responses = await _responseProvider.getDueResponses();
     if (!mounted || responses.isEmpty) return;
 
     for (final item in responses) {
@@ -127,8 +143,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _initChatStorage() async {
     try {
-      await Hive.initFlutter();
-      _chatBox = await Hive.openBox<String>(_chatBoxName);
+      await _storage.init();
       _loadMessages();
     } catch (e) {
       debugPrint("Error loading chat storage: $e");
