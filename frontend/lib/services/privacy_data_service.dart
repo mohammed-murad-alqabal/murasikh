@@ -9,6 +9,16 @@ import 'notification_service.dart';
 import 'offline_service.dart';
 import 'settings_service.dart';
 
+class ClearDataResult {
+  const ClearDataResult({
+    required this.localCleared,
+    required this.remoteDeletionConfirmed,
+  });
+
+  final bool localCleared;
+  final bool remoteDeletionConfirmed;
+}
+
 class PrivacyDataService {
   static const String _chatBoxName = 'murassikh_chat_box';
   static const String _dailyVerseBoxName = 'daily_verse_cache';
@@ -50,19 +60,32 @@ class PrivacyDataService {
     };
   }
 
-  Future<bool> clearAllUserData() async {
-    final remoteCleared = await HistoryService().clearHistory();
-    if (!remoteCleared) return false;
-
+  Future<ClearDataResult> clearAllUserData() async {
+    var remoteDeletionConfirmed = false;
     try {
-      await OfflineService().clearLocalData();
-      await NotificationService().clearStoredData();
-      await _clearBox(_chatBoxName);
-      await _clearBox(_dailyVerseBoxName);
-      return true;
+      remoteDeletionConfirmed = await HistoryService().clearHistory();
     } catch (_) {
-      return false;
+      remoteDeletionConfirmed = false;
     }
+
+    var localCleared = true;
+    for (final clearOperation in <Future<void> Function()>[
+      () => OfflineService().clearLocalData(),
+      () => NotificationService().clearStoredData(),
+      () => _clearBox(_chatBoxName),
+      () => _clearBox(_dailyVerseBoxName),
+    ]) {
+      try {
+        await clearOperation();
+      } catch (_) {
+        localCleared = false;
+      }
+    }
+
+    return ClearDataResult(
+      localCleared: localCleared,
+      remoteDeletionConfirmed: remoteDeletionConfirmed,
+    );
   }
 
   Future<List<dynamic>> _readStringBox(String name) async {

@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "murassikh_db"
     POSTGRES_PORT: int = 5432
+    REDIS_URL: str = ""
+    CHROMA_PATH: str = "./chroma_db"
+    TRUSTED_PROXY_NETWORKS: str = "172.16.0.0/12,127.0.0.1/32"
 
     @computed_field
     @property
@@ -27,7 +30,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost,http://127.0.0.1,http://10.0.2.2"
 
     # JWT Settings
-    SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(64))
     ALGORITHM: str = "HS512"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # 15 minutes
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
@@ -35,7 +38,11 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.ENVIRONMENT == "production":
-            if not self.SECRET_KEY or len(self.SECRET_KEY) < 32 or "SECRET_KEY" not in kwargs:
+            if (
+                not self.SECRET_KEY
+                or len(self.SECRET_KEY) < 32
+                or "SECRET_KEY" not in kwargs
+            ):
                 raise ValueError(
                     "SECRET_KEY must be set to at least 32 characters in production"
                 )
@@ -58,10 +65,16 @@ class Settings(BaseSettings):
             origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()
         ]
 
+    @property
+    def trusted_proxy_networks(self) -> list[str]:
+        return [
+            network.strip()
+            for network in self.TRUSTED_PROXY_NETWORKS.split(",")
+            if network.strip()
+        ]
+
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True, extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
     )
 
 

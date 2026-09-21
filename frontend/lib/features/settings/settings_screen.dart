@@ -130,12 +130,16 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 );
                 if (confirm == true) {
-                  final cleared = await PrivacyDataService().clearAllUserData();
+                  final result = await PrivacyDataService().clearAllUserData();
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          cleared ? 'تم مسح جميع البيانات بنجاح' : 'تعذر مسح البيانات من الخادم؛ لم يتم حذف النسخة المحلية',
+                          !result.localCleared
+                              ? 'تعذر مسح بعض البيانات المحلية'
+                              : result.remoteDeletionConfirmed
+                                  ? 'تم مسح جميع البيانات محلياً ومن الخادم'
+                                  : 'تم مسح البيانات المحلية، ولم يتأكد الحذف من الخادم',
                         ),
                         duration: const Duration(seconds: 2),
                       ),

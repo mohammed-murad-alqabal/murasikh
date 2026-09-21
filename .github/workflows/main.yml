@@ -64,6 +64,16 @@ jobs:
         run: |
           cd backend
           python scripts/normalize_fingerprints.py --check
+      - name: Validate production Compose and release transport policy
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+          SECRET_KEY: ci-only-secret-key-with-at-least-64-characters-0123456789
+          CORS_ORIGINS: https://app.example.com
+        run: |
+          docker compose -f docker-compose.production.yml config --quiet
+          test ! -f frontend/android/app/src/main/AndroidManifest.xml || \
+            ! grep -q 'usesCleartextTraffic="true"' frontend/android/app/src/main/AndroidManifest.xml
+          if grep -RIn 'http://' frontend/android/app/src/release; then exit 1; fi
       - name: Test with pytest
         env:
           POSTGRES_SERVER: localhost

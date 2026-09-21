@@ -316,8 +316,7 @@ class RAGEngine:
 الآية المختارة لمواساته: {retrieved_text}
 التفسير: {tafsir}
 
-اكتب رسالة مواساة وتعاطف دافئة وقصيرة جداً (سطر واحد)، ثم اذكر الآية. لا تقم بشرح التفسير، فقط استخدمه لفهم السياق.
-الرسالة يجب أن تنتهي بالآية مباشرة.
+اكتب جملة مواساة وتعاطف دافئة وقصيرة جداً (سطر واحد) فقط، ولا تكتب الآية أو المصدر؛ سيضيفهما التطبيق حرفياً من المصدر الموثوق.
 """
         response = await asyncio.to_thread(
             self.client.models.generate_content,
@@ -325,7 +324,8 @@ class RAGEngine:
             contents=prompt,
             config=genai.types.GenerateContentConfig(temperature=0.7),
         )
-        return response.text.strip() + f"\n\n📖 {source}"
+        intro = response.text.strip()
+        return f"{intro}\n\n{retrieved_text}\n\n📖 {source}"
 
     def _format_with_template(
         self,

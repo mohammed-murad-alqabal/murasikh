@@ -93,7 +93,7 @@ async def analyze_audio(
         analysis = await audio_analyzer.analyze_tone(audio_bytes)
 
         emotion = analysis.get("emotion", "طبيعي")
-        confidence = analysis.get("confidence", 0.7)
+        confidence = max(0.0, min(1.0, float(analysis.get("confidence", 0.7))))
 
         history_service = HistoryService(db)
         if emotion == "طبيعي":

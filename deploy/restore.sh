@@ -13,6 +13,10 @@ if [ ! -f "$BACKUP_FILE" ]; then
     exit 1
 fi
 
+if [ -f "${BACKUP_FILE}.sha256" ]; then
+    sha256sum --check "${BACKUP_FILE}.sha256"
+fi
+
 if [ -z "$POSTGRES_PASSWORD" ]; then
     echo "Error: POSTGRES_PASSWORD is not set."
     exit 1

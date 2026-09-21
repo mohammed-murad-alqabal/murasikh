@@ -1,9 +1,10 @@
 import asyncio
 import logging
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Request, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.v1.endpoints.auth import get_current_user_optional
@@ -26,17 +27,17 @@ logger = logging.getLogger(__name__)
 
 
 class AppRatingRequest(BaseModel):
-    rating: int
-    feedback: str | None = None
+    rating: int = Field(..., ge=1, le=5)
+    feedback: str | None = Field(None, max_length=1000)
 
 
 class ContextSignalsRequest(BaseModel):
     """إشارات السياق الواردة من العميل (الجهاز)."""
 
     dominant_emotion: str | None = None  # «قلق» / «حزن» / «فرح» …
-    confidence: float = 0.0  # ثقة المستشعر: 0.0 – 1.0
-    signal_source: str = "history"  # «face» | «audio» | «history» | «time»
-    time_of_day: str | None = None  # «فجر» | «صباح» | «ظهر» | «عصر» | «مساء» | «ليل»
+    confidence: float = Field(0.0, ge=0.0, le=1.0)
+    signal_source: Literal["face", "audio", "history", "time"] = "history"
+    time_of_day: Literal["فجر", "صباح", "ظهر", "عصر", "مساء", "ليل"] | None = None
 
 
 class VerseResponse(BaseModel):
@@ -47,7 +48,7 @@ class VerseResponse(BaseModel):
     tafsir: str | None = None
     emotion_context: str
     signal_used: str
-    confidence: float = 0.0
+    confidence: float = Field(0.0, ge=0.0, le=1.0)
     cached: bool = False
 
 

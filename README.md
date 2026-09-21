@@ -75,7 +75,9 @@ uvicorn app.main:app --reload
 
 ```bash
 curl http://localhost:8000/health
-# {"status": "healthy", "version": "0.1.0"}
+# {"status": "ok"}
+curl http://localhost:8000/health/ready
+# readiness: PostgreSQL, Redis, and Chroma
 ```
 
 📖 **للتفاصيل:** [دليل البدء السريع](./docs/02-development/البدء-السريع.md)

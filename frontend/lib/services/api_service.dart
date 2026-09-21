@@ -38,15 +38,14 @@ class ApiService {
     Future<http.Response> Function(Map<String, String> headers) requestFunc,
   ) async {
     Map<String, String> headers = await getHeaders();
+    final originalToken = headers['Authorization']?.replaceFirst('Bearer ', '');
     http.Response response = await requestFunc(headers);
 
     if (response.statusCode == 401) {
       bool refreshed = false;
       await _refreshMutex.protect(() async {
         final currentToken = await AuthService().getToken();
-        if (currentToken != null &&
-            currentToken !=
-                headers['Authorization']?.replaceAll('Bearer ', '')) {
+        if (currentToken != null && currentToken != originalToken) {
           refreshed = true;
           return;
         }
@@ -56,7 +55,8 @@ class ApiService {
           final refreshResponse = await http
               .post(
                 Uri.parse('$baseUrl/auth/refresh'),
-                headers: {'Authorization': 'Bearer $refreshToken'},
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode({'refresh_token': refreshToken}),
               )
               .timeout(const Duration(seconds: 5));
 
@@ -79,6 +79,28 @@ class ApiService {
       }
     }
     return response;
+  }
+
+  static Future<bool> _refreshAccessToken() async {
+    final refreshToken = await AuthService().getRefreshToken();
+    if (refreshToken == null) return false;
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/refresh'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'refresh_token': refreshToken}),
+        )
+        .timeout(const Duration(seconds: 5));
+    if (response.statusCode != 200) {
+      await AuthService().logout();
+      return false;
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    await AuthService().login_with_tokens(
+      data['access_token'] as String,
+      (data['refresh_token'] as String?) ?? refreshToken,
+    );
+    return true;
   }
 
   Future<RecommendationModel> getRecommendation(
@@ -255,22 +277,28 @@ class ApiService {
       mergedContext.addAll(userContext);
     }
 
-    final headers = await getHeaders(isMultipart: true);
-
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/audio/analyze-audio'),
-    );
-    request.headers.addAll(headers);
-    request.files.add(await http.MultipartFile.fromPath('file', filePath));
-    if (mergedContext.isNotEmpty) {
-      request.fields['user_context'] = jsonEncode(mergedContext);
+    Future<http.Response> sendAudio() async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/audio/analyze-audio'),
+      );
+      request.headers.addAll(await getHeaders(isMultipart: true));
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      if (mergedContext.isNotEmpty) {
+        request.fields['user_context'] = jsonEncode(mergedContext);
+      }
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 15),
+      );
+      return http.Response.fromStream(streamedResponse);
     }
 
-    final streamedResponse = await request.send().timeout(
-      const Duration(seconds: 15),
-    );
-    final response = await http.Response.fromStream(streamedResponse);
+    var response = await sendAudio();
+    if (response.statusCode == 401) {
+      await _refreshMutex.protect(() async {
+        if (await _refreshAccessToken()) response = await sendAudio();
+      });
+    }
 
     if (response.statusCode == 200) {
       final decodedData = jsonDecode(utf8.decode(response.bodyBytes));

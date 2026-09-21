@@ -30,6 +30,8 @@ class AuthService {
         await _secureStorage.write(key: 'jwt_token', value: token);
         if (refreshToken != null) {
           await _secureStorage.write(key: 'refresh_token', value: refreshToken);
+        } else {
+          await _secureStorage.delete(key: 'refresh_token');
         }
 
         final prefs = await SharedPreferences.getInstance();
@@ -71,6 +73,8 @@ class AuthService {
         await _secureStorage.write(key: 'jwt_token', value: token);
         if (refreshToken != null) {
           await _secureStorage.write(key: 'refresh_token', value: refreshToken);
+        } else {
+          await _secureStorage.delete(key: 'refresh_token');
         }
 
         final prefs = await SharedPreferences.getInstance();

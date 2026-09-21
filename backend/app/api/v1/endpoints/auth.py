@@ -96,12 +96,12 @@ async def refresh_token(
 
     jti = payload.get("jti")
     if not jti or user.get("refresh_jti") != jti:
-        user_manager.set_refresh_jti(db, username, None)
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
     new_access_token = create_access_token(data={"sub": user["username"]})
     new_refresh_token, new_jti = create_refresh_token(data={"sub": user["username"]})
-    user_manager.set_refresh_jti(db, user["username"], new_jti)
+    if not user_manager.rotate_refresh_jti(db, user["username"], jti, new_jti):
+        raise HTTPException(status_code=401, detail="Refresh token already used")
 
     return {
         "access_token": new_access_token,

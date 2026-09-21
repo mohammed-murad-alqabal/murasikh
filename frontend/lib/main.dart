@@ -31,12 +31,12 @@ void callbackDispatcher() {
       if (task == 'update_widget') {
         
         final response = await http.post(
-          Uri.parse('http://192.168.1.106:8000/api/v1/home/verse'),
+          Uri.parse('${ApiService.baseUrl}/home/verse'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'dominant_emotion': null,
             'confidence': 0.0,
-            'signal_source': 'widget',
+            'signal_source': 'time',
             'time_of_day': null,
           }),
         ).timeout(const Duration(seconds: 15));

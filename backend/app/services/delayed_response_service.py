@@ -51,6 +51,7 @@ class DelayedResponseService:
                 DelayedResponse.scheduled_for <= current_time,
             )
             .order_by(DelayedResponse.scheduled_for.asc(), DelayedResponse.id.asc())
+            .with_for_update(skip_locked=True)
             .all()
         )
 

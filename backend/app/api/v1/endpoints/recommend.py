@@ -34,7 +34,7 @@ class RecommendationRequest(BaseModel):
 
 class RecommendationResponse(BaseModel):
     emotion: str
-    confidence: float
+    confidence: float = Field(..., ge=0.0, le=1.0)
     tier: str
     message: str
     delayed_message: str | None = None
@@ -86,7 +86,7 @@ async def get_recommendation(
 
         action = analysis.get("action", "guide")
         emotion = analysis.get("emotion", "طبيعي")
-        confidence = float(analysis.get("confidence", 0.0))
+        confidence = max(0.0, min(1.0, float(analysis.get("confidence", 0.0))))
         ai_message = analysis.get("ai_message", "")
 
         if action == "ask":

@@ -55,6 +55,19 @@ def test_home_verse_contract(client, monkeypatch):
     assert data["cached"] is False
 
 
+def test_home_rejects_out_of_range_signal(client):
+    response = client.post(
+        "/api/v1/home/verse",
+        json={"confidence": 1.1, "signal_source": "sensor"},
+    )
+    assert response.status_code == 422
+
+
+def test_rating_rejects_out_of_range_value(client):
+    response = client.post("/api/v1/home/rating", json={"rating": 0})
+    assert response.status_code == 422
+
+
 def test_home_verse_openapi_contract(client):
     schema = client.get("/openapi.json").json()
     operation = schema["paths"]["/api/v1/home/verse"]["post"]
@@ -66,7 +79,6 @@ def test_home_verse_openapi_contract(client):
 
 def test_legacy_home_route_is_not_the_contract(client):
     response = client.post(
-        "/api/v1/home",
-        json={"dominant_emotion": "قلق", "confidence": 0.8},
+        "/api/v1/home", json={"dominant_emotion": "قلق", "confidence": 0.8}
     )
     assert response.status_code in (404, 405)

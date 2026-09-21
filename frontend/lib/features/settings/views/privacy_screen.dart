@@ -358,14 +358,16 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
-              final cleared = await PrivacyDataService().clearAllUserData();
+              final result = await PrivacyDataService().clearAllUserData();
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    cleared
-                        ? 'تم مسح بيانات السجل محلياً ومن الخادم'
-                        : 'تعذر مسح السجل من الخادم؛ لم يتم حذف النسخة المحلية',
+                    !result.localCleared
+                        ? 'تعذر مسح بعض البيانات المحلية'
+                        : result.remoteDeletionConfirmed
+                            ? 'تم مسح البيانات محلياً ومن الخادم'
+                            : 'تم مسح البيانات المحلية، ولم يتأكد الحذف من الخادم',
                   ),
                 ),
               );

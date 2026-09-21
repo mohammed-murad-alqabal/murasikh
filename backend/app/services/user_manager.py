@@ -4,6 +4,7 @@ import warnings
 
 import bcrypt
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 import passlib.exc
 
@@ -131,3 +132,15 @@ class UserManager:
         if user_record:
             user_record.refresh_jti = jti
             db.commit()
+
+    def rotate_refresh_jti(
+        self, db: Session, username: str, old_jti: str, new_jti: str
+    ) -> bool:
+        """Atomically consume the old refresh JTI and install the new one."""
+        result = db.execute(
+            update(User)
+            .where(User.username == username, User.refresh_jti == old_jti)
+            .values(refresh_jti=new_jti)
+        )
+        db.commit()
+        return result.rowcount == 1

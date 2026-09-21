@@ -8,6 +8,7 @@ not load the embedding model again.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -22,6 +23,7 @@ QURAN_FILE = BACKEND_DIR / "quran.json"
 CHROMA_DIR = Path(os.environ.get("CHROMA_PATH", str(BACKEND_DIR / "chroma_db")))
 COLLECTION_NAME = "islamic_content_minilm"
 EXPECTED_VERSE_COUNT = 6236
+INDEX_VERSION = "quran-v1"
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 # A small curated set of context hints. The Quran remains the only stored
@@ -98,11 +100,27 @@ def load_verses() -> list[dict[str, Any]]:
 def get_collection(client):
     return client.get_or_create_collection(
         name=COLLECTION_NAME,
-        metadata={"description": "القرآن الكريم فقط", "hnsw:space": "cosine"},
+        metadata={
+            "description": "القرآن الكريم فقط",
+            "hnsw:space": "cosine",
+            "index_version": INDEX_VERSION,
+        },
     )
 
 
+def dataset_checksum(verses: list[dict[str, Any]]) -> str:
+    payload = "\n".join(f"{verse['id']}\t{verse['text']}" for verse in verses)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def verify_collection(collection, verses: list[dict[str, Any]]) -> None:
+    metadata = getattr(collection, "metadata", None) or {}
+    expected_checksum = dataset_checksum(verses)
+    if metadata and (
+        metadata.get("index_version") != INDEX_VERSION
+        or metadata.get("dataset_checksum") != expected_checksum
+    ):
+        raise RuntimeError("Chroma index metadata does not match the Quran artifact")
     if collection.count() != EXPECTED_VERSE_COUNT:
         raise RuntimeError(
             f"Chroma collection has {collection.count()} records; expected {EXPECTED_VERSE_COUNT}."
@@ -166,6 +184,16 @@ def seed_quran(*, reset: bool = False, batch_size: int = 128) -> None:
             metadatas=[item["metadata"] for item in batch],
         )
         print(f"Seeded {min(start + batch_size, len(verses))}/{len(verses)} verses")
+
+    if hasattr(collection, "modify"):
+        collection.modify(
+            metadata={
+                "description": "القرآن الكريم فقط",
+                "hnsw:space": "cosine",
+                "index_version": INDEX_VERSION,
+                "dataset_checksum": dataset_checksum(verses),
+            }
+        )
 
     verify_collection(collection, verses)
     print(f"Quran collection seeded and verified: {EXPECTED_VERSE_COUNT} verses")
