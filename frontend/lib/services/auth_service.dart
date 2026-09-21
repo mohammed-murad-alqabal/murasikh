@@ -89,7 +89,7 @@ class AuthService {
     }
   }
 
-  Future<void> login_with_tokens(String token, String refreshToken) async {
+  Future<void> loginWithTokens(String token, String refreshToken) async {
     await _secureStorage.write(key: 'jwt_token', value: token);
     await _secureStorage.write(key: 'refresh_token', value: refreshToken);
   }

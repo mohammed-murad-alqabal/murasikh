@@ -13,7 +13,7 @@ import 'settings_service.dart';
 class ApiService {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: const bool.fromEnvironment("dart.vm.product")
+    defaultValue: bool.fromEnvironment("dart.vm.product")
         ? "https://api.murassikh.com/api/v1"
         : "http://10.0.2.2:8000/api/v1",
   );
@@ -62,7 +62,7 @@ class ApiService {
 
           if (refreshResponse.statusCode == 200) {
             final data = jsonDecode(refreshResponse.body);
-            await AuthService().login_with_tokens(
+            await AuthService().loginWithTokens(
               data['access_token'],
               data['refresh_token'] ?? refreshToken,
             );
@@ -96,7 +96,7 @@ class ApiService {
       return false;
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    await AuthService().login_with_tokens(
+    await AuthService().loginWithTokens(
       data['access_token'] as String,
       (data['refresh_token'] as String?) ?? refreshToken,
     );
@@ -310,7 +310,7 @@ class ApiService {
     }
   }
 
-  Future<VerseCardModel?> getDailyVerse() async {
+  Future<VerseCard?> getDailyVerse() async {
     final isConnected = await OfflineService().isConnected();
     if (isConnected) {
       try {
@@ -322,11 +322,7 @@ class ApiService {
 
         if (response.statusCode == 200) {
           final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-          return VerseCardModel(
-            surah: decoded['surah_name'] ?? 'سورة',
-            ayah: decoded['verse_number'] ?? 0,
-            text: decoded['text'] ?? '',
-          );
+          return VerseCard.fromJson(decoded);
         }
       } catch (e, st) {
         debugPrint('Failed to get daily verse from API: $e, $st');
