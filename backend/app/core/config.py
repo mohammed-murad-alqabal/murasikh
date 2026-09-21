@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.ENVIRONMENT == "production":
-            if "SECRET_KEY" not in self.model_fields_set or len(self.SECRET_KEY) < 32:
+            if not self.SECRET_KEY or len(self.SECRET_KEY) < 32 or "SECRET_KEY" not in kwargs:
                 raise ValueError(
                     "SECRET_KEY must be set to at least 32 characters in production"
                 )
@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        case_sensitive=True,
+        case_sensitive=True, extra="ignore"
     )
 
 
