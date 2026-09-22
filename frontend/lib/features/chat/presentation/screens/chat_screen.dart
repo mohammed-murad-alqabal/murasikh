@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../services/history_service.dart';
@@ -15,6 +13,7 @@ import '../../../recommendation/bloc/recommendation_bloc.dart';
 import '../../../recommendation/models/recommendation_model.dart';
 import '../../../recommendation/views/mic_button.dart';
 
+import "chat_dependencies.dart";
 class ChatMessage {
   final String text;
   final bool isUser;
@@ -55,7 +54,6 @@ class ChatMessage {
   }
 }
 
-import 'chat_dependencies.dart';
 
 class ChatScreen extends StatefulWidget {
   final bool enableImplicitContext;
@@ -129,16 +127,21 @@ class _ChatScreenState extends State<ChatScreen> {
     final responses = await _responseProvider.getDueResponses();
     if (!mounted || responses.isEmpty) return;
 
+    final newMessages = <ChatMessage>[];
     for (final item in responses) {
       final message = ChatMessage(
         text: item.recommendation.message,
         isUser: false,
         recommendation: item.recommendation,
       );
-      setState(() => _messages.add(message));
+      newMessages.add(message);
       await _saveMessage(message);
     }
-    _scrollToBottom();
+    
+    if (mounted && newMessages.isNotEmpty) {
+      setState(() => _messages.addAll(newMessages));
+      _scrollToBottom();
+    }
   }
 
   Future<void> _initChatStorage() async {
@@ -151,13 +154,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _loadMessages() {
-    final List<ChatMessage> loaded = [];
-    for (final raw in _chatBox.values) {
-      try {
-        final data = jsonDecode(raw);
-        loaded.add(ChatMessage.fromMap(data));
-      } catch (_) {}
-    }
+    final List<ChatMessage> loaded = _storage.loadMessages();
 
     if (loaded.isEmpty) {
       final initial = ChatMessage(
@@ -166,7 +163,7 @@ class _ChatScreenState extends State<ChatScreen> {
         isUser: false,
       );
       loaded.add(initial);
-      _chatBox.add(jsonEncode(initial.toMap()));
+      _storage.saveMessage(initial);
     }
 
     if (mounted) {
@@ -182,7 +179,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _saveMessage(ChatMessage msg) async {
     if (!_isBoxReady) return;
     try {
-      await _chatBox.add(jsonEncode(msg.toMap()));
+      await _storage.saveMessage(msg);
     } catch (e) {
       debugPrint("Error saving chat message: $e");
     }
@@ -211,7 +208,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     if (confirm == true) {
-      await _chatBox.clear();
+      await _storage.clear();
       _loadMessages();
     }
   }
@@ -386,7 +383,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     try {
-      await _chatBox.putAt(index, jsonEncode(msg.toMap()));
+      await _storage.updateMessage(index, msg);
     } catch (e) {
       debugPrint("Error updating feedback in chat storage: $e");
     }

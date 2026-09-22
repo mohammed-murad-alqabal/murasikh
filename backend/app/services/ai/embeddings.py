@@ -75,9 +75,10 @@ class EmbeddingService:
                 n_results=min(n_results, 5),
                 where=curated_filter,
             )
-        except Exception:
+        except Exception as e:
+            import logging
+            logging.error(f"Error querying curated collection: {e}", exc_info=True)
             curated_results = None
-
         results = self.collection.query(
             query_embeddings=[query_embedding], n_results=fetch_count, where=filters
         )
