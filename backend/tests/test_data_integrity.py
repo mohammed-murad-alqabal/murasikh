@@ -49,9 +49,7 @@ def test_production_seed_path_cannot_insert_hadiths():
 
 
 def test_hadith_seed_isolated_and_fails_without_provenance():
-    seed_hadiths = (BACKEND_DIR / "scripts/seed_hadiths.py").read_text(
-        encoding="utf-8"
-    )
+    seed_hadiths = (BACKEND_DIR / "scripts/seed_hadiths.py").read_text(encoding="utf-8")
 
     assert "HADITH_CHROMA_PATH" in seed_hadiths
     assert "hadith_content_minilm" in seed_hadiths

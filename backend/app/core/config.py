@@ -38,10 +38,7 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.ENVIRONMENT == "production":
-            if (
-                not self.SECRET_KEY
-                or len(self.SECRET_KEY) < 32
-            ):
+            if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
                 raise ValueError(
                     "SECRET_KEY must be set to at least 32 characters in production"
                 )

@@ -77,6 +77,7 @@ class EmbeddingService:
             )
         except Exception as e:
             import logging
+
             logging.error(f"Error querying curated collection: {e}", exc_info=True)
             curated_results = None
         results = self.collection.query(

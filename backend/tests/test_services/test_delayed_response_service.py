@@ -95,9 +95,7 @@ def test_interaction_and_delayed_response_can_rollback_together(db_session):
 
         assert db.query(Interaction).filter(Interaction.user_id == user.id).count() == 0
         assert (
-            db.query(DelayedResponse)
-            .filter(DelayedResponse.user_id == user.id)
-            .count()
+            db.query(DelayedResponse).filter(DelayedResponse.user_id == user.id).count()
             == 0
         )
     finally:

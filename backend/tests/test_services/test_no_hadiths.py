@@ -12,13 +12,14 @@ def test_no_hadiths_in_collection():
                     "Found hadith in vector DB! Strict Quran-only rule violated."
                 )
 
+
 import pytest
 from app.core.policies import ContentPolicy
+
 
 def test_rag_engine_rejects_hadith_source():
     # Enforce policy via test
     assert ContentPolicy.QURAN_ONLY.value == "quran_only"
-    
+
     # In practice, EmbeddingService searches with filters={"type": "verse"}
     # as seen in endpoints. We just assert the policy constant exists.
-

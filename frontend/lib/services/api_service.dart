@@ -118,7 +118,11 @@ class ApiService {
 
     if (isConnected) {
       try {
-        final rec = await _fetchFromServer(text, userContext: userContext);
+        final rec = await _fetchFromServer(
+          text,
+          userContext: userContext,
+          chatHistory: chatHistory,
+        );
         await offlineService.cacheRecommendation(text, rec);
         await HistoryService().saveInteraction(text, rec);
         _syncPendingFeedbacks(offlineService);
@@ -180,6 +184,7 @@ class ApiService {
   Future<RecommendationModel> _fetchFromServer(
     String text, {
     Map<String, dynamic>? userContext,
+    List<Map<String, String>>? chatHistory,
   }) async {
     final settingsService = SettingsService();
     await settingsService.init();
