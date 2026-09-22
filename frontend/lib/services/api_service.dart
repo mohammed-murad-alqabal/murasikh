@@ -107,6 +107,7 @@ class ApiService {
     String text, {
     bool forceOffline = false,
     Map<String, dynamic>? userContext,
+    List<Map<String, String>>? chatHistory,
   }) async {
     final offlineService = OfflineService();
     await offlineService.init();
@@ -191,15 +192,23 @@ class ApiService {
       mergedContext.addAll(userContext);
     }
 
+    final requestBody = <String, dynamic>{
+      'text': text,
+      'user_context': mergedContext.isEmpty ? null : mergedContext,
+    };
+    if (chatHistory != null && chatHistory.isNotEmpty) {
+      requestBody['chat_history'] = chatHistory
+          .where((message) => message['content']?.trim().isNotEmpty ?? false)
+          .take(10)
+          .toList();
+    }
+
     final response = await _requestWithRetry(
       (headers) => http
           .post(
             Uri.parse('$baseUrl/analyze'),
             headers: headers,
-            body: jsonEncode({
-              'text': text,
-              'user_context': mergedContext.isEmpty ? null : mergedContext,
-            }),
+            body: jsonEncode(requestBody),
           )
           .timeout(const Duration(seconds: 15)),
     );

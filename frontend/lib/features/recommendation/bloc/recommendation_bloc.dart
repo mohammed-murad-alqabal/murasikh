@@ -13,9 +13,10 @@ abstract class RecommendationEvent extends Equatable {
 class GetRecommendationEvent extends RecommendationEvent {
   final String text;
   final Map<String, dynamic>? userContext;
-  GetRecommendationEvent(this.text, {this.userContext});
+  final List<Map<String, String>>? chatHistory;
+  GetRecommendationEvent(this.text, {this.userContext, this.chatHistory});
   @override
-  List<Object?> get props => [text, userContext];
+  List<Object?> get props => [text, userContext, chatHistory];
 }
 
 // --- States ---
@@ -63,6 +64,7 @@ class RecommendationBloc
         final recommendation = await apiService.getRecommendation(
           event.text,
           userContext: event.userContext,
+          chatHistory: event.chatHistory,
         );
         emit(RecommendationLoaded(recommendation));
       } catch (e) {

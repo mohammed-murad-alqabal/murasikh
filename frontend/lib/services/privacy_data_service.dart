@@ -8,6 +8,7 @@ import 'history_service.dart';
 import 'notification_service.dart';
 import 'offline_service.dart';
 import 'settings_service.dart';
+import 'local_account_scope.dart';
 
 class ClearDataResult {
   const ClearDataResult({
@@ -20,7 +21,6 @@ class ClearDataResult {
 }
 
 class PrivacyDataService {
-  static const String _chatBoxName = 'murassikh_chat_box';
   static const String _dailyVerseBoxName = 'daily_verse_cache';
 
   Future<Map<String, dynamic>> exportAllData() async {
@@ -35,7 +35,7 @@ class PrivacyDataService {
       'remote': remote,
       'offline': await OfflineService().exportData(),
       'notifications': await NotificationService().exportStoredData(),
-      'chat': await _readStringBox(_chatBoxName),
+      'chat': await _readStringBox(LocalAccountScope.boxName('chat')),
       'daily_verse': await _readStringBox(_dailyVerseBoxName),
     };
   }
@@ -72,7 +72,7 @@ class PrivacyDataService {
     for (final clearOperation in <Future<void> Function()>[
       () => OfflineService().clearLocalData(),
       () => NotificationService().clearStoredData(),
-      () => _clearBox(_chatBoxName),
+      () => _clearBox(LocalAccountScope.boxName('chat')),
       () => _clearBox(_dailyVerseBoxName),
     ]) {
       try {

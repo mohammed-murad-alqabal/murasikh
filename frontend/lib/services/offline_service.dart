@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../features/recommendation/models/recommendation_model.dart';
+import 'local_account_scope.dart';
 
 /// خدمة العمل بدون إنترنت (Offline-First)
 /// تتولى:
@@ -16,18 +17,28 @@ class OfflineService {
   factory OfflineService() => _instance;
   OfflineService._internal();
 
-  static const String _cacheBoxName = 'cached_recommendations';
-  static const String _pendingFeedbackBox = 'pending_feedback';
   static const int _maxCacheSize = 20; // نحتفظ بآخر 20 توصية
 
   late Box<String> _cacheBox;
   late Box<String> _feedbackBox;
   bool _initialized = false;
+  String? _scope;
 
   Future<void> init() async {
-    if (_initialized) return;
-    _cacheBox = await Hive.openBox<String>(_cacheBoxName);
-    _feedbackBox = await Hive.openBox<String>(_pendingFeedbackBox);
+    final scope = LocalAccountScope.active;
+    final cacheName = LocalAccountScope.boxName('offline_cache');
+    final feedbackName = LocalAccountScope.boxName('pending_feedback');
+    if (_initialized &&
+        _scope == scope &&
+        _cacheBox.isOpen &&
+        _feedbackBox.isOpen) {
+      return;
+    }
+    if (_initialized && _cacheBox.isOpen) await _cacheBox.close();
+    if (_initialized && _feedbackBox.isOpen) await _feedbackBox.close();
+    _cacheBox = await Hive.openBox<String>(cacheName);
+    _feedbackBox = await Hive.openBox<String>(feedbackName);
+    _scope = scope;
     _initialized = true;
   }
 

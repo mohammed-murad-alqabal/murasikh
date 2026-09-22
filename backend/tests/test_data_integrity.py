@@ -45,3 +45,14 @@ def test_production_seed_path_cannot_insert_hadiths():
     seed_quran = (BACKEND_DIR / "scripts/seed_quran.py").read_text(encoding="utf-8")
 
     assert '"type": "hadith"' not in seed_quran
+    assert "verify_quran_only_collections" in seed_quran
+
+
+def test_hadith_seed_isolated_and_fails_without_provenance():
+    seed_hadiths = (BACKEND_DIR / "scripts/seed_hadiths.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "HADITH_CHROMA_PATH" in seed_hadiths
+    assert "hadith_content_minilm" in seed_hadiths
+    assert "has no source grades" in seed_hadiths

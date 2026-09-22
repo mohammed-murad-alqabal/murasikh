@@ -16,6 +16,8 @@ import 'services/ambient_listening_service.dart';
 import 'services/settings_service.dart';
 import 'services/daily_verse_service.dart';
 import 'services/home_context_service.dart';
+import 'services/auth_service.dart';
+import 'services/local_account_scope.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -76,6 +78,7 @@ void main() async {
 
     await Hive.initFlutter();
     timeago.setLocaleMessages('ar', timeago.ArMessages());
+    await LocalAccountScope.activate(await AuthService().getUsername());
     await Future.wait([
       SettingsService().init(),
       NotificationService().init(),

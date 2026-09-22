@@ -26,6 +26,7 @@ class DelayedResponseService:
         payload: dict,
         reason: str = "high_emotion",
         delay: timedelta | None = None,
+        commit: bool = True,
     ) -> DelayedResponse:
         response = DelayedResponse(
             user_id=user_id,
@@ -37,8 +38,10 @@ class DelayedResponseService:
             payload=payload,
         )
         self.db.add(response)
-        self.db.commit()
-        self.db.refresh(response)
+        self.db.flush()
+        if commit:
+            self.db.commit()
+            self.db.refresh(response)
         return response
 
     def deliver_due(self, user_id: int, *, now: datetime | None = None) -> list[dict]:

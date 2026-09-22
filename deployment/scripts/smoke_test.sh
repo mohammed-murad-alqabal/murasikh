@@ -43,8 +43,9 @@ echo "--- Auth Routes ---"
 
 # Login with invalid credentials should return 401 or 422
 code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/v1/auth/login" \
-    -H "Content-Type: application/json" \
-    -d '{"email":"nonexistent@test.com","password":"wrongpassword"}')
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    --data-urlencode "username=nonexistent@test.com" \
+    --data-urlencode "password=wrongpassword")
 print_result "POST /auth/login (invalid creds → 401/400)" "$code" 401
 
 # Register with empty body should return 422 (Unprocessable Entity)

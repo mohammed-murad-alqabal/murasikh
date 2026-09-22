@@ -1,5 +1,6 @@
 import logging
 import asyncio
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -23,12 +24,22 @@ rag_engine = RAGEngine()
 logger = logging.getLogger(__name__)
 
 
+class ChatHistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(..., min_length=1, max_length=2000)
+
+
 class RecommendationRequest(BaseModel):
     text: str = Field(
         ..., min_length=2, max_length=1000, description="نص المستخدم المراد تحليله"
     )
     user_context: UserContextSchema | None = Field(
         None, description="السياق الإضافي للمستخدم"
+    )
+    chat_history: list[ChatHistoryMessage] = Field(
+        default_factory=list,
+        max_length=10,
+        description="آخر رسائل الجلسة للضيف أو السياق غير المتزامن",
     )
 
 
@@ -73,6 +84,10 @@ async def get_recommendation(
                             "content": interaction["recommendation"]["message"],
                         }
                     )
+        elif payload.chat_history:
+            # Guest sessions have no server-side memory. Accept only the
+            # bounded, validated client transcript for this request.
+            chat_history = [message.model_dump() for message in payload.chat_history]
 
         # 2. تحليل الحالة العاطفية والموقف (الوكيل الاستقصائي)
         context_dict = (
@@ -104,6 +119,8 @@ async def get_recommendation(
                     message=final_message,
                     source=None,
                     tafsir=None,
+                    confidence=confidence,
+                    response_tier="minimal",
                 )
                 interaction_id = interaction.id
 
@@ -251,6 +268,7 @@ async def get_recommendation(
                 confidence=confidence,
                 response_tier=tier,
                 response_delayed=bool(delayed_message and should_delay),
+                commit=not (delayed_message and should_delay),
             )
             interaction_id = interaction.id
 
@@ -266,7 +284,10 @@ async def get_recommendation(
                         "source": source,
                         "tafsir": tafsir,
                     },
+                    commit=False,
                 )
+                db.commit()
+                db.refresh(interaction)
 
         return RecommendationResponse(
             emotion=emotion,
@@ -280,4 +301,5 @@ async def get_recommendation(
         )
     except Exception as e:
         logger.error(f"Error processing recommendation: {e}")
+        db.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")

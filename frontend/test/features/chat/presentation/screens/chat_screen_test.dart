@@ -13,6 +13,7 @@ import 'package:murassikh_app/features/recommendation/models/recommendation_mode
 
 import "package:murassikh_app/features/chat/presentation/screens/chat_dependencies.dart";
 import "package:murassikh_app/services/history_service.dart";
+import "package:murassikh_app/services/local_account_scope.dart";
 class FakeChatStorage implements ChatStorage {
   final List<ChatMessage> messages = [];
 
@@ -84,8 +85,9 @@ void main() {
   });
 
   tearDown(() async {
-    if (Hive.isBoxOpen('murassikh_chat_box')) {
-      await Hive.box<String>('murassikh_chat_box').clear();
+    final chatBoxName = LocalAccountScope.boxName('chat');
+    if (Hive.isBoxOpen(chatBoxName)) {
+      await Hive.box<String>(chatBoxName).clear();
     }
   });
 

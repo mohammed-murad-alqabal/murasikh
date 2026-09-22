@@ -22,6 +22,7 @@ BACKEND_DIR = SCRIPT_DIR.parent
 QURAN_FILE = BACKEND_DIR / "quran.json"
 CHROMA_DIR = Path(os.environ.get("CHROMA_PATH", str(BACKEND_DIR / "chroma_db")))
 COLLECTION_NAME = "islamic_content_minilm"
+ALLOWED_COLLECTIONS = {COLLECTION_NAME}
 EXPECTED_VERSE_COUNT = 6236
 INDEX_VERSION = "quran-v1"
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
@@ -143,9 +144,24 @@ def verify_collection(collection, verses: list[dict[str, Any]]) -> None:
             )
 
 
+def verify_quran_only_collections(client) -> None:
+    """Fail closed if a production Chroma path contains another collection."""
+    collections = client.list_collections()
+    names = {
+        getattr(collection, "name", str(collection)) for collection in collections
+    }
+    unexpected = sorted(names - ALLOWED_COLLECTIONS)
+    if unexpected:
+        raise RuntimeError(
+            "Quran-only verification found unexpected Chroma collections: "
+            f"{unexpected}"
+        )
+
+
 def seed_quran(*, reset: bool = False, batch_size: int = 128) -> None:
     verses = load_verses()
     client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+    verify_quran_only_collections(client)
 
     if reset:
         try:
@@ -221,6 +237,7 @@ def main() -> int:
 
     verses = load_verses()
     client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+    verify_quran_only_collections(client)
     collection = get_collection(client)
     if args.verify:
         verify_collection(collection, verses)

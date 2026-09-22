@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:murassikh_app/features/recommendation/models/recommendation_model.dart';
+import 'package:murassikh_app/services/local_account_scope.dart';
 import 'package:murassikh_app/services/offline_service.dart';
 
 void main() {
@@ -98,7 +99,9 @@ void main() {
   );
 
   test('ignores malformed pending feedback and exports valid data', () async {
-    final pendingBox = Hive.box<String>('pending_feedback');
+    final pendingBox = Hive.box<String>(
+      LocalAccountScope.boxName('pending_feedback'),
+    );
     await pendingBox.put('bad', '{not-json');
     await offlineService.savePendingFeedback('7', 1);
 
