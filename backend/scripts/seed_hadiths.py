@@ -10,13 +10,20 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def seed_hadiths():
+    hadith_chroma_path = os.environ.get("HADITH_CHROMA_PATH")
+    if not hadith_chroma_path:
+        raise RuntimeError(
+            "Hadith indexing is disabled by default. Set HADITH_CHROMA_PATH "
+            "to an isolated, separately governed Chroma path."
+        )
+
     print("تحميل نموذج AraBERT...")
     model = SentenceTransformer("Omartificial-Intelligence-Space/GATE-AraBERT-v1")
 
-    client = chromadb.PersistentClient(path="./chroma_db")
+    client = chromadb.PersistentClient(path=hadith_chroma_path)
     collection = client.get_or_create_collection(
-        name="islamic_content_minilm",
-        metadata={"description": "القرآن والأحاديث والتفاسير (Local Embeddings)"},
+        name="hadith_content_minilm",
+        metadata={"description": "حديث مستقل يحتاج حوكمة ومراجعة"},
     )
 
     # أسماء الكتب بالعربية
@@ -57,6 +64,12 @@ def seed_hadiths():
                 raw_text = h.get("text", "").strip()
                 if not raw_text:
                     continue
+                grades = h.get("grades") or []
+                if not grades:
+                    raise RuntimeError(
+                        f"Hadith {book}:{h.get('hadithnumber')} has no source grades; "
+                        "refusing to index ungoverned content."
+                    )
 
                 # ✂️ إزالة سند الحديث: نبحث عن بداية المتن بعد "قَالَ" أو "أَنَّ"
                 # عادةً المتن يبدأ بعد جملة كبيرة من الرواة. نقطع عند آخر "قَالَ" قبل علامة اقتباس
@@ -77,6 +90,10 @@ def seed_hadiths():
                     "type": "hadith",
                     "source": f"{book_ar} - حديث رقم {hadith_id}",
                     "book": book_ar,
+                    "reference": json.dumps(
+                        h.get("reference", {}), ensure_ascii=False
+                    ),
+                    "grades": json.dumps(grades, ensure_ascii=False),
                 }
 
                 documents.append(text)

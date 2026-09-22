@@ -24,6 +24,7 @@ class HistoryService:
         confidence: float = 1.0,
         response_tier: str = "moderate",
         response_delayed: bool = False,
+        commit: bool = True,
     ):
         interaction = Interaction(
             user_id=user_id,
@@ -38,8 +39,10 @@ class HistoryService:
             user_feedback=0,
         )
         self.db.add(interaction)
-        self.db.commit()
-        self.db.refresh(interaction)
+        self.db.flush()
+        if commit:
+            self.db.commit()
+            self.db.refresh(interaction)
         return interaction
 
     def update_feedback(self, user_id: int, record_id: int, feedback: int):

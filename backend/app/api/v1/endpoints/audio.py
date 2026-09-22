@@ -219,6 +219,7 @@ async def analyze_audio(
                 confidence=confidence,
                 response_tier=tier,
                 response_delayed=bool(delayed_message and should_delay),
+                commit=not (delayed_message and should_delay),
             )
             interaction_id = interaction.id
             if delayed_message and should_delay:
@@ -233,7 +234,10 @@ async def analyze_audio(
                         "source": source,
                         "tafsir": tafsir,
                     },
+                    commit=False,
                 )
+                db.commit()
+                db.refresh(interaction)
 
         return RecommendationResponse(
             emotion=emotion,
@@ -246,8 +250,10 @@ async def analyze_audio(
             interaction_id=interaction_id,
         )
     except HTTPException:
+        db.rollback()
         raise
     except Exception as e:
         # Security: Do not expose raw exception details to the client to prevent sensitive data exposure
         logger.error(f"Error processing audio: {e}", exc_info=True)
+        db.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")

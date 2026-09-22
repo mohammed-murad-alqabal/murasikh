@@ -208,8 +208,16 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     if (confirm == true) {
+      final remoteCleared = await HistoryService().clearHistory();
       await _storage.clear();
       _loadMessages();
+      if (mounted && !remoteCleared) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم مسح النسخة المحلية، وتعذر تأكيد مسح النسخة البعيدة.'),
+          ),
+        );
+      }
     }
   }
 
@@ -253,10 +261,25 @@ class _ChatScreenState extends State<ChatScreen> {
     return ctx;
   }
 
+  List<Map<String, String>> _buildChatHistory() {
+    final messages = _messages
+        .where((message) => message.text.trim().isNotEmpty)
+        .toList();
+    final start = messages.length > 10 ? messages.length - 10 : 0;
+    return messages.skip(start).map((message) {
+      return <String, String>{
+        'role': message.isUser ? 'user' : 'assistant',
+        'content': message.text.trim(),
+      };
+    }).toList();
+  }
+
   void _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
     HapticFeedback.lightImpact(); // تفاعل لمسي عند إرسال رسالة
+
+    final chatHistory = _buildChatHistory();
 
     final userMsg = ChatMessage(text: text.trim(), isUser: true);
     setState(() {
@@ -276,6 +299,7 @@ class _ChatScreenState extends State<ChatScreen> {
         GetRecommendationEvent(
           text.trim(),
           userContext: implicitCtx.isNotEmpty ? implicitCtx : null,
+          chatHistory: chatHistory,
         ),
       );
     }

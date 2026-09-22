@@ -41,7 +41,6 @@ class Settings(BaseSettings):
             if (
                 not self.SECRET_KEY
                 or len(self.SECRET_KEY) < 32
-                or "SECRET_KEY" not in kwargs
             ):
                 raise ValueError(
                     "SECRET_KEY must be set to at least 32 characters in production"

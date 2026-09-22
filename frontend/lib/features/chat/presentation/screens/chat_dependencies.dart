@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../services/history_service.dart';
+import '../../../../services/local_account_scope.dart';
 import 'chat_screen.dart';
 
 abstract class ChatStorage {
@@ -13,11 +14,19 @@ abstract class ChatStorage {
 
 class HiveChatStorage implements ChatStorage {
   late Box<String> _chatBox;
+  String? _scope;
 
   @override
   Future<void> init() async {
     await Hive.initFlutter();
-    _chatBox = await Hive.openBox<String>('murassikh_chat_box');
+    final scope = LocalAccountScope.active;
+    final boxName = LocalAccountScope.boxName('chat');
+    if (_scope == scope && Hive.isBoxOpen(boxName)) {
+      _chatBox = Hive.box<String>(boxName);
+      return;
+    }
+    _chatBox = await Hive.openBox<String>(boxName);
+    _scope = scope;
   }
 
   @override

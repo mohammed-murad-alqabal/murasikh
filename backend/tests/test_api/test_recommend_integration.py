@@ -43,6 +43,20 @@ class FakeRagEngine:
         return "رسالة مهيأة من RAG"
 
 
+class RecordingAskAgent:
+    def __init__(self):
+        self.chat_history = None
+
+    async def analyze(self, text, chat_history=None, user_context=None):
+        self.chat_history = chat_history
+        return {
+            "action": "ask",
+            "emotion": "حيرة",
+            "confidence": 0.4,
+            "ai_message": "هل يمكنك توضيح الموقف أكثر؟",
+        }
+
+
 def _register_and_login(client):
     suffix = uuid.uuid4().hex[:10]
     credentials = {
@@ -170,6 +184,63 @@ def test_unauthenticated_recommendation_does_not_save_history(
     assert initial_count == final_count, (
         "No new interaction should be saved for unauthenticated user"
     )
+
+
+def test_guest_chat_history_is_bounded_and_passed_to_agent(client, monkeypatch):
+    agent = RecordingAskAgent()
+    monkeypatch.setattr(recommend, "agent", agent)
+
+    response = client.post(
+        "/api/v1/analyze",
+        json={
+            "text": "أحتاج توضيحاً",
+            "chat_history": [
+                {"role": "user", "content": "أشعر بالتعب"},
+                {"role": "assistant", "content": "هل هو تعب جسدي أم نفسي؟"},
+            ],
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    assert agent.chat_history == [
+        {"role": "user", "content": "أشعر بالتعب"},
+        {"role": "assistant", "content": "هل هو تعب جسدي أم نفسي؟"},
+    ]
+
+
+def test_chat_history_contract_rejects_more_than_ten_messages(client, monkeypatch):
+    monkeypatch.setattr(recommend, "agent", RecordingAskAgent())
+    response = client.post(
+        "/api/v1/analyze",
+        json={
+            "text": "رسالة",
+            "chat_history": [
+                {"role": "user", "content": str(index)} for index in range(11)
+            ],
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_ask_persists_actual_confidence_and_tier(client, monkeypatch, db_session):
+    token, _username = _register_and_login(client)
+    monkeypatch.setattr(recommend, "agent", RecordingAskAgent())
+
+    response = client.post(
+        "/api/v1/analyze",
+        json={"text": "أحتاج توضيحاً"},
+        headers=_headers(token),
+    )
+
+    assert response.status_code == 200, response.text
+    interaction = (
+        db_session.query(Interaction)
+        .filter(Interaction.id == response.json()["interaction_id"])
+        .first()
+    )
+    assert interaction is not None
+    assert interaction.emotion_confidence == 0.4
+    assert interaction.response_tier == "minimal"
 
 
 def test_recommendation_injects_user_context(client, monkeypatch, db_session):

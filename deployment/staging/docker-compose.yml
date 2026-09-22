@@ -36,8 +36,8 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      # SSL Certs directory
-      # - ./ssl:/etc/nginx/ssl:ro
+      # Required: provide certificates before starting staging.
+      - ./ssl:/etc/nginx/ssl:ro
     depends_on:
       - backend
     networks:

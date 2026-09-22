@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../features/recommendation/models/recommendation_model.dart';
 import 'api_service.dart';
+import 'local_account_scope.dart';
 
 class HistoryItem {
   final String id;
@@ -86,14 +87,21 @@ class HistoryService {
   HistoryService._internal();
 
   static const String baseUrl = '${ApiService.baseUrl}/history';
-  static const String _historyBoxName = 'murassikh_local_history';
   late Box<String> _box;
   bool _initialized = false;
+  String? _scope;
 
   Future<void> init() async {
-    if (_initialized) return;
+    final scope = LocalAccountScope.active;
+    if (_initialized && _scope == scope && _box.isOpen) return;
     try {
-      _box = await Hive.openBox<String>(_historyBoxName);
+      if (_initialized && _box.isOpen) {
+        await _box.close();
+      }
+      _box = await Hive.openBox<String>(
+        LocalAccountScope.boxName('history'),
+      );
+      _scope = scope;
       _initialized = true;
     } catch (e) {
       debugPrint("Error initializing HistoryService Hive box: $e");
@@ -151,7 +159,7 @@ class HistoryService {
         for (var item in remoteItems) {
           merged[item.id] = item;
           // حفظها في التخزين المحلي للاستخدام دون إنترنت
-          _box.put(item.id, jsonEncode(item.toMap()));
+          await _box.put(item.id, jsonEncode(item.toMap()));
         }
         for (var item in localItems) {
           if (!merged.containsKey(item.id)) {
@@ -204,16 +212,20 @@ class HistoryService {
     var remoteCleared = false;
     try {
       final headers = await ApiService.getHeaders();
+      if (!headers.containsKey('Authorization')) {
+        await _box.clear();
+        return true;
+      }
       final response = await http
           .delete(Uri.parse(baseUrl), headers: headers)
           .timeout(const Duration(seconds: 3));
       remoteCleared = response.statusCode == 200;
     } catch (_) {}
-    if (remoteCleared) {
-      try {
-        await _box.clear();
-      } catch (_) {}
-    }
+    // Local data must not remain visible after the user explicitly clears
+    // history, even when the remote deletion is temporarily unavailable.
+    try {
+      await _box.clear();
+    } catch (_) {}
     return remoteCleared;
   }
 

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
+import 'local_account_scope.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -26,6 +27,8 @@ class AuthService {
         final data = jsonDecode(response.body);
         final token = data['access_token'];
         final refreshToken = data['refresh_token']; // Read refresh_token
+
+        await LocalAccountScope.activate(username);
 
         await _secureStorage.write(key: 'jwt_token', value: token);
         if (refreshToken != null) {
@@ -70,6 +73,8 @@ class AuthService {
         final token = data['access_token'];
         final refreshToken = data['refresh_token'];
 
+        await LocalAccountScope.activate(username);
+
         await _secureStorage.write(key: 'jwt_token', value: token);
         if (refreshToken != null) {
           await _secureStorage.write(key: 'refresh_token', value: refreshToken);
@@ -108,6 +113,7 @@ class AuthService {
         } catch (_) {}
       }
     } finally {
+      await LocalAccountScope.activate(null);
       await _secureStorage.delete(key: 'jwt_token');
       await _secureStorage.delete(key: 'refresh_token');
       final prefs = await SharedPreferences.getInstance();

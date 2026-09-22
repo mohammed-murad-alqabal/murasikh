@@ -32,7 +32,12 @@ CORS_ORIGINS=https://murassikh.com,https://www.murassikh.com
 certbot certonly --nginx -d api.murassikh.com
 ```
 
-ثم أزل علامة التعليق عن أسطر SSL في `nginx.conf` وحدّث المسار.
+تركيب الشهادة إلزامي في `deployment/staging/docker-compose.yml`؛ يجب أن توجد الملفات التالية قبل التشغيل:
+
+```text
+deployment/staging/ssl/live/api.murassikh.com/fullchain.pem
+deployment/staging/ssl/live/api.murassikh.com/privkey.pem
+```
 
 ### 3. التشغيل
 
@@ -56,8 +61,12 @@ docker exec -it staging-backend-1 python -m scripts.seed_quran
 ### النسخ الاحتياطي اليدوي
 
 ```bash
+export DB_CONTAINER=staging-postgres-1
+export CHROMA_VOLUME=murassikh-staging_chroma-data
 ./scripts/backup.sh
 ```
+
+ينشئ السكربت نسخة PostgreSQL ونسخة Chroma منفصلة، مع ملف `sha256` لكل نسخة. لا يُعد النسخ كاملاً إذا لم يُحدّد `CHROMA_VOLUME`.
 
 ### جدولة النسخ الاحتياطي التلقائي (cron)
 
@@ -69,8 +78,14 @@ docker exec -it staging-backend-1 python -m scripts.seed_quran
 ### الاستعادة من نسخة احتياطية
 
 ```bash
-./scripts/restore.sh /var/backups/murassikh/murassikh_db_2026-09-22_02-00-00.sql.gz
+export DB_CONTAINER=staging-postgres-1
+export CHROMA_VOLUME=murassikh-staging_chroma-data
+./scripts/restore.sh \
+  /var/backups/murassikh/murassikh_db_2026-09-22_02-00-00.sql.gz \
+  /var/backups/murassikh/murassikh_chroma_2026-09-22_02-00-00.tar.gz
 ```
+
+يتطلب الاستعادة ملفات checksum المطابقة، وتظل عملية مدمرة تفاعلية يجب تنفيذها فقط داخل بيئة معزولة أثناء `restore drill` موثق.
 
 ---
 
