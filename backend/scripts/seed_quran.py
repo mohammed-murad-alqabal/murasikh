@@ -147,14 +147,11 @@ def verify_collection(collection, verses: list[dict[str, Any]]) -> None:
 def verify_quran_only_collections(client) -> None:
     """Fail closed if a production Chroma path contains another collection."""
     collections = client.list_collections()
-    names = {
-        getattr(collection, "name", str(collection)) for collection in collections
-    }
+    names = {getattr(collection, "name", str(collection)) for collection in collections}
     unexpected = sorted(names - ALLOWED_COLLECTIONS)
     if unexpected:
         raise RuntimeError(
-            "Quran-only verification found unexpected Chroma collections: "
-            f"{unexpected}"
+            f"Quran-only verification found unexpected Chroma collections: {unexpected}"
         )
 
 

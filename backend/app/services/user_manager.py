@@ -13,6 +13,7 @@ if os.environ.get("ENVIRONMENT") == "testing":
 else:
     ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4)
 
+
 class UserManager:
     def get_password_hash(self, password: str) -> str:
         return ph.hash(password)

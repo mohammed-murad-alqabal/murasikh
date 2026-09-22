@@ -90,9 +90,7 @@ def seed_hadiths():
                     "type": "hadith",
                     "source": f"{book_ar} - حديث رقم {hadith_id}",
                     "book": book_ar,
-                    "reference": json.dumps(
-                        h.get("reference", {}), ensure_ascii=False
-                    ),
+                    "reference": json.dumps(h.get("reference", {}), ensure_ascii=False),
                     "grades": json.dumps(grades, ensure_ascii=False),
                 }
 
