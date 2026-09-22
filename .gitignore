@@ -90,3 +90,8 @@ credentials.json
 *.dll
 *.so
 *.dylib
+deployment/staging/.env
+deployment/**/.env
+frontend/android/key.properties
+*.jks
+*.keystore

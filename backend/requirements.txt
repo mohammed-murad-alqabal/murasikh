@@ -1,5 +1,8 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 
+# Security policy: pin ChromaDB to the last safe embedded-only release.
+# 0.4.17+ introduced trust_remote_code risk. Keep Chroma embedded/local only.
+chromadb==0.4.16
 fastapi
 uvicorn[standard]
 sqlalchemy
@@ -10,7 +13,6 @@ pyjwt
 redis
 slowapi
 python-multipart
-chromadb
 sentence-transformers
 google-genai
 python-dotenv

@@ -1,0 +1,72 @@
+services:
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    image: murassikh-backend:latest
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-murassikh}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-murassikh_db}
+      - REDIS_URL=redis://redis:6379/0
+      - CHROMA_PATH=/app/chroma_db
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://murassikh.com,https://www.murassikh.com}
+      - SECRET_KEY=${SECRET_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - chroma-data:/app/chroma_db
+    # Do NOT expose ports directly to host to enforce Nginx proxy
+    expose:
+      - "8000"
+    networks:
+      - murassikh-network
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # SSL Certs directory
+      # - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    networks:
+      - murassikh-network
+
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-murassikh}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-murassikh_db}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    # F-16 #5: Do NOT map ports to the host
+    networks:
+      - murassikh-network
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    # F-16 #5: Do NOT map ports to the host
+    networks:
+      - murassikh-network
+
+volumes:
+  pg-data:
+  chroma-data:
+
+networks:
+  murassikh-network:
+    driver: bridge
