@@ -47,7 +47,17 @@ jobs:
           ruff format --check backend/app backend/tests backend/scripts
       - name: Audit Python dependencies
         run: |
-          pip-audit -r backend/requirements.txt --strict
+          # The CPU-only PyTorch index publishes local-version wheels such as
+          # torch==2.14.0+cpu, which pip-audit cannot query on PyPI. Audit the
+          # equivalent public PyPI dependency graph instead of weakening the
+          # strict failure policy for the complete audit.
+          sed '/^--extra-index-url https:\/\/download\.pytorch\.org\/whl\/cpu$/d' \
+            backend/requirements.txt > /tmp/murasikh-requirements-pypi.txt
+          pip-audit \
+            -r /tmp/murasikh-requirements-pypi.txt \
+            --index-url https://pypi.org/simple \
+            --strict \
+            --progress-spinner off
       - name: Run Alembic migrations
         env:
           POSTGRES_SERVER: localhost
