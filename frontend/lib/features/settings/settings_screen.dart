@@ -112,7 +112,7 @@ class SettingsScreen extends StatelessWidget {
                   builder: (context) => AlertDialog(
                     title: const Text('مسح بيانات السجل'),
                     content: const Text(
-                      'هل أنت متأكد من مسح سجل التوجيه والكاش والإشعارات نهائياً؟',
+              'هل أنت متأكد من مسح سجل التوجيه والكاش والإشعارات نهائياً؟ لن يتم حذف الحساب.',
                     ),
                     actions: [
                       TextButton(
@@ -130,7 +130,8 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 );
                 if (confirm == true) {
-                  final result = await PrivacyDataService().clearAllUserData();
+                  final result = await PrivacyDataService()
+                      .clearHistoryAndLocalCaches();
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

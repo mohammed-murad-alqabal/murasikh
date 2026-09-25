@@ -15,3 +15,9 @@ class UserContextSchema(BaseModel):
     source: str | None = Field(
         None, min_length=1, max_length=50, description="مصدر الإشارة"
     )
+    sensitive_context_consent: bool = Field(
+        False,
+        description=(
+            "موافقة صريحة على إرسال العمر والجنس وإشارات الوجه/الضغط إلى مزود AI"
+        ),
+    )

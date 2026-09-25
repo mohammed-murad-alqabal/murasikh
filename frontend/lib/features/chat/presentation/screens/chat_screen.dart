@@ -9,6 +9,8 @@ import '../../../../services/history_service.dart';
 import '../../../../services/offline_service.dart';
 import '../../../../services/face_emotion_service.dart';
 import '../../../../services/health_service.dart';
+import '../../../../services/local_account_scope.dart';
+import '../../../../services/settings_service.dart';
 import '../../../recommendation/bloc/recommendation_bloc.dart';
 import '../../../recommendation/models/recommendation_model.dart';
 import '../../../recommendation/views/mic_button.dart';
@@ -82,6 +84,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = false;
   bool _isBoxReady = false;
   Timer? _delayedResponseTimer;
+  String _chatScope = LocalAccountScope.active;
 
   String get _currentEmotion {
     for (var i = _messages.length - 1; i >= 0; i--) {
@@ -110,6 +113,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    LocalAccountScope.changes.addListener(_onAccountScopeChanged);
     _storage = widget.storage ?? HiveChatStorage();
     _responseProvider = widget.delayedResponseProvider ?? DefaultDelayedResponseProvider();
     
@@ -147,10 +151,21 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _initChatStorage() async {
     try {
       await _storage.init();
+      _chatScope = LocalAccountScope.active;
       _loadMessages();
     } catch (e) {
       debugPrint("Error loading chat storage: $e");
     }
+  }
+
+  void _onAccountScopeChanged() {
+    if (!mounted || _chatScope == LocalAccountScope.active) return;
+    _chatScope = LocalAccountScope.active;
+    setState(() {
+      _messages = [];
+      _isBoxReady = false;
+    });
+    _initChatStorage();
   }
 
   void _loadMessages() {
@@ -224,6 +239,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _delayedResponseTimer?.cancel();
+    LocalAccountScope.changes.removeListener(_onAccountScopeChanged);
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -243,6 +259,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<Map<String, dynamic>> _buildImplicitContext() async {
     final Map<String, dynamic> ctx = {};
+    final settingsService = SettingsService();
+    await settingsService.init();
+    if (!settingsService.getSettings().allowSensitiveContext) return ctx;
 
     // 1. الوجه (Facial Emotion)
     final faceEmotion = FaceEmotionService().detectedEmotion;
@@ -257,6 +276,8 @@ class _ChatScreenState extends State<ChatScreen> {
         ctx['biometric_stress'] = true;
       }
     } catch (_) {}
+
+    if (ctx.isNotEmpty) ctx['sensitive_context_consent'] = true;
 
     return ctx;
   }

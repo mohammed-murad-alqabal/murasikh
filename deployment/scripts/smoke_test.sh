@@ -1,65 +1,59 @@
-#!/bin/bash
-# F-16 #6: Smoke test against /health, auth routes, and recommendation
-# Verifies staging deployment is functioning end-to-end.
+#!/usr/bin/env bash
+# Smoke tests for the canonical Murasikh API contract.
 
-set -e
+set -euo pipefail
 
-BASE_URL=${1:-"https://api.murassikh.com"}
+BASE_URL="${1:-https://api.murassikh.com}"
 PASS=0
 FAIL=0
 
+request_status() {
+    curl --silent --show-error --connect-timeout 10 --max-time 20 \
+        -o /dev/null -w "%{http_code}" "$@"
+}
+
 print_result() {
-    local name=$1
-    local code=$2
-    local expected=$3
-    if [ "$code" -eq "$expected" ]; then
-        echo "  ✅ PASS: $name (HTTP $code)"
+    local name="$1"
+    local status="$2"
+    local expected="$3"
+    if [[ "$status" == "$expected" ]]; then
+        echo "  PASS: $name (HTTP $status)"
         PASS=$((PASS + 1))
     else
-        echo "  ❌ FAIL: $name (expected HTTP $expected, got HTTP $code)"
+        echo "  FAIL: $name (expected HTTP $expected, got HTTP $status)" >&2
         FAIL=$((FAIL + 1))
     fi
 }
 
 echo "======================================"
-echo " Murassikh Staging Smoke Test"
+echo " Murasikh Staging Smoke Test"
 echo " Target: $BASE_URL"
 echo "======================================"
 
-echo ""
 echo "--- Health Checks ---"
+print_result "/health/live" "$(request_status "$BASE_URL/health/live")" 200
+print_result "/health/ready" "$(request_status "$BASE_URL/health/ready")" 200
 
-code=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/health/live")
-print_result "/health/live" "$code" 200
-
-code=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/health/ready")
-print_result "/health/ready" "$code" 200
-
-code=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/health")
-print_result "/health (alias)" "$code" 200
-
-echo ""
-echo "--- Auth Routes ---"
-
-# Login with invalid credentials should return 401 or 422
-code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/v1/auth/login" \
+# Malformed bodies validate that the canonical routes are registered without
+# invoking the AI/database recommendation path.
+echo "--- Contract Validation ---"
+print_result "POST /auth/login" "$(request_status \
+    -X POST "$BASE_URL/api/v1/auth/login" \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    --data-urlencode "username=nonexistent@test.com" \
-    --data-urlencode "password=wrongpassword")
-print_result "POST /auth/login (invalid creds → 401/400)" "$code" 401
-
-# Register with empty body should return 422 (Unprocessable Entity)
-code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/v1/auth/register" \
+    --data '')" 422
+print_result "POST /auth/register" "$(request_status \
+    -X POST "$BASE_URL/api/v1/auth/register" \
     -H "Content-Type: application/json" \
-    -d '{}')
-print_result "POST /auth/register (empty body → 422)" "$code" 422
+    -d '{}')" 422
+print_result "POST /analyze" "$(request_status \
+    -X POST "$BASE_URL/api/v1/analyze" \
+    -H "Content-Type: application/json" \
+    -d '{}')" 422
 
-echo ""
-echo "======================================"
-echo " Results: $PASS passed, $FAIL failed"
-echo "======================================"
+printf '%s\n' "======================================"
+printf ' Results: %s passed, %s failed\n' "$PASS" "$FAIL"
+printf '%s\n' "======================================"
 
-if [ "$FAIL" -gt 0 ]; then
+if (( FAIL > 0 )); then
     exit 1
 fi
-exit 0

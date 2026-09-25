@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
-from app.db.models import User
+from app.db.models import AppRating, DelayedResponse, Interaction, User
 
 # Configure Argon2id with lower costs in test environments for speed
 if os.environ.get("ENVIRONMENT") == "testing":
@@ -41,6 +41,7 @@ class UserManager:
                 "id": db_user.id,
                 "username": db_user.username,
                 "email": db_user.email,
+                "session_version": db_user.session_version,
             }
         except IntegrityError:
             db.rollback()
@@ -63,6 +64,7 @@ class UserManager:
                 "email": user.email,
                 "password_hash": user.password_hash,
                 "refresh_jti": getattr(user, "refresh_jti", None),
+                "session_version": user.session_version,
             }
         return None
 
@@ -71,6 +73,50 @@ class UserManager:
         if user_record:
             user_record.refresh_jti = jti
             db.commit()
+
+    def revoke_session(self, db: Session, username: str) -> bool:
+        """Invalidate access and refresh tokens issued for the current session."""
+        try:
+            result = db.execute(
+                update(User)
+                .where(
+                    User.username == username,
+                    User.is_active.is_(True),
+                    User.is_deleted.is_(False),
+                )
+                .values(
+                    refresh_jti=None,
+                    session_version=User.session_version + 1,
+                )
+            )
+            db.commit()
+            return result.rowcount == 1
+        except Exception:
+            db.rollback()
+            raise
+
+    def delete_account(self, db: Session, user_id: int) -> bool:
+        """Delete all account-owned records and the account in one transaction."""
+        try:
+            user = db.query(User).filter(User.id == user_id).one_or_none()
+            if user is None:
+                return False
+
+            db.query(DelayedResponse).filter(DelayedResponse.user_id == user_id).delete(
+                synchronize_session=False
+            )
+            db.query(Interaction).filter(Interaction.user_id == user_id).delete(
+                synchronize_session=False
+            )
+            db.query(AppRating).filter(AppRating.user_id == user_id).delete(
+                synchronize_session=False
+            )
+            db.delete(user)
+            db.commit()
+            return True
+        except Exception:
+            db.rollback()
+            raise
 
     def rotate_refresh_jti(
         self, db: Session, username: str, old_jti: str, new_jti: str

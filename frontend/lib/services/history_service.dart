@@ -98,9 +98,7 @@ class HistoryService {
       if (_initialized && _box.isOpen) {
         await _box.close();
       }
-      _box = await Hive.openBox<String>(
-        LocalAccountScope.boxName('history'),
-      );
+      _box = await LocalAccountScope.openEncryptedStringBox('history');
       _scope = scope;
       _initialized = true;
     } catch (e) {

@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import '../features/home/models/verse_card.dart';
 import 'api_service.dart';
 import 'home_context_service.dart';
+import 'local_account_scope.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────
 /// DailyVerseService — خدمة الآية الديناميكية
@@ -27,7 +28,6 @@ class DailyVerseService extends ChangeNotifier {
 
   DailyVerseService._internal();
 
-  static const String _cacheBoxName = 'daily_verse_cache';
   static const String _cacheKey = 'last_verse';
   static const Duration _debounce = Duration(minutes: 3);
   static const String _baseUrl = ApiService.baseUrl;
@@ -38,6 +38,7 @@ class DailyVerseService extends ChangeNotifier {
 
   Box<String>? _cacheBox;
   bool _initialized = false;
+  String? _scope;
   bool _isFetching = false;
   DateTime _lastFetchTime = DateTime(2000);
   VerseCard? _lastCard;
@@ -51,14 +52,21 @@ class DailyVerseService extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
-    if (_initialized) return;
+    final scope = LocalAccountScope.active;
+    final boxName = LocalAccountScope.boxName('daily_verse');
+    if (_initialized && _scope == scope && Hive.isBoxOpen(boxName)) return;
+    final wasInitialized = _initialized;
+    if (_initialized && _cacheBox?.isOpen == true) await _cacheBox!.close();
     _initialized = true;
+    _scope = scope;
+    _lastCard = null;
+    _lastFetchTime = DateTime(2000);
 
     // فتح الكاش المحلي
-    _cacheBox = await Hive.openBox<String>(_cacheBoxName);
+    _cacheBox = await LocalAccountScope.openEncryptedStringBox('daily_verse');
 
     // استمع لتغييرات السياق
-    _contextService.addListener(_onContextChanged);
+    if (!wasInitialized) _contextService.addListener(_onContextChanged);
 
     // عرض الكاش فوراً إذا كان موجوداً
     final cached = _loadFromCache();

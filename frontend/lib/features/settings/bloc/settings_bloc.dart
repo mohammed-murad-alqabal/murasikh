@@ -35,6 +35,7 @@ class UpdatePrivacySettings extends SettingsEvent {
   final double? autoLockTimeoutMinutes;
   final bool? clearHistoryOnExit;
   final bool? shareAnalytics;
+  final bool? allowSensitiveContext;
 
   UpdatePrivacySettings({
     this.hideContentInLockScreen,
@@ -43,6 +44,7 @@ class UpdatePrivacySettings extends SettingsEvent {
     this.autoLockTimeoutMinutes,
     this.clearHistoryOnExit,
     this.shareAnalytics,
+    this.allowSensitiveContext,
   });
 }
 
@@ -170,6 +172,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       autoLockTimeoutMinutes: event.autoLockTimeoutMinutes,
       clearHistoryOnExit: event.clearHistoryOnExit,
       shareAnalytics: event.shareAnalytics,
+      allowSensitiveContext: event.allowSensitiveContext,
     );
     await SettingsService().saveSettings(updatedSettings);
     emit(state.copyWith(userSettings: updatedSettings));

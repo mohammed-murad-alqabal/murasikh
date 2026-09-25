@@ -84,7 +84,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'التطبيق يعمل بكامل ميزاته دون إنترنت. يمكنك تسجيل الدخول إذا أردت مزامنة تقدمك مستقبلاً.',
+                  'يتوفر دون اتصال cache وfallback محدودان. تسجيل الدخول يفعّل مزامنة السجل والحذف من الخادم.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),

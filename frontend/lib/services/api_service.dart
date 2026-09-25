@@ -191,10 +191,23 @@ class ApiService {
     final settings = settingsService.getSettings();
 
     Map<String, dynamic> mergedContext = {};
-    if (settings.age != null) mergedContext['age'] = settings.age;
-    if (settings.gender != null) mergedContext['gender'] = settings.gender;
+    if (settings.allowSensitiveContext) {
+      if (settings.age != null) mergedContext['age'] = settings.age;
+      if (settings.gender != null) mergedContext['gender'] = settings.gender;
+      mergedContext['sensitive_context_consent'] = true;
+    }
     if (userContext != null) {
       mergedContext.addAll(userContext);
+    }
+    if (!settings.allowSensitiveContext) {
+      mergedContext.removeWhere(
+        (key, value) =>
+            key == 'age' ||
+            key == 'gender' ||
+            key == 'facial_emotion' ||
+            key == 'biometric_stress' ||
+            key == 'sensitive_context_consent',
+      );
     }
 
     final requestBody = <String, dynamic>{
@@ -285,10 +298,23 @@ class ApiService {
     final settings = settingsService.getSettings();
 
     Map<String, dynamic> mergedContext = {};
-    if (settings.age != null) mergedContext['age'] = settings.age;
-    if (settings.gender != null) mergedContext['gender'] = settings.gender;
+    if (settings.allowSensitiveContext) {
+      if (settings.age != null) mergedContext['age'] = settings.age;
+      if (settings.gender != null) mergedContext['gender'] = settings.gender;
+      mergedContext['sensitive_context_consent'] = true;
+    }
     if (userContext != null) {
       mergedContext.addAll(userContext);
+    }
+    if (!settings.allowSensitiveContext) {
+      mergedContext.removeWhere(
+        (key, value) =>
+            key == 'age' ||
+            key == 'gender' ||
+            key == 'facial_emotion' ||
+            key == 'biometric_stress' ||
+            key == 'sensitive_context_consent',
+      );
     }
 
     Future<http.Response> sendAudio() async {

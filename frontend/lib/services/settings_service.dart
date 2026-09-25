@@ -4,17 +4,26 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../features/settings/models/user_settings.dart';
+import 'local_account_scope.dart';
 
 class SettingsService {
   static final SettingsService _instance = SettingsService._internal();
   factory SettingsService() => _instance;
   SettingsService._internal();
 
-  static const String _boxName = 'murassikh_settings_box';
   late Box<String> _box;
+  String? _scope;
 
   Future<void> init() async {
-    _box = await Hive.openBox<String>(_boxName);
+    final scope = LocalAccountScope.active;
+    final boxName = LocalAccountScope.boxName('settings');
+    if (_scope == scope && Hive.isBoxOpen(boxName)) {
+      _box = Hive.box<String>(boxName);
+      return;
+    }
+    if (_scope != null && _box.isOpen) await _box.close();
+    _box = await LocalAccountScope.openEncryptedStringBox('settings');
+    _scope = scope;
   }
 
   UserSettings getSettings() {
@@ -41,6 +50,7 @@ class SettingsService {
               (map['autoLockTimeoutMinutes'] as num?)?.toDouble() ?? 5.0,
           clearHistoryOnExit: map['clearHistoryOnExit'] ?? false,
           shareAnalytics: map['shareAnalytics'] ?? false,
+          allowSensitiveContext: map['allowSensitiveContext'] ?? false,
           notificationSound: map['notificationSound'] ?? true,
           notificationVibrate: map['notificationVibrate'] ?? true,
           quietHoursEnabled: map['quietHoursEnabled'] ?? false,
@@ -72,6 +82,7 @@ class SettingsService {
       autoLockTimeoutMinutes: 5.0,
       clearHistoryOnExit: false,
       shareAnalytics: false,
+      allowSensitiveContext: false,
     );
   }
 
@@ -94,6 +105,7 @@ class SettingsService {
       'autoLockTimeoutMinutes': settings.autoLockTimeoutMinutes,
       'clearHistoryOnExit': settings.clearHistoryOnExit,
       'shareAnalytics': settings.shareAnalytics,
+      'allowSensitiveContext': settings.allowSensitiveContext,
       'notificationSound': settings.notificationSound,
       'notificationVibrate': settings.notificationVibrate,
       'quietHoursEnabled': settings.quietHoursEnabled,

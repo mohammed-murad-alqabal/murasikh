@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_service.dart';
+import 'auth_service.dart';
 import 'history_service.dart';
+import 'local_account_scope.dart';
 import 'notification_service.dart';
 import 'offline_service.dart';
 import 'settings_service.dart';
-import 'local_account_scope.dart';
 
 class ClearDataResult {
   const ClearDataResult({
@@ -21,23 +21,30 @@ class ClearDataResult {
 }
 
 class PrivacyDataService {
-  static const String _dailyVerseBoxName = 'daily_verse_cache';
-
   Future<Map<String, dynamic>> exportAllData() async {
     final settingsService = SettingsService();
     await settingsService.init();
     final remote = await _exportRemoteData();
 
     return {
-      'export_version': 1,
+      'export_version': 2,
       'exported_at': DateTime.now().toUtc().toIso8601String(),
       'settings': settingsService.getSettings().toJson(),
       'remote': remote,
       'offline': await OfflineService().exportData(),
       'notifications': await NotificationService().exportStoredData(),
-      'chat': await _readStringBox(LocalAccountScope.boxName('chat')),
-      'daily_verse': await _readStringBox(_dailyVerseBoxName),
+      'chat': await _readLogicalBox('chat'),
+      'daily_verse': await _readLogicalBox('daily_verse'),
     };
+  }
+
+  /// Store the export inside an encrypted, account-scoped Hive box. The UI
+  /// must not write this JSON to a permanent plaintext documents file.
+  Future<String> saveEncryptedExport() async {
+    final box = await LocalAccountScope.openEncryptedStringBox('exports');
+    final id = 'export_${DateTime.now().toUtc().microsecondsSinceEpoch}';
+    await box.put(id, jsonEncode(await exportAllData()));
+    return id;
   }
 
   Future<Map<String, dynamic>> _exportRemoteData() async {
@@ -53,14 +60,17 @@ class PrivacyDataService {
             as Map<String, dynamic>;
       }
     } catch (_) {}
+    final localHistory = await HistoryService().getHistory();
     return {
       'account': null,
-      'interactions': await HistoryService().getHistory(),
+      'interactions': localHistory.map((item) => item.toMap()).toList(),
       'available': false,
     };
   }
 
-  Future<ClearDataResult> clearAllUserData() async {
+  /// Clear the interaction history and local caches without deleting the
+  /// account itself. Account deletion is a separate explicit operation.
+  Future<ClearDataResult> clearHistoryAndLocalCaches() async {
     var remoteDeletionConfirmed = false;
     try {
       remoteDeletionConfirmed = await HistoryService().clearHistory();
@@ -72,8 +82,9 @@ class PrivacyDataService {
     for (final clearOperation in <Future<void> Function()>[
       () => OfflineService().clearLocalData(),
       () => NotificationService().clearStoredData(),
-      () => _clearBox(LocalAccountScope.boxName('chat')),
-      () => _clearBox(_dailyVerseBoxName),
+      () => _clearLogicalBox('chat'),
+      () => _clearLogicalBox('daily_verse'),
+      () => _clearLogicalBox('exports'),
     ]) {
       try {
         await clearOperation();
@@ -88,8 +99,13 @@ class PrivacyDataService {
     );
   }
 
-  Future<List<dynamic>> _readStringBox(String name) async {
-    final box = await _openStringBox(name);
+  /// Delete the server account first, then purge encrypted local data and keys.
+  /// A failed server request leaves the local session intact so the user can
+  /// retry rather than receiving a false success message.
+  Future<String?> deleteAccount() => AuthService().deleteAccount();
+
+  Future<List<dynamic>> _readLogicalBox(String logicalName) async {
+    final box = await LocalAccountScope.openEncryptedStringBox(logicalName);
     final values = <dynamic>[];
     for (final raw in box.values) {
       try {
@@ -101,13 +117,8 @@ class PrivacyDataService {
     return values;
   }
 
-  Future<void> _clearBox(String name) async {
-    final box = await _openStringBox(name);
+  Future<void> _clearLogicalBox(String logicalName) async {
+    final box = await LocalAccountScope.openEncryptedStringBox(logicalName);
     await box.clear();
-  }
-
-  Future<Box<String>> _openStringBox(String name) async {
-    if (Hive.isBoxOpen(name)) return Hive.box<String>(name);
-    return Hive.openBox<String>(name);
   }
 }

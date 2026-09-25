@@ -37,6 +37,7 @@ class User(Base):
     )
     is_active = Column(Boolean, default=True)
     refresh_jti = Column(String(36), nullable=True)
+    session_version = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     is_deleted = Column(Boolean, default=False)
