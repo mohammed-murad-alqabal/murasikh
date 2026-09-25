@@ -15,7 +15,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:15-alpine
+        image: postgres:15-alpine@sha256:f7d23353e1b15400d22ebe31189f4d314b87a4c129cc400c8c2d8d4ca127bf81
         env:
           POSTGRES_USER: murassikh
           POSTGRES_PASSWORD: murassikh_pwd
@@ -29,7 +29,7 @@ jobs:
           - 5433:5432
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
@@ -114,7 +114,7 @@ jobs:
   frontend-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -132,3 +132,45 @@ jobs:
         run: |
           cd frontend
           flutter test
+
+  staging-test:
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Build Docker Image
+        run: docker build -t murassikh-backend:latest backend
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'murassikh-backend:latest'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+      - name: Generate Dummy TLS Certs for Staging
+        run: |
+          mkdir -p deploy/certs
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout deploy/certs/privkey.pem -out deploy/certs/fullchain.pem -subj "/CN=localhost"
+      - name: Build and start Staging Environment
+        env:
+          POSTGRES_PASSWORD: staging-password
+          SECRET_KEY: staging-secret-key-1234567890123456789012345678901234567890
+          CORS_ORIGINS: https://staging.example.com
+        run: |
+          # Use empty volumes for staging
+          docker compose -f docker-compose.staging.yml up -d
+      - name: Wait for services to be ready
+        run: |
+          sleep 45
+          docker compose -f docker-compose.staging.yml ps
+      - name: Test Health Endpoints via Nginx
+        run: |
+          curl -k -f https://localhost/nginx-health || exit 1
+          # Staging curl directly to backend port if mapped, or via Nginx (we'll assume Nginx proxies it properly)
+          # Actually, Nginx config proxies / to backend. Let's test /health/live
+          curl -k -f https://localhost/health/live || exit 1
+          curl -k -f https://localhost/health/ready || exit 1
+      - name: Teardown Staging
+        if: always()
+        run: docker compose -f docker-compose.staging.yml down -v
