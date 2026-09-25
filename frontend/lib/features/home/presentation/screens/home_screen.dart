@@ -475,10 +475,31 @@ class _HomeScreenState extends State<HomeScreen>
             onTap: () {
               if (_ambientService.isListening) {
                 _ambientService.stopListening();
+                setState(() {});
               } else {
-                _ambientService.startListening();
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('حارس السكينة (صلاحية الميكروفون)'),
+                    content: const Text('لتفعيل "حارس السكينة"، يحتاج التطبيق إلى صلاحية تسجيل الصوت لفترات قصيرة لتحليل التوتر.\nنؤكد لك أنه لا يتم حفظ أو مشاركة أي مقاطع صوتية؛ تُحذف فور التحليل.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('إلغاء'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _ambientService.startListening().then((_) {
+                            if (mounted) setState(() {});
+                          });
+                        },
+                        child: const Text('موافق'),
+                      ),
+                    ],
+                  ),
+                );
               }
-              setState(() {});
             },
           ),
           Container(width: 1, height: 30, color: Colors.grey.shade300),

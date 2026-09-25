@@ -132,6 +132,10 @@ jobs:
         run: |
           cd frontend
           flutter test
+      - name: Build Android APK (Release)
+        run: |
+          cd frontend
+          flutter build apk --release
 
   staging-test:
     runs-on: ubuntu-latest
@@ -174,3 +178,21 @@ jobs:
       - name: Teardown Staging
         if: always()
         run: docker compose -f docker-compose.staging.yml down -v
+
+  ios-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - name: Install dependencies
+        run: |
+          cd frontend
+          flutter pub get
+      - name: Build iOS Archive
+        run: |
+          cd frontend
+          flutter build ios --release --no-codesign

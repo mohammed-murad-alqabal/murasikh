@@ -39,20 +39,45 @@ class _MicButtonState extends State<MicButton>
 
   Future<void> _startRecording() async {
     try {
-      if (await _audioRecorder.hasPermission()) {
-        final dir = await getTemporaryDirectory();
-        final filePath =
-            '${dir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
-
-        await _audioRecorder.start(
-          const RecordConfig(encoder: AudioEncoder.wav),
-          path: filePath,
+      if (!await _audioRecorder.hasPermission()) {
+        if (!mounted) return;
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('صلاحية الميكروفون'),
+            content: const Text('نحتاج إلى صلاحية الميكروفون لتسجيل مقطع صوتي قصير وتحليل نبرتك لتقديم الآية المناسبة لحالتك.\nلا يتم حفظ المقطع على خوادمنا.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('إلغاء'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('موافق'),
+              ),
+            ],
+          ),
         );
-        if (mounted) {
-          setState(() {
-            _isRecording = true;
-          });
+        if (proceed != true) return;
+        
+        // Let the package request the permission
+        if (!await _audioRecorder.hasPermission()) {
+          return;
         }
+      }
+
+      final dir = await getTemporaryDirectory();
+      final filePath =
+          '${dir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
+
+      await _audioRecorder.start(
+        const RecordConfig(encoder: AudioEncoder.wav),
+        path: filePath,
+      );
+      if (mounted) {
+        setState(() {
+          _isRecording = true;
+        });
       }
     } catch (e) {
       debugPrint("Error starting record: $e");
