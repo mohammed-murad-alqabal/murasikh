@@ -20,6 +20,7 @@ import chromadb
 SCRIPT_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = SCRIPT_DIR.parent
 QURAN_FILE = BACKEND_DIR / "quran.json"
+MANIFEST_FILE = BACKEND_DIR / "quran_manifest.json"
 CHROMA_DIR = Path(os.environ.get("CHROMA_PATH", str(BACKEND_DIR / "chroma_db")))
 COLLECTION_NAME = "islamic_content_minilm"
 ALLOWED_COLLECTIONS = {COLLECTION_NAME}
@@ -64,6 +65,23 @@ EMOTION_MAPPING: dict[str, dict[str, str]] = {
 
 
 def load_verses() -> list[dict[str, Any]]:
+    # F-18 Content Governance: Verify provenance via manifest
+    if not MANIFEST_FILE.exists():
+        raise RuntimeError(f"Missing Quran manifest file: {MANIFEST_FILE}")
+        
+    with MANIFEST_FILE.open("r", encoding="utf-8") as m_file:
+        manifest = json.load(m_file)
+        
+    expected_hash = manifest.get("checksum_sha256")
+    with QURAN_FILE.open("rb") as f_bin:
+        actual_hash = hashlib.sha256(f_bin.read()).hexdigest()
+        
+    if actual_hash != expected_hash:
+        raise RuntimeError(
+            f"Quran artifact hash mismatch! Expected {expected_hash}, got {actual_hash}. "
+            f"Provenance verification failed."
+        )
+
     with QURAN_FILE.open("r", encoding="utf-8") as handle:
         data = json.load(handle)
 

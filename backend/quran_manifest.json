@@ -1,0 +1,12 @@
+{
+  "name": "Quran Uthmani Text",
+  "source": "Tanzil.net / King Fahd Complex",
+  "version": "1.0",
+  "license": "Public Domain / CC0",
+  "extracted_at": "2026-09-25",
+  "description": "Complete Quranic text used for RAG and search.",
+  "format": "json",
+  "verses_count": 6236,
+  "checksum_sha256": "bd74e2cefe800e2600baa4a6056d1e83a83c771f6ff525064cb08bdccbf128bf",
+  "verification_status": "Structurally Verified"
+}
