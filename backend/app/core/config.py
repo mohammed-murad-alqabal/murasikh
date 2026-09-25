@@ -30,15 +30,19 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost,http://127.0.0.1,http://10.0.2.2"
 
     # JWT Settings
-    SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(64))
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS512"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # 15 minutes
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        if not self.SECRET_KEY:
+            if self.ENVIRONMENT == "production":
+                raise ValueError("SECRET_KEY must be explicitly set in production")
+            self.SECRET_KEY = secrets.token_urlsafe(64)
         if self.ENVIRONMENT == "production":
-            if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
+            if len(self.SECRET_KEY) < 32:
                 raise ValueError(
                     "SECRET_KEY must be set to at least 32 characters in production"
                 )

@@ -140,7 +140,7 @@ def test_delete_account_removes_owned_data_and_revokes_tokens(
         async def analyze(self, text, chat_history=None, user_context=None):
             return {
                 "action": "guide",
-                "emotion": "حزن",
+                "emotion": "فرح",
                 "confidence": 0.9,
                 "ai_message": "رسالة حذف اختبارية.",
             }
