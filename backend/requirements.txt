@@ -17,5 +17,6 @@ redis
 slowapi
 python-multipart
 sentence-transformers
+librosa
 google-genai
 python-dotenv
