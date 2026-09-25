@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 SQLALCHEMY_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
     SQLALCHEMY_DATABASE_URL = (
-        "postgresql://{user}:{password}@{server}:{port}/{database}".format(
+        "postgresql+psycopg2://{user}:{password}@{server}:{port}/{database}".format(
             user=os.environ.get("POSTGRES_USER", "postgres"),
             password=os.environ.get("POSTGRES_PASSWORD", "postgres"),
             server=os.environ.get("POSTGRES_SERVER", "localhost"),
