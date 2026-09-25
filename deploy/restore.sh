@@ -1,32 +1,38 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
 
-BACKUP_FILE="${1:-}"
+# Phase 5: RPO/RTO Restore Drill
+# Restores PostgreSQL and ChromaDB from encrypted backups
 
-if [ -z "$BACKUP_FILE" ]; then
-    echo "Usage: ./restore.sh <backup_file.sql.gz>"
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <db_backup_enc_file> <chroma_backup_enc_file>"
     exit 1
 fi
 
-if [ ! -f "$BACKUP_FILE" ]; then
-    echo "Error: Backup file $BACKUP_FILE not found."
-    exit 1
-fi
+DB_ENC=$1
+CHROMA_ENC=$2
+DB_CONTAINER="murassikh-production-db-1"
+CHROMA_DIR="./backend/chroma_db"
+ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-default_secret_key_1234567890123}"
 
-if [ -f "${BACKUP_FILE}.sha256" ]; then
-    sha256sum --check "${BACKUP_FILE}.sha256"
-fi
+echo "[Restore] Decrypting database..."
+openssl enc -d -aes-256-cbc -in "$DB_ENC" -out "/tmp/db_restore.sql" -k "$ENCRYPTION_KEY" -pbkdf2
 
-if [ -z "$POSTGRES_PASSWORD" ]; then
-    echo "Error: POSTGRES_PASSWORD is not set."
-    exit 1
-fi
+echo "[Restore] Decrypting Chroma..."
+openssl enc -d -aes-256-cbc -in "$CHROMA_ENC" -out "/tmp/chroma_restore.tar.gz" -k "$ENCRYPTION_KEY" -pbkdf2
 
-echo "Restoring database from $BACKUP_FILE..."
-gunzip -c "$BACKUP_FILE" | PGPASSWORD="$POSTGRES_PASSWORD" psql \
-    -h "${POSTGRES_SERVER:-db}" \
-    -p "${POSTGRES_PORT:-5432}" \
-    -U "${POSTGRES_USER:-murassikh}" \
-    -d "${POSTGRES_DB:-murassikh_db}"
+echo "[Restore] Restoring Database..."
+docker exec -i $DB_CONTAINER psql -U murassikh -d murassikh_db -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+cat /tmp/db_restore.sql | docker exec -i $DB_CONTAINER psql -U murassikh -d murassikh_db
+echo "[Restore] Database restored."
 
-echo "Restore completed successfully."
+echo "[Restore] Restoring Chroma..."
+rm -rf "$CHROMA_DIR"/*
+tar -xzf "/tmp/chroma_restore.tar.gz" -C "$CHROMA_DIR"
+echo "[Restore] Chroma restored."
+
+# Cleanup
+rm /tmp/db_restore.sql
+rm /tmp/chroma_restore.tar.gz
+
+echo "[Restore] Restore completed successfully."

@@ -1,35 +1,31 @@
-#!/usr/bin/env bash
-set -euo pipefail
-umask 077
+#!/bin/bash
+set -e
 
-BACKUP_DIR=${BACKUP_DIR:-"/backups"}
+# Phase 5: RPO/RTO Backup Policy
+# Encrypts and backs up PostgreSQL and ChromaDB
+
+BACKUP_DIR="/tmp/murassikh_backups"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_FILE="${BACKUP_DIR}/db_backup_${TIMESTAMP}.sql.gz"
-CHECKSUM_FILE="${BACKUP_FILE}.sha256"
-RETENTION_DAYS=${RETENTION_DAYS:-7}
+DB_CONTAINER="murassikh-production-db-1"
+CHROMA_DIR="./backend/chroma_db"
+ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-default_secret_key_1234567890123}"
 
 mkdir -p "$BACKUP_DIR"
 
-echo "Starting database backup..."
-if [ -z "$POSTGRES_PASSWORD" ]; then
-    echo "Error: POSTGRES_PASSWORD is not set."
-    exit 1
-fi
+echo "[Backup] Starting Postgres dump..."
+docker exec $DB_CONTAINER pg_dump -U murassikh murassikh_db > "$BACKUP_DIR/db_$TIMESTAMP.sql"
+echo "[Backup] Postgres dump completed."
 
-PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
-    -h "${POSTGRES_SERVER:-db}" \
-    -p "${POSTGRES_PORT:-5432}" \
-    -U "${POSTGRES_USER:-murassikh}" \
-    -d "${POSTGRES_DB:-murassikh_db}" \
-    | gzip > "$BACKUP_FILE"
-echo "Backup completed: $BACKUP_FILE"
-sha256sum "$BACKUP_FILE" > "$CHECKSUM_FILE"
+echo "[Backup] Tarring Chroma DB..."
+tar -czf "$BACKUP_DIR/chroma_$TIMESTAMP.tar.gz" -C "$CHROMA_DIR" .
+echo "[Backup] Chroma tar completed."
 
-if [ -n "${CHROMA_PATH:-}" ] && [ -d "$CHROMA_PATH" ]; then
-    tar -czf "${BACKUP_DIR}/chroma_${TIMESTAMP}.tar.gz" -C "$CHROMA_PATH" .
-    sha256sum "${BACKUP_DIR}/chroma_${TIMESTAMP}.tar.gz" > "${BACKUP_DIR}/chroma_${TIMESTAMP}.tar.gz.sha256"
-fi
+echo "[Backup] Encrypting backups..."
+openssl enc -aes-256-cbc -salt -in "$BACKUP_DIR/db_$TIMESTAMP.sql" -out "$BACKUP_DIR/db_$TIMESTAMP.sql.enc" -k "$ENCRYPTION_KEY" -pbkdf2
+openssl enc -aes-256-cbc -salt -in "$BACKUP_DIR/chroma_$TIMESTAMP.tar.gz" -out "$BACKUP_DIR/chroma_$TIMESTAMP.tar.gz.enc" -k "$ENCRYPTION_KEY" -pbkdf2
 
-echo "Cleaning up backups older than $RETENTION_DAYS days..."
-find "$BACKUP_DIR" -type f \( -name "db_backup_*" -o -name "chroma_*" \) -mtime +"$RETENTION_DAYS" -delete
-echo "Cleanup complete."
+# Remove unencrypted
+rm "$BACKUP_DIR/db_$TIMESTAMP.sql"
+rm "$BACKUP_DIR/chroma_$TIMESTAMP.tar.gz"
+
+echo "[Backup] Backup completed and encrypted at $BACKUP_DIR"
