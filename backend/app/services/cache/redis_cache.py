@@ -1,12 +1,15 @@
 import json
 from typing import Any
-
 import redis
-
+from app.core.config import settings
 
 class RedisCache:
     def __init__(self, host: str = "localhost", port: int = 6379):
-        self.client = redis.Redis(host=host, port=port, decode_responses=True)
+        redis_url = getattr(settings, "REDIS_URL", None)
+        if redis_url:
+            self.client = redis.Redis.from_url(redis_url, decode_responses=True)
+        else:
+            self.client = redis.Redis(host=host, port=port, decode_responses=True)
 
     def get(self, key: str) -> Any | None:
         value = self.client.get(key)

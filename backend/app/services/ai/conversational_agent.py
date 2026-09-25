@@ -90,13 +90,25 @@ class ConversationalAgent:
             prompt += f"\nالرسالة الحالية للمستخدم:\n{_redact(text)}"
 
             import asyncio
+            from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=genai.types.GenerateContentConfig(temperature=0.3),
+            @retry(
+                stop=stop_after_attempt(3),
+                wait=wait_exponential(multiplier=1, min=2, max=10),
+                retry=retry_if_exception_type(Exception),
+                reraise=True
             )
+            def _call_gemini():
+                return self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                    config=genai.types.GenerateContentConfig(temperature=0.3),
+                )
+
+            # Phase 4: Timeouts & Retries
+            async with asyncio.timeout(10.0):
+                response = await asyncio.to_thread(_call_gemini)
+                
             raw_text = response.text.strip()
             # fallback cleanup just in case
             if raw_text.startswith("```json"):

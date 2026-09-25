@@ -36,6 +36,9 @@ class RecommendationRequest(BaseModel):
     user_context: UserContextSchema | None = Field(
         None, description="السياق الإضافي للمستخدم"
     )
+    idempotency_key: str | None = Field(
+        None, description="مفتاح فريد لمنع تكرار الطلب (Idempotency Key)"
+    )
     chat_history: list[ChatHistoryMessage] = Field(
         default_factory=list,
         max_length=10,
@@ -62,6 +65,23 @@ async def get_recommendation(
     user: dict | None = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
+    # 0. Idempotency Check
+    cache = None
+    try:
+        from app.services.cache.redis_cache import RedisCache
+        cache = RedisCache()
+    except Exception:
+        pass
+        
+    if cache and payload.idempotency_key:
+        cache_key = f"idemp_rec:{payload.idempotency_key}"
+        try:
+            cached_res = cache.get(cache_key)
+            if cached_res:
+                return RecommendationResponse(**cached_res)
+        except Exception as e:
+            logger.warning(f"Redis idempotency check failed: {e}")
+
     try:
         history_service = HistoryService(db)
 
@@ -293,7 +313,7 @@ async def get_recommendation(
                 db.commit()
                 db.refresh(interaction)
 
-        return RecommendationResponse(
+        response = RecommendationResponse(
             emotion=emotion,
             confidence=confidence,
             tier=tier,
@@ -303,6 +323,16 @@ async def get_recommendation(
             tafsir=tafsir,
             interaction_id=interaction_id,
         )
+
+        if cache and payload.idempotency_key:
+            try:
+                # Cache successful responses for 24h to prevent duplicates
+                cache_key = f"idemp_rec:{payload.idempotency_key}"
+                cache.set(cache_key, response.model_dump(), ttl=86400)
+            except Exception as e:
+                logger.warning(f"Failed to cache idempotency key: {e}")
+
+        return response
     except Exception as e:
         logger.error(f"Error processing recommendation: {e}")
         db.rollback()

@@ -37,6 +37,7 @@ def check_magic_bytes(header_bytes: bytes) -> bool:
 
 
 MAX_AUDIO_BYTES = 10 * 1024 * 1024
+MIN_AUDIO_BYTES = 4096
 ALLOWED_AUDIO_TYPES = {
     "audio/mpeg",
     "audio/mp3",
@@ -48,6 +49,7 @@ ALLOWED_AUDIO_TYPES = {
     "audio/x-m4a",
 }
 
+audio_semaphore = asyncio.Semaphore(5)
 
 @router.post("/analyze-audio", response_model=RecommendationResponse)
 @limiter.limit("5/minute")
@@ -65,8 +67,8 @@ async def analyze_audio(
             )
 
         audio_bytes = await file.read(MAX_AUDIO_BYTES + 1)
-        if not audio_bytes:
-            raise HTTPException(status_code=400, detail="Audio file is empty")
+        if not audio_bytes or len(audio_bytes) < MIN_AUDIO_BYTES:
+            raise HTTPException(status_code=400, detail="Audio file is too short or empty")
         if len(audio_bytes) > MAX_AUDIO_BYTES:
             raise HTTPException(
                 status_code=413, detail="Audio file exceeds the 10 MB limit"
@@ -93,10 +95,20 @@ async def analyze_audio(
             if not consent:
                 context_dict = {}
 
-        analysis = await audio_analyzer.analyze_tone(audio_bytes)
+        try:
+            # P4 Concurrency & Reliability
+            async with asyncio.timeout(15.0):
+                async with audio_semaphore:
+                    analysis = await audio_analyzer.analyze_tone(audio_bytes)
+        except asyncio.TimeoutError:
+            raise HTTPException(status_code=504, detail="Audio analysis timed out")
 
         emotion = analysis.get("emotion", "طبيعي")
         confidence = max(0.0, min(1.0, float(analysis.get("confidence", 0.7))))
+        
+        # P4 Logic: Decrease confidence for very short/poor audio
+        if len(audio_bytes) < 50000:
+            confidence = max(0.0, confidence - 0.2)
 
         history_service = HistoryService(db)
         if emotion == "طبيعي":
