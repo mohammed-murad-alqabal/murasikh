@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     Float,
@@ -106,6 +107,11 @@ class Interaction(Base):
     user = relationship("User", back_populates="interactions")
     delayed_response = relationship("DelayedResponse", back_populates="interaction")
 
+    __table_args__ = (
+        CheckConstraint('user_feedback IN (-1, 0, 1)', name='check_valid_feedback'),
+        CheckConstraint('emotion_confidence >= 0.0 AND emotion_confidence <= 1.0', name='check_confidence_range'),
+    )
+
 
 class DelayedResponse(Base):
     __tablename__ = "delayed_responses"
@@ -134,3 +140,7 @@ class AppRating(Base):
     created_at = Column(DateTime, default=utc_now)
 
     user = relationship("User", backref="app_ratings")
+
+    __table_args__ = (
+        CheckConstraint('rating >= 1 AND rating <= 5', name='check_valid_rating'),
+    )

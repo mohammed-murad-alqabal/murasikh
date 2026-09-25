@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 from google import genai
 
@@ -55,6 +56,12 @@ class ConversationalAgent:
         chat_history: list[dict] | None = None,
         user_context: dict | None = None,
     ) -> dict:
+        def _redact(s: str) -> str:
+            # Redact emails and phone numbers for privacy before sending to LLM
+            s = re.sub(r'[\w\.-]+@[\w\.-]+', '[EMAIL_REDACTED]', s)
+            s = re.sub(r'\b(?:\+?\d{1,3}[-\s]?)?\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}\b', '[PHONE_REDACTED]', s)
+            return s
+
         try:
             if not self._gemini_available:
                 raise ValueError("No API_KEY provided")
@@ -76,11 +83,11 @@ class ConversationalAgent:
             if chat_history:
                 for msg in chat_history:
                     role = "المستخدم" if msg["role"] == "user" else "المساعد"
-                    prompt += f"{role}: {msg['content']}\n"
+                    prompt += f"{role}: {_redact(msg['content'])}\n"
             else:
                 prompt += "(لا يوجد سجل سابق)\n"
 
-            prompt += f"\nالرسالة الحالية للمستخدم:\n{text}"
+            prompt += f"\nالرسالة الحالية للمستخدم:\n{_redact(text)}"
 
             import asyncio
 

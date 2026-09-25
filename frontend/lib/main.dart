@@ -1,4 +1,5 @@
 import 'dart:convert';
+import "package:flutter_windowmanager/flutter_windowmanager.dart";
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_widget/home_widget.dart';
@@ -63,9 +64,14 @@ void callbackDispatcher() {
   });
 }
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
+    // P3 Privacy: Hide content in recent apps snapshot
+    try {
+      await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+    } catch (_) {}
     Workmanager().initialize(
       callbackDispatcher,
     );
