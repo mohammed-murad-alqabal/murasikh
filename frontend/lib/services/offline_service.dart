@@ -26,8 +26,6 @@ class OfflineService {
 
   Future<void> init() async {
     final scope = LocalAccountScope.active;
-    final cacheName = LocalAccountScope.boxName('offline_cache');
-    final feedbackName = LocalAccountScope.boxName('pending_feedback');
     if (_initialized &&
         _scope == scope &&
         _cacheBox.isOpen &&
@@ -36,8 +34,10 @@ class OfflineService {
     }
     if (_initialized && _cacheBox.isOpen) await _cacheBox.close();
     if (_initialized && _feedbackBox.isOpen) await _feedbackBox.close();
-    _cacheBox = await Hive.openBox<String>(cacheName);
-    _feedbackBox = await Hive.openBox<String>(feedbackName);
+    _cacheBox = await LocalAccountScope.openEncryptedStringBox('offline_cache');
+    _feedbackBox = await LocalAccountScope.openEncryptedStringBox(
+      'pending_feedback',
+    );
     _scope = scope;
     _initialized = true;
   }

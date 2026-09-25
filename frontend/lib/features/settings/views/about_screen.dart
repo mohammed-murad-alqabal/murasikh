@@ -18,7 +18,7 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSection(context, 'نبذة عن التطبيق', [
               _buildText(context, '''
-مُرَسِّخ هو رفيقك الروحي الذكي، نظام ذكاء اصطناعي متقدم يرافقك في حياتك اليومية، يعمل على تحليل السياق والمشاعر لتقديم توجيه ديني وروحي يعتمد على القرآن الكريم والسنة النبوية.
+مُرَسِّخ هو MVP تجريبي لتوصية قرآنية نصية مخصصة. يحلل النص ويستخدم استرجاعاً قرآنياً؛ الصوت وتحليل الوجه قدرات تجريبية محدودة، والحديث خارج عقد التوصية الحالي.
 '''),
             ]),
             const SizedBox(height: 24),
@@ -37,7 +37,7 @@ class AboutScreen extends StatelessWidget {
               _buildFeature(
                 context,
                 'العمل بدون إنترنت',
-                'Offline-First Architecture',
+                'cache وfallback موسومان، وليس تحليلاً محلياً كاملاً',
               ),
               _buildFeature(
                 context,
@@ -46,8 +46,8 @@ class AboutScreen extends StatelessWidget {
               ),
               _buildFeature(
                 context,
-                'الخصوصية الكاملة',
-                'معالجة محلية وتشفير البيانات',
+                'الخصوصية والحذف',
+                'جلسات قابلة للإبطال، تخزين محلي مشفر، وحذف حساب صريح',
               ),
             ]),
             const SizedBox(height: 24),

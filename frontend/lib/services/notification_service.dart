@@ -9,6 +9,7 @@ import '../features/notifications/models/app_notification.dart';
 import 'settings_service.dart';
 import 'api_service.dart';
 import 'home_context_service.dart';
+import 'local_account_scope.dart';
 
 class NotificationSchedulePolicy {
   static DateTime nextInstanceOfTime(DateTime now, int hour, int minute) {
@@ -47,9 +48,9 @@ class NotificationService extends ChangeNotifier {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  static const String _boxName = 'murassikh_notifications_box';
   Box<String>? _box;
   bool _initialized = false;
+  String? _scope;
 
   final List<AppNotification> _notifications = [];
   List<AppNotification> get notifications => List.unmodifiable(_notifications);
@@ -57,11 +58,21 @@ class NotificationService extends ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
   Future<void> init({bool isBackground = false}) async {
-    if (_initialized) return;
+    final scope = LocalAccountScope.active;
+    if (_initialized && _scope == scope && _box?.isOpen == true) return;
+
+    if (_initialized) {
+      if (_box?.isOpen == true) await _box!.close();
+      _box = await LocalAccountScope.openEncryptedStringBox('notifications');
+      _scope = scope;
+      _loadFromHive();
+      return;
+    }
 
     // 1. Initialize Hive for persistence
     try {
-      _box = await Hive.openBox<String>(_boxName);
+      _box = await LocalAccountScope.openEncryptedStringBox('notifications');
+      _scope = scope;
       _loadFromHive();
     } catch (e) {
       debugPrint('Error opening notifications box: $e');
@@ -309,14 +320,15 @@ class NotificationService extends ChangeNotifier {
   }
 
   Future<List<String>> exportStoredData() async {
-    _box ??= await Hive.openBox<String>(_boxName);
+    await init();
     return _box!.values.toList();
   }
 
   Future<void> clearStoredData() async {
-    _box ??= await Hive.openBox<String>(_boxName);
+    await init();
     _notifications.clear();
     await _box!.clear();
+    await _notificationsPlugin.cancelAll();
     notifyListeners();
   }
 

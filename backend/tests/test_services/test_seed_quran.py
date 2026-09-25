@@ -39,6 +39,9 @@ class FakeClient:
     def get_or_create_collection(self, name, metadata):
         return self.collection
 
+    def list_collections(self):
+        return [types.SimpleNamespace(name=seed_quran.COLLECTION_NAME)]
+
     def delete_collection(self, name):
         self.deleted += 1
         self.collection = FakeCollection()

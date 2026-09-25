@@ -18,6 +18,7 @@ class UserSettings {
   final double autoLockTimeoutMinutes;
   final bool clearHistoryOnExit;
   final bool shareAnalytics;
+  final bool allowSensitiveContext;
 
   // Notification settings
   final bool notificationSound;
@@ -51,6 +52,7 @@ class UserSettings {
     this.autoLockTimeoutMinutes = 5.0,
     this.clearHistoryOnExit = false,
     this.shareAnalytics = false,
+    this.allowSensitiveContext = false,
     this.notificationSound = true,
     this.notificationVibrate = true,
     this.quietHoursEnabled = false,
@@ -82,6 +84,7 @@ class UserSettings {
       'autoLockTimeoutMinutes': autoLockTimeoutMinutes,
       'clearHistoryOnExit': clearHistoryOnExit,
       'shareAnalytics': shareAnalytics,
+      'allowSensitiveContext': allowSensitiveContext,
       'notificationSound': notificationSound,
       'notificationVibrate': notificationVibrate,
       'quietHoursEnabled': quietHoursEnabled,
@@ -117,6 +120,7 @@ class UserSettings {
           (json['autoLockTimeoutMinutes'] as num?)?.toDouble() ?? 5.0,
       clearHistoryOnExit: json['clearHistoryOnExit'] ?? false,
       shareAnalytics: json['shareAnalytics'] ?? false,
+      allowSensitiveContext: json['allowSensitiveContext'] ?? false,
       notificationSound: json['notificationSound'] ?? true,
       notificationVibrate: json['notificationVibrate'] ?? true,
       quietHoursEnabled: json['quietHoursEnabled'] ?? false,
@@ -148,6 +152,7 @@ class UserSettings {
     double? autoLockTimeoutMinutes,
     bool? clearHistoryOnExit,
     bool? shareAnalytics,
+    bool? allowSensitiveContext,
     bool? notificationSound,
     bool? notificationVibrate,
     bool? quietHoursEnabled,
@@ -179,6 +184,8 @@ class UserSettings {
           autoLockTimeoutMinutes ?? this.autoLockTimeoutMinutes,
       clearHistoryOnExit: clearHistoryOnExit ?? this.clearHistoryOnExit,
       shareAnalytics: shareAnalytics ?? this.shareAnalytics,
+      allowSensitiveContext:
+          allowSensitiveContext ?? this.allowSensitiveContext,
       notificationSound: notificationSound ?? this.notificationSound,
       notificationVibrate: notificationVibrate ?? this.notificationVibrate,
       quietHoursEnabled: quietHoursEnabled ?? this.quietHoursEnabled,

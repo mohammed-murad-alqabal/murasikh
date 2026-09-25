@@ -3,10 +3,13 @@
 # Security policy: pin ChromaDB to the last safe embedded-only release.
 # 0.4.17+ introduced trust_remote_code risk. Keep Chroma embedded/local only.
 chromadb==0.4.16
+# ChromaDB 0.4.16 references NumPy aliases removed in NumPy 2.
+numpy<2
 fastapi
 uvicorn[standard]
 sqlalchemy
 alembic
+pydantic-settings
 psycopg2-binary
 argon2-cffi
 pyjwt
@@ -14,5 +17,6 @@ redis
 slowapi
 python-multipart
 sentence-transformers
+librosa
 google-genai
 python-dotenv

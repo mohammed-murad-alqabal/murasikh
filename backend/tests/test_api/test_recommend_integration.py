@@ -57,6 +57,20 @@ class RecordingAskAgent:
         }
 
 
+class RecordingContextAgent:
+    def __init__(self):
+        self.contexts = []
+
+    async def analyze(self, text, chat_history=None, user_context=None):
+        self.contexts.append(user_context)
+        return {
+            "action": "ask",
+            "emotion": "حيرة",
+            "confidence": 0.4,
+            "ai_message": "هل يمكنك توضيح الموقف أكثر؟",
+        }
+
+
 def _register_and_login(client):
     suffix = uuid.uuid4().hex[:10]
     credentials = {
@@ -220,6 +234,47 @@ def test_chat_history_contract_rejects_more_than_ten_messages(client, monkeypatc
         },
     )
     assert response.status_code == 422
+
+
+def test_sensitive_context_requires_explicit_consent(client, monkeypatch):
+    agent = RecordingContextAgent()
+    monkeypatch.setattr(recommend, "agent", agent)
+
+    without_consent = client.post(
+        "/api/v1/analyze",
+        json={
+            "text": "أشعر بالتوتر",
+            "user_context": {
+                "age": 30,
+                "gender": "male",
+                "facial_emotion": "قلق",
+                "biometric_stress": True,
+            },
+        },
+    )
+    assert without_consent.status_code == 200
+    assert agent.contexts[-1] == {}
+
+    with_consent = client.post(
+        "/api/v1/analyze",
+        json={
+            "text": "أشعر بالتوتر",
+            "user_context": {
+                "age": 30,
+                "gender": "male",
+                "facial_emotion": "قلق",
+                "biometric_stress": True,
+                "sensitive_context_consent": True,
+            },
+        },
+    )
+    assert with_consent.status_code == 200
+    assert agent.contexts[-1] == {
+        "age": 30,
+        "gender": "male",
+        "facial_emotion": "قلق",
+        "biometric_stress": True,
+    }
 
 
 def test_ask_persists_actual_confidence_and_tier(client, monkeypatch, db_session):

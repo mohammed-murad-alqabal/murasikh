@@ -25,7 +25,7 @@ class HiveChatStorage implements ChatStorage {
       _chatBox = Hive.box<String>(boxName);
       return;
     }
-    _chatBox = await Hive.openBox<String>(boxName);
+    _chatBox = await LocalAccountScope.openEncryptedStringBox('chat');
     _scope = scope;
   }
 

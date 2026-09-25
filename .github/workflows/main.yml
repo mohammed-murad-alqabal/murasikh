@@ -93,7 +93,7 @@ jobs:
           POSTGRES_PORT: 5433
           ENVIRONMENT: testing
           SECRET_KEY: test-secret-key-for-ci-64-bytes-long-0123456789abcdef-gha-9876543210
-          TEST_DATABASE_URL: postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db
+          TEST_DATABASE_URL: postgresql+psycopg2://murassikh:murassikh_pwd@localhost:5433/murassikh_db
         run: |
           cd backend
           python -m pytest -m "not performance"
@@ -106,7 +106,7 @@ jobs:
           POSTGRES_PORT: 5433
           ENVIRONMENT: testing
           SECRET_KEY: test-secret-key-for-ci-64-bytes-long-0123456789abcdef-gha-9876543210
-          TEST_DATABASE_URL: postgresql://murassikh:murassikh_pwd@localhost:5433/murassikh_db
+          TEST_DATABASE_URL: postgresql+psycopg2://murassikh:murassikh_pwd@localhost:5433/murassikh_db
         run: |
           cd backend
           python -m pytest tests/performance -m performance -q

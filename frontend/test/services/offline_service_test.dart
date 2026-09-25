@@ -21,6 +21,7 @@ void main() {
   }
 
   setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
     hiveDirectory = await Directory.systemTemp.createTemp(
       'murassikh_hive_test_',
     );

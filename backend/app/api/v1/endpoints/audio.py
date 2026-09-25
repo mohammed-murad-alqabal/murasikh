@@ -89,6 +89,9 @@ async def analyze_audio(
                 )
             except ValidationError as exc:
                 raise HTTPException(status_code=422, detail=exc.errors()) from exc
+            consent = context_dict.pop("sensitive_context_consent", False)
+            if not consent:
+                context_dict = {}
 
         analysis = await audio_analyzer.analyze_tone(audio_bytes)
 

@@ -1,9 +1,5 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../bloc/settings_bloc.dart';
 import '../models/user_settings.dart';
@@ -20,18 +16,15 @@ class PrivacyScreen extends StatefulWidget {
 class _PrivacyScreenState extends State<PrivacyScreen> {
   Future<void> _exportData() async {
     try {
-      final data = await PrivacyDataService().exportAllData();
-      final String jsonStr = const JsonEncoder.withIndent('  ').convert(data);
-
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File(
-        '${directory.path}/murassikh_export_${DateTime.now().millisecondsSinceEpoch}.json',
-      );
-      await file.writeAsString(jsonStr);
+      final exportId = await PrivacyDataService().saveEncryptedExport();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تم تصدير البيانات بنجاح إلى:\n${file.path}')),
+          SnackBar(
+            content: Text(
+              'تم حفظ التصدير داخل التخزين المشفر. معرّف النسخة: $exportId',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -122,6 +115,16 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                     UpdatePrivacySettings(shareAnalytics: value),
                   ),
                 ),
+                _buildToggleTile(
+                  context: context,
+                  title: 'السماح بالسياق الحساس للذكاء الاصطناعي',
+                  subtitle:
+                      'السماح بإرسال العمر والجنس وإشارات الوجه/الضغط عند طلب التوصية',
+                  value: state.userSettings.allowSensitiveContext,
+                  onChanged: (value) => settingsBloc.add(
+                    UpdatePrivacySettings(allowSensitiveContext: value),
+                  ),
+                ),
               ]),
               _buildSection(context, 'إدارة البيانات', [
                 ListTile(
@@ -135,7 +138,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                     style: TextStyle(fontWeight: FontWeight.w500),
                   ),
                   subtitle: Text(
-                    'حفظ نسخة من محادثاتك وسجلاتك بصيغة JSON',
+                    'حفظ نسخة داخل مساحة الحساب المشفرة بصيغة JSON',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   onTap: _exportData,
@@ -146,6 +149,13 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   subtitle:
                       'حذف جميع سجلات التوجيه والتفاعلات (لا يمكن الاسترجاع)',
                   onPressed: () => _showClearHistoryDialog(context),
+                ),
+                _buildWarningTile(
+                  context: context,
+                  title: 'حذف الحساب نهائياً',
+                  subtitle:
+                      'حذف الحساب وبياناته من الخادم ومسح التخزين المحلي. لا يمكن التراجع.',
+                  onPressed: () => _showDeleteAccountDialog(context),
                 ),
               ]),
             ],
@@ -358,7 +368,8 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
-              final result = await PrivacyDataService().clearAllUserData();
+              final result = await PrivacyDataService()
+                  .clearHistoryAndLocalCaches();
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -374,6 +385,40 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('مسح'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('حذف الحساب نهائياً'),
+        content: const Text(
+          'سيتم حذف الحساب والتفاعلات والردود المؤجلة من الخادم، ثم مسح الرموز والتخزين المحلي المشفر. لا يمكن التراجع عن هذا الإجراء.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              final error = await PrivacyDataService().deleteAccount();
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    error ?? 'تم حذف الحساب والبيانات المحلية بنجاح',
+                  ),
+                ),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('حذف نهائياً'),
           ),
         ],
       ),

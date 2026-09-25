@@ -90,11 +90,15 @@ async def get_recommendation(
             chat_history = [message.model_dump() for message in payload.chat_history]
 
         # 2. تحليل الحالة العاطفية والموقف (الوكيل الاستقصائي)
-        context_dict = (
+        raw_context = (
             payload.user_context.model_dump(exclude_none=True)
             if payload.user_context
-            else None
+            else {}
         )
+        context_consent = raw_context.pop("sensitive_context_consent", False)
+        # Do not send age, gender, facial signals, or biometric stress to an
+        # external model unless the user explicitly opted in for this request.
+        context_dict = raw_context if context_consent else {}
         analysis = await agent.analyze(
             payload.text, chat_history=chat_history, user_context=context_dict
         )
